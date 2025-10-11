@@ -3,174 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Porte v1.6 - Rilievo Misure</title>
+    <title>OpenPorte V15 - Sistema Rilevazione Misure</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * { -webkit-tap-highlight-color: transparent; }
-        body { overscroll-behavior-y: contain; }
-        input, select, textarea { font-size: 16px !important; }
-        
-        .accordion-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        
-        .accordion-content.active {
-            max-height: 1500px;
-            transition: max-height 0.5s ease-in;
-        }
-        
-        .accordion-header {
-            cursor: pointer;
-            user-select: none;
-        }
-        
-        .accordion-icon {
-            transition: transform 0.3s ease;
-        }
-        
-        .accordion-header.active .accordion-icon {
-            transform: rotate(180deg);
-        }
-
-        .override-badge {
-            background: #fbbf24;
-            color: #78350f;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-        }
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .tab-active { border-bottom: 2px solid #3B82F6; color: #3B82F6; background: white; }
+        .tab-inactive { color: #6B7280; }
+        .tab-inactive:hover { background: #F3F4F6; color: #374151; }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div id="app"></div>
 
     <script>
-        // STATE
+        // STATE MANAGEMENT
         let state = {
-            currentScreen: 'home',
             projects: [],
-            currentProject: null
+            currentProjectId: null
         };
 
-        // LOAD/SAVE
-        function loadState() {
-            const saved = localStorage.getItem('openPorteState');
-            if (saved) {
-                state = JSON.parse(saved);
-            }
-        }
-
-        function saveState() {
-            localStorage.setItem('openPorteState', JSON.stringify(state));
-        }
-
         // UTILITY FUNCTIONS
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        function generateId(prefix) {
+            return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         }
 
-        function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString('it-IT');
+        function createEmptyPosition() {
+            return {
+                id: generateId('pos'),
+                piano: '',
+                tipoAmbiente: '',
+                misurePosizione: {},
+                infissi: [],
+                persiane: [],
+                cassonetti: []
+            };
         }
 
-        // PROJECT MANAGEMENT
-        function addProject(name, client, clientData = {}) {
-            const project = {
-                id: generateId(),
+        function createProject(name, client) {
+            return {
+                id: generateId('project'),
                 name,
                 client,
-                clientData: clientData || {},
-                caratteristicheMuro: {
-                    profMuroInt: '',
-                    profPianaSopra: '',
-                    profPianaSotto: '',
-                    spessoreInfisso: '',
-                    spessoreGuida: '',
-                    profMuroEst: '',
-                    larghezzaTelaio: '',
-                    haFalso: ''
-                },
-                positions: [],
                 createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                positions: [createEmptyPosition()]
             };
+        }
+
+        // STATE ACTIONS
+        function addProject(name, client) {
+            const project = createProject(name, client);
             state.projects.push(project);
+            state.currentProjectId = project.id;
             saveState();
             render();
         }
 
-        function deleteProject(projectId) {
-            if (confirm('Sei sicuro di voler eliminare questo progetto?')) {
-                state.projects = state.projects.filter(p => p.id !== projectId);
-                if (state.currentProject === projectId) {
-                    state.currentScreen = 'home';
-                    state.currentProject = null;
-                }
-                saveState();
-                render();
-            }
-        }
-
-        function openProject(projectId) {
-            state.currentProject = projectId;
-            state.currentScreen = 'project';
+        function setCurrentProject(projectId) {
+            state.currentProjectId = projectId;
             render();
         }
 
-        function updateClientData(projectId, field, value) {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                if (!project.clientData) project.clientData = {};
-                project.clientData[field] = value;
-                project.updatedAt = new Date().toISOString();
-                saveState();
-            }
-        }
-
-        function updateCaratteristicheMuro(projectId, field, value) {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                if (!project.caratteristicheMuro) project.caratteristicheMuro = {};
-                project.caratteristicheMuro[field] = value;
-                project.updatedAt = new Date().toISOString();
-                saveState();
-                render();
-            }
-        }
-
-        // POSITION MANAGEMENT
         function addPosition(projectId) {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
-                const position = {
-                    id: generateId(),
-                    name: `Vano ${project.positions.length + 1}`,
-                    piano: '',
-                    tipologia: '',
-                    misure: {
-                        LF: '',
-                        HF: '',
-                        LV: '',
-                        HV: '',
-                        HVAR: ''
-                    },
-                    caratteristicheMuroOverride: null,
-                    note: ''
-                };
-                project.positions.push(position);
-                project.updatedAt = new Date().toISOString();
-                saveState();
-                render();
-            }
-        }
-
-        function deletePosition(projectId, positionId) {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project && confirm('Eliminare questo vano?')) {
-                project.positions = project.positions.filter(p => p.id !== positionId);
+                project.positions.push(createEmptyPosition());
                 project.updatedAt = new Date().toISOString();
                 saveState();
                 render();
@@ -190,540 +88,456 @@
             }
         }
 
-        function updateMisure(projectId, positionId, field, value) {
+        function deletePosition(projectId, positionId) {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
-                const position = project.positions.find(p => p.id === positionId);
-                if (position) {
-                    if (!position.misure) position.misure = {};
-                    position.misure[field] = value === '' ? '' : value;
-                    project.updatedAt = new Date().toISOString();
-                    saveState();
-                }
+                project.positions = project.positions.filter(p => p.id !== positionId);
+                project.updatedAt = new Date().toISOString();
+                saveState();
+                render();
             }
         }
 
-        function enableOverride(projectId, positionId) {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                const position = project.positions.find(p => p.id === positionId);
-                if (position) {
-                    position.caratteristicheMuroOverride = {...project.caratteristicheMuro};
-                    project.updatedAt = new Date().toISOString();
-                    saveState();
-                    render();
+        function deleteProject(projectId) {
+            if (confirm('Sei sicuro di voler eliminare questo progetto?')) {
+                state.projects = state.projects.filter(p => p.id !== projectId);
+                if (state.currentProjectId === projectId) {
+                    state.currentProjectId = null;
                 }
+                saveState();
+                render();
             }
         }
 
-        function disableOverride(projectId, positionId) {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                const position = project.positions.find(p => p.id === positionId);
-                if (position) {
-                    position.caratteristicheMuroOverride = null;
-                    project.updatedAt = new Date().toISOString();
-                    saveState();
-                    render();
-                }
-            }
+        // LOCAL STORAGE
+        function saveState() {
+            localStorage.setItem('openporte-v15', JSON.stringify(state));
         }
 
-        function updateCaratteristicheMuroOverride(projectId, positionId, field, value) {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                const position = project.positions.find(p => p.id === positionId);
-                if (position && position.caratteristicheMuroOverride) {
-                    position.caratteristicheMuroOverride[field] = value;
-                    project.updatedAt = new Date().toISOString();
-                    saveState();
-                }
+        function loadState() {
+            const saved = localStorage.getItem('openporte-v15');
+            if (saved) {
+                state = JSON.parse(saved);
             }
         }
 
         // COMPONENTS
         function Header() {
             return `
-                <header class="bg-blue-600 text-white shadow-lg">
-                    <div class="max-w-7xl mx-auto px-4 py-4">
+                <header class="bg-white shadow-md">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                ${state.currentScreen !== 'home' ? `
-                                    <button onclick="goHome()" class="mr-4 p-2 hover:bg-blue-700 rounded">
-                                        ← Indietro
-                                    </button>
-                                ` : ''}
-                                <h1 class="text-2xl font-bold">Open Porte v1.6</h1>
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-900">OpenPorte v15 ✅</h1>
+                                <p class="text-sm text-gray-600 mt-1">Sistema di rilevazione misure per serramenti - HTML Standalone</p>
                             </div>
-                            ${state.currentScreen === 'home' ? `
-                                <button onclick="showNewProjectModal()" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50">
-                                    + Nuovo Progetto
-                                </button>
-                            ` : ''}
+                            <button onclick="showNewProjectModal()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                                ➕ Nuovo Progetto
+                            </button>
                         </div>
                     </div>
                 </header>
             `;
         }
 
+        function NewProjectModal() {
+            return `
+                <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
+                    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <h2 class="text-xl font-bold mb-4">Nuovo Progetto</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nome Progetto *</label>
+                                <input type="text" id="projectName" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Es: Ristrutturazione Villa Rossi">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+                                <input type="text" id="projectClient" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Es: Mario Rossi">
+                            </div>
+                        </div>
+                        <div class="flex gap-3 mt-6">
+                            <button onclick="hideModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Annulla</button>
+                            <button onclick="createProjectFromModal()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Crea Progetto</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function ProjectsList() {
             if (state.projects.length === 0) {
                 return `
-                    <div class="text-center py-16">
-                        <p class="text-gray-500 text-lg mb-4">Nessun progetto presente</p>
-                        <button onclick="showNewProjectModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700">
-                            Crea il tuo primo progetto
+                    <div class="text-center py-16 bg-white rounded-lg shadow-md">
+                        <div class="text-6xl mb-4">🏢</div>
+                        <h2 class="text-xl font-semibold text-gray-700 mb-2">Nessun progetto creato</h2>
+                        <p class="text-gray-500 mb-6">Inizia creando il tuo primo progetto</p>
+                        <button onclick="showNewProjectModal()" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            ➕ Crea Primo Progetto
                         </button>
                     </div>
                 `;
             }
 
             return `
-                <div class="grid gap-4">
-                    ${state.projects.map(project => `
-                        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-                            <div class="flex justify-between items-start mb-2">
-                                <div class="flex-1">
-                                    <h3 class="text-xl font-bold text-gray-900">${project.name}</h3>
-                                    <p class="text-gray-600">Cliente: ${project.client}</p>
-                                    ${project.clientData && (project.clientData.citta || project.clientData.via) ? `
-                                        <p class="text-sm text-gray-500 mt-1">
-                                            ${[project.clientData.via, project.clientData.citta].filter(Boolean).join(', ')}
-                                        </p>
-                                    ` : ''}
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-lg font-semibold mb-4">Progetti</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${state.projects.map(project => `
+                                <div class="border-2 rounded-lg p-4 cursor-pointer transition-all ${state.currentProjectId === project.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}" onclick="setCurrentProject('${project.id}')">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="text-2xl">📄</span>
+                                        <button onclick="event.stopPropagation(); deleteProject('${project.id}')" class="text-red-500 hover:text-red-700">🗑️</button>
+                                    </div>
+                                    <h3 class="font-semibold text-gray-800">${project.name}</h3>
+                                    <p class="text-sm text-gray-600">Cliente: ${project.client}</p>
+                                    <p class="text-xs text-gray-500 mt-2">${project.positions.length} posizione/i</p>
                                 </div>
-                                <button onclick="deleteProject('${project.id}')" class="text-red-600 hover:text-red-800 p-2">
-                                    🗑️
-                                </button>
-                            </div>
-                            <div class="flex justify-between items-center mt-4 pt-4 border-t">
-                                <span class="text-sm text-gray-500">
-                                    ${project.positions.length} vani • ${formatDate(project.updatedAt)}
-                                </span>
-                                <button onclick="openProject('${project.id}')" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                                    Apri →
-                                </button>
-                            </div>
+                            `).join('')}
                         </div>
-                    `).join('')}
+                    </div>
+                    ${CurrentProject()}
                 </div>
             `;
         }
 
-        function CaratteristicheMuroSection(project) {
-            const cm = project.caratteristicheMuro || {};
-            return `
-                <div class="border-t pt-4 mt-4">
-                    <div class="accordion-header bg-blue-50 p-3 rounded-lg flex justify-between items-center" 
-                         onclick="toggleAccordion('caratteristicheMuro')">
-                        <span class="font-semibold text-gray-700">🏗️ Caratteristiche Muro (Globale)</span>
-                        <span class="accordion-icon text-gray-500">▼</span>
-                    </div>
-                    <div id="caratteristicheMuro" class="accordion-content mt-2">
-                        <div class="p-4 bg-blue-50 rounded-lg space-y-4">
-                            <p class="text-sm text-gray-600 mb-3">Configurazione valida per tutto il progetto (modificabile per singolo vano)</p>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prof. Muro Int. (cm)</label>
-                                    <input type="number" 
-                                           value="${cm.profMuroInt || ''}"
-                                           onchange="updateCaratteristicheMuro('${project.id}', 'profMuroInt', this.value)"
-                                           class="w-full px-3 py-2 border rounded-lg"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prof. Piana Sopra (cm)</label>
-                                    <input type="number" 
-                                           value="${cm.profPianaSopra || ''}"
-                                           onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSopra', this.value)"
-                                           class="w-full px-3 py-2 border rounded-lg"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prof. Piana Sotto (cm)</label>
-                                    <input type="number" 
-                                           value="${cm.profPianaSotto || ''}"
-                                           onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSotto', this.value)"
-                                           class="w-full px-3 py-2 border rounded-lg"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Spessore Infisso/Falso (cm)</label>
-                                    <input type="number" 
-                                           value="${cm.spessoreInfisso || ''}"
-                                           onchange="updateCaratteristicheMuro('${project.id}', 'spessoreInfisso', this.value)"
-                                           class="w-full px-3 py-2 border rounded-lg"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Spessore Guida/Distanziale (cm)</label>
-                                    <input type="number" 
-                                           value="${cm.spessoreGuida || ''}"
-                                           onchange="updateCaratteristicheMuro('${project.id}', 'spessoreGuida', this.value)"
-                                           class="w-full px-3 py-2 border rounded-lg"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prof. Muro Est. (cm)</label>
-                                    <input type="number" 
-                                           value="${cm.profMuroEst || ''}"
-                                           onchange="updateCaratteristicheMuro('${project.id}', 'profMuroEst', this.value)"
-                                           class="w-full px-3 py-2 border rounded-lg"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Larghezza Telaio Esistente (cm)</label>
-                                    <input type="number" 
-                                           value="${cm.larghezzaTelaio || ''}"
-                                           onchange="updateCaratteristicheMuro('${project.id}', 'larghezzaTelaio', this.value)"
-                                           class="w-full px-3 py-2 border rounded-lg"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Ha Falso?</label>
-                                    <select onchange="updateCaratteristicheMuro('${project.id}', 'haFalso', this.value)"
-                                            class="w-full px-3 py-2 border rounded-lg">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si" ${cm.haFalso === 'si' ? 'selected' : ''}>Sì</option>
-                                        <option value="no" ${cm.haFalso === 'no' ? 'selected' : ''}>No</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function ProjectDetail() {
-            const project = state.projects.find(p => p.id === state.currentProject);
-            if (!project) return '<p>Progetto non trovato</p>';
+        function CurrentProject() {
+            const project = state.projects.find(p => p.id === state.currentProjectId);
+            if (!project) return '';
 
             return `
                 <div class="space-y-6">
-                    <!-- HEADER PROGETTO -->
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h2 class="text-2xl font-bold mb-4">${project.name}</h2>
-                        <p class="text-gray-600 mb-4">Cliente: ${project.client}</p>
-                        
-                        <!-- DATI CLIENTE OPZIONALI (ACCORDION) -->
-                        <div class="border-t pt-4">
-                            <div class="accordion-header bg-gray-50 p-3 rounded-lg flex justify-between items-center" 
-                                 onclick="toggleAccordion('clientData')">
-                                <span class="font-semibold text-gray-700">📋 Dati Cliente (Opzionale)</span>
-                                <span class="accordion-icon text-gray-500">▼</span>
-                            </div>
-                            <div id="clientData" class="accordion-content mt-2">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Città</label>
-                                        <input type="text" 
-                                               value="${project.clientData?.citta || ''}"
-                                               onchange="updateClientData('${project.id}', 'citta', this.value)"
-                                               class="w-full px-3 py-2 border rounded-lg"
-                                               placeholder="Es: Milano">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Via/Indirizzo</label>
-                                        <input type="text" 
-                                               value="${project.clientData?.via || ''}"
-                                               onchange="updateClientData('${project.id}', 'via', this.value)"
-                                               class="w-full px-3 py-2 border rounded-lg"
-                                               placeholder="Es: Via Roma, 123">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefono</label>
-                                        <input type="tel" 
-                                               value="${project.clientData?.telefono || ''}"
-                                               onchange="updateClientData('${project.id}', 'telefono', this.value)"
-                                               class="w-full px-3 py-2 border rounded-lg"
-                                               placeholder="Es: 333 1234567">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                        <input type="email" 
-                                               value="${project.clientData?.email || ''}"
-                                               onchange="updateClientData('${project.id}', 'email', this.value)"
-                                               class="w-full px-3 py-2 border rounded-lg"
-                                               placeholder="Es: cliente@email.com">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CARATTERISTICHE MURO GLOBALI -->
-                        ${CaratteristicheMuroSection(project)}
-                    </div>
-
-                    <!-- LISTA VANI -->
-                    <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-white rounded-lg shadow-md p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-bold">Vani (${project.positions.length})</h3>
-                            <button onclick="addPosition('${project.id}')" 
-                                    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                                + Aggiungi Vano
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900">${project.name}</h2>
+                                <p class="text-gray-600">Cliente: ${project.client}</p>
+                            </div>
+                            <button onclick="addPosition('${project.id}')" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                ➕ Nuova Posizione
                             </button>
                         </div>
-                        
-                        ${project.positions.length === 0 ? `
-                            <p class="text-gray-500 text-center py-8">Nessun vano inserito</p>
-                        ` : `
-                            <div class="space-y-4">
-                                ${project.positions.map(pos => PositionCard(project, pos)).join('')}
-                            </div>
-                        `}
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+                            <h3 class="font-semibold text-blue-900 mb-2">✅ Nuova Struttura Implementata</h3>
+                            <ul class="text-sm text-blue-800 space-y-1">
+                                <li>✓ <strong>MISURE POSIZIONE</strong>: Sezione unica e indipendente</li>
+                                <li>✓ <strong>INFISSI</strong>: Solo configurazione (senza misure)</li>
+                                <li>✓ Luce Interna/Esterna <strong>ELIMINATE</strong></li>
+                            </ul>
+                        </div>
                     </div>
+                    ${project.positions.map((position, index) => PositionEditor(project.id, position, index)).join('')}
                 </div>
             `;
         }
 
-        function PositionCard(project, position) {
-            const hasOverride = position.caratteristicheMuroOverride !== null;
-            const cm = hasOverride ? position.caratteristicheMuroOverride : project.caratteristicheMuro;
+        function PositionEditor(projectId, position, index) {
+            const activeTab = position._activeTab || 'ambiente';
             
             return `
-                <div class="border rounded-lg p-4 bg-gray-50">
-                    <div class="flex justify-between items-start mb-4">
-                        <input type="text" 
-                               value="${position.name}"
-                               onchange="updatePosition('${project.id}', '${position.id}', {name: this.value})"
-                               class="text-lg font-semibold border-b-2 border-transparent hover:border-blue-300 focus:border-blue-500 outline-none bg-transparent">
-                        <button onclick="deletePosition('${project.id}', '${position.id}')" 
-                                class="text-red-600 hover:text-red-800 p-2">
-                            🗑️
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden relative">
+                    <button onclick="deletePosition('${projectId}', '${position.id}')" class="absolute top-4 right-4 z-10 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">🗑️</button>
+                    
+                    <div class="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4">
+                        <h2 class="text-xl font-bold text-white">${position.piano || 'Piano'} - ${position.tipoAmbiente || 'Ambiente'}</h2>
+                        <p class="text-purple-100 text-sm mt-1">Posizione #${index + 1}</p>
+                    </div>
+
+                    <div class="border-b border-gray-200 bg-gray-50 flex overflow-x-auto">
+                        <button onclick="setPositionTab('${projectId}', '${position.id}', 'ambiente')" class="px-6 py-4 font-medium transition-colors ${activeTab === 'ambiente' ? 'tab-active' : 'tab-inactive'}">
+                            🏠 Ambiente
+                        </button>
+                        <button onclick="setPositionTab('${projectId}', '${position.id}', 'misure')" class="px-6 py-4 font-medium transition-colors ${activeTab === 'misure' ? 'tab-active' : 'tab-inactive'}">
+                            📏 Misure
+                        </button>
+                        <button onclick="setPositionTab('${projectId}', '${position.id}', 'infissi')" class="px-6 py-4 font-medium transition-colors ${activeTab === 'infissi' ? 'tab-active' : 'tab-inactive'}">
+                            🔧 Infissi ${(position.infissi || []).length > 0 ? '(' + position.infissi.length + ')' : ''}
+                        </button>
+                        <button onclick="setPositionTab('${projectId}', '${position.id}', 'persiane')" class="px-6 py-4 font-medium transition-colors ${activeTab === 'persiane' ? 'tab-active' : 'tab-inactive'}">
+                            🚪 Persiane ${(position.persiane || []).length > 0 ? '(' + position.persiane.length + ')' : ''}
+                        </button>
+                        <button onclick="setPositionTab('${projectId}', '${position.id}', 'cassonetti')" class="px-6 py-4 font-medium transition-colors ${activeTab === 'cassonetti' ? 'tab-active' : 'tab-inactive'}">
+                            ⚙️ Cassonetti ${(position.cassonetti || []).length > 0 ? '(' + position.cassonetti.length + ')' : ''}
                         </button>
                     </div>
 
-                    <div class="space-y-3">
-                        <!-- PIANO -->
+                    <div class="p-6">
+                        ${activeTab === 'ambiente' ? AmbienteTab(projectId, position) : ''}
+                        ${activeTab === 'misure' ? MisureTab(projectId, position) : ''}
+                        ${activeTab === 'infissi' ? InfissiTab(projectId, position) : ''}
+                        ${activeTab === 'persiane' ? PersianeTab(projectId, position) : ''}
+                        ${activeTab === 'cassonetti' ? CassonettiTab(projectId, position) : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function AmbienteTab(projectId, position) {
+            const tipiAmbiente = [
+                'Soggiorno', 'Camera da letto', 'Cucina', 'Bagno', 
+                'Studio', 'Corridoio', 'Ingresso', 'Mansarda', 
+                'Taverna', 'Cantina', 'Garage', 'Balcone', 'Terrazzo'
+            ];
+            
+            return `
+                <div class="space-y-4">
+                    <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r mb-6">
+                        <h3 class="text-sm font-semibold text-purple-800 mb-1">🏠 AMBIENTE E POSIZIONE</h3>
+                        <p class="text-sm text-purple-700">Specifica il piano e il tipo di ambiente.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>
-                            <select onchange="updatePosition('${project.id}', '${position.id}', {piano: this.value})"
-                                    class="w-full px-3 py-2 border rounded-lg">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Piano *</label>
+                            <input type="text" value="${position.piano}" onchange="updatePositionField('${projectId}', '${position.id}', 'piano', this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Es: Piano Terra">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo Ambiente *</label>
+                            <select onchange="updatePositionField('${projectId}', '${position.id}', 'tipoAmbiente', this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                                 <option value="">Seleziona...</option>
-                                <option value="interrato" ${position.piano === 'interrato' ? 'selected' : ''}>Interrato</option>
-                                <option value="terra" ${position.piano === 'terra' ? 'selected' : ''}>Piano Terra</option>
-                                <option value="primo" ${position.piano === 'primo' ? 'selected' : ''}>Primo Piano</option>
-                                <option value="secondo" ${position.piano === 'secondo' ? 'selected' : ''}>Secondo Piano</option>
-                                <option value="terzo" ${position.piano === 'terzo' ? 'selected' : ''}>Terzo Piano</option>
-                                <option value="quarto" ${position.piano === 'quarto' ? 'selected' : ''}>Quarto Piano</option>
-                                <option value="attico" ${position.piano === 'attico' ? 'selected' : ''}>Attico</option>
+                                ${tipiAmbiente.map(tipo => `
+                                    <option value="${tipo}" ${position.tipoAmbiente === tipo ? 'selected' : ''}>${tipo}</option>
+                                `).join('')}
                             </select>
                         </div>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                        <h4 class="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                            <span>📋</span>
+                            Suggerimento
+                        </h4>
+                        <p class="text-sm text-blue-800">Seleziona il tipo di ambiente dal menu a tendina oppure digitalo manualmente nel campo sopra.</p>
+                    </div>
+                </div>
+            `;
+        }
 
-                        <!-- TIPOLOGIA -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipologia</label>
-                            <select onchange="updatePosition('${project.id}', '${position.id}', {tipologia: this.value})"
-                                    class="w-full px-3 py-2 border rounded-lg">
-                                <option value="">Seleziona...</option>
-                                <option value="porta" ${position.tipologia === 'porta' ? 'selected' : ''}>Porta</option>
-                                <option value="finestra" ${position.tipologia === 'finestra' ? 'selected' : ''}>Finestra</option>
-                                <option value="portafinestra" ${position.tipologia === 'portafinestra' ? 'selected' : ''}>Portafinestra</option>
-                                <option value="persiana" ${position.tipologia === 'persiana' ? 'selected' : ''}>Persiana</option>
-                                <option value="cassonetto" ${position.tipologia === 'cassonetto' ? 'selected' : ''}>Cassonetto</option>
-                            </select>
+        function MisureTab(projectId, position) {
+            const misure = position.misurePosizione || {};
+            return `
+                <div class="space-y-6">
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+                        <h3 class="text-sm font-semibold text-blue-800 mb-1">📏 MISURE POSIZIONE</h3>
+                        <p class="text-sm text-blue-700">Prendi le misure <strong>UNA SOLA VOLTA</strong> per questa posizione.</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3">Misure Principali del Foro</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            ${['LF', 'HF', 'LVT', 'HVT', 'TMV', 'HMT', 'LVAR', 'HVAR'].map(key => `
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">${key} (mm)</label>
+                                    <input type="number" value="${misure[key] || ''}" onchange="updateMisure('${projectId}', '${position.id}', '${key}', this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="0">
+                                </div>
+                            `).join('')}
                         </div>
+                    </div>
 
-                        <!-- MISURE -->
-                        <div class="bg-white p-3 rounded-lg border-2 border-blue-200">
-                            <p class="text-sm font-bold text-gray-700 mb-2">📏 Misure (cm)</p>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3">Profondità</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            ${['profonditaSX', 'profonditaDX', 'profonditaAlto', 'profonditaBasso'].map(key => `
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">LF</label>
-                                    <input type="number" step="0.1"
-                                           value="${position.misure?.LF || ''}"
-                                           onchange="updateMisure('${project.id}', '${position.id}', 'LF', this.value)"
-                                           class="w-full px-2 py-1 border rounded text-sm"
-                                           placeholder="0">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">${key.replace('profondita', '')} (mm)</label>
+                                    <input type="number" value="${misure[key] || ''}" onchange="updateMisure('${projectId}', '${position.id}', '${key}', this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="0">
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">HF</label>
-                                    <input type="number" step="0.1"
-                                           value="${position.misure?.HF || ''}"
-                                           onchange="updateMisure('${project.id}', '${position.id}', 'HF', this.value)"
-                                           class="w-full px-2 py-1 border rounded text-sm"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">LV</label>
-                                    <input type="number" step="0.1"
-                                           value="${position.misure?.LV || ''}"
-                                           onchange="updateMisure('${project.id}', '${position.id}', 'LV', this.value)"
-                                           class="w-full px-2 py-1 border rounded text-sm"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">HV</label>
-                                    <input type="number" step="0.1"
-                                           value="${position.misure?.HV || ''}"
-                                           onchange="updateMisure('${project.id}', '${position.id}', 'HV', this.value)"
-                                           class="w-full px-2 py-1 border rounded text-sm"
-                                           placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">HVAR</label>
-                                    <input type="number" step="0.1"
-                                           value="${position.misure?.HVAR || ''}"
-                                           onchange="updateMisure('${project.id}', '${position.id}', 'HVAR', this.value)"
-                                           class="w-full px-2 py-1 border rounded text-sm"
-                                           placeholder="0">
-                                </div>
-                            </div>
+                            `).join('')}
                         </div>
+                    </div>
 
-                        <!-- CARATTERISTICHE MURO SPECIFICHE -->
-                        <div class="bg-yellow-50 p-3 rounded-lg border-2 border-yellow-200">
-                            <div class="flex justify-between items-center mb-2">
-                                <p class="text-sm font-bold text-gray-700">🏗️ Caratteristiche Muro</p>
-                                ${hasOverride ? `
-                                    <span class="override-badge">PERSONALIZZATO</span>
-                                ` : ''}
-                            </div>
-                            
-                            ${!hasOverride ? `
-                                <p class="text-xs text-gray-600 mb-2">Usa valori globali del progetto</p>
-                                <button onclick="enableOverride('${project.id}', '${position.id}')" 
-                                        class="text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700">
-                                    ✏️ Personalizza per questo vano
-                                </button>
-                            ` : `
-                                <button onclick="disableOverride('${project.id}', '${position.id}')" 
-                                        class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 mb-3">
-                                    ↩️ Ripristina valori globali
-                                </button>
-                                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                        <textarea onchange="updateMisure('${projectId}', '${position.id}', 'note', this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="3" placeholder="Note sulle misure...">${misure.note || ''}</textarea>
+                    </div>
+                </div>
+            `;
+        }
+
+        function InfissiTab(projectId, position) {
+            if (!position.infissi) position.infissi = [];
+            
+            return `
+                <div class="space-y-6">
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r">
+                        <h3 class="text-sm font-semibold text-green-800 mb-1">🔧 INFISSI - Solo Configurazione</h3>
+                        <p class="text-sm text-green-700">Le misure sono nella sezione "Misure Posizione". Qui configuri solo i prodotti.</p>
+                    </div>
+
+                    ${position.infissi.length === 0 ? `
+                        <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <div class="text-5xl mb-3">🪟</div>
+                            <p class="text-gray-600 mb-4">Nessun infisso aggiunto</p>
+                            <button onclick="addInfisso('${projectId}', '${position.id}')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                ➕ Aggiungi Infisso
+                            </button>
+                        </div>
+                    ` : `
+                        ${position.infissi.map((infisso, idx) => `
+                            <div class="border rounded-lg p-4 bg-white shadow-sm">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="font-semibold text-gray-800">Infisso #${idx + 1}</h4>
+                                    <button onclick="removeInfisso('${projectId}', '${position.id}', ${idx})" class="text-red-600 hover:text-red-800">🗑️</button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Prof. Muro Int.</label>
-                                        <input type="number" 
-                                               value="${cm.profMuroInt || ''}"
-                                               onchange="updateCaratteristicheMuroOverride('${project.id}', '${position.id}', 'profMuroInt', this.value)"
-                                               class="w-full px-2 py-1 border rounded text-sm"
-                                               placeholder="0">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Prof. Piana Sopra</label>
-                                        <input type="number" 
-                                               value="${cm.profPianaSopra || ''}"
-                                               onchange="updateCaratteristicheMuroOverride('${project.id}', '${position.id}', 'profPianaSopra', this.value)"
-                                               class="w-full px-2 py-1 border rounded text-sm"
-                                               placeholder="0">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Prof. Piana Sotto</label>
-                                        <input type="number" 
-                                               value="${cm.profPianaSotto || ''}"
-                                               onchange="updateCaratteristicheMuroOverride('${project.id}', '${position.id}', 'profPianaSotto', this.value)"
-                                               class="w-full px-2 py-1 border rounded text-sm"
-                                               placeholder="0">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Spess. Infisso</label>
-                                        <input type="number" 
-                                               value="${cm.spessoreInfisso || ''}"
-                                               onchange="updateCaratteristicheMuroOverride('${project.id}', '${position.id}', 'spessoreInfisso', this.value)"
-                                               class="w-full px-2 py-1 border rounded text-sm"
-                                               placeholder="0">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Spess. Guida</label>
-                                        <input type="number" 
-                                               value="${cm.spessoreGuida || ''}"
-                                               onchange="updateCaratteristicheMuroOverride('${project.id}', '${position.id}', 'spessoreGuida', this.value)"
-                                               class="w-full px-2 py-1 border rounded text-sm"
-                                               placeholder="0">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Prof. Muro Est.</label>
-                                        <input type="number" 
-                                               value="${cm.profMuroEst || ''}"
-                                               onchange="updateCaratteristicheMuroOverride('${project.id}', '${position.id}', 'profMuroEst', this.value)"
-                                               class="w-full px-2 py-1 border rounded text-sm"
-                                               placeholder="0">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Largh. Telaio</label>
-                                        <input type="number" 
-                                               value="${cm.larghezzaTelaio || ''}"
-                                               onchange="updateCaratteristicheMuroOverride('${project.id}', '${position.id}', 'larghezzaTelaio', this.value)"
-                                               class="w-full px-2 py-1 border rounded text-sm"
-                                               placeholder="0">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Ha Falso?</label>
-                                        <select onchange="updateCaratteristicheMuroOverride('${project.id}', '${position.id}', 'haFalso', this.value)"
-                                                class="w-full px-2 py-1 border rounded text-sm">
-                                            <option value="">-</option>
-                                            <option value="si" ${cm.haFalso === 'si' ? 'selected' : ''}>Sì</option>
-                                            <option value="no" ${cm.haFalso === 'no' ? 'selected' : ''}>No</option>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                                        <select onchange="updateInfisso('${projectId}', '${position.id}', ${idx}, 'tipo', this.value)" class="w-full px-3 py-2 border rounded">
+                                            <option value="Finestra" ${infisso.tipo === 'Finestra' ? 'selected' : ''}>Finestra</option>
+                                            <option value="Porta" ${infisso.tipo === 'Porta' ? 'selected' : ''}>Porta</option>
+                                            <option value="Portafinestra" ${infisso.tipo === 'Portafinestra' ? 'selected' : ''}>Portafinestra</option>
+                                            <option value="Scorrevole" ${infisso.tipo === 'Scorrevole' ? 'selected' : ''}>Scorrevole</option>
                                         </select>
                                     </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantità</label>
+                                        <input type="number" value="${infisso.quantita || 1}" onchange="updateInfisso('${projectId}', '${position.id}', ${idx}, 'quantita', this.value)" class="w-full px-3 py-2 border rounded" min="1">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Apertura</label>
+                                        <input type="text" value="${infisso.apertura || ''}" onchange="updateInfisso('${projectId}', '${position.id}', ${idx}, 'apertura', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: Battente">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Materiale</label>
+                                        <input type="text" value="${infisso.materiale || ''}" onchange="updateInfisso('${projectId}', '${position.id}', ${idx}, 'materiale', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: PVC">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Colore</label>
+                                        <input type="text" value="${infisso.colore || ''}" onchange="updateInfisso('${projectId}', '${position.id}', ${idx}, 'colore', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: Bianco">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Vetro</label>
+                                        <input type="text" value="${infisso.vetro || ''}" onchange="updateInfisso('${projectId}', '${position.id}', ${idx}, 'vetro', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: Doppio">
+                                    </div>
                                 </div>
-                            `}
-                        </div>
-
-                        <!-- NOTE -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
-                            <textarea onchange="updatePosition('${project.id}', '${position.id}', {note: this.value})"
-                                      class="w-full px-3 py-2 border rounded-lg"
-                                      rows="2"
-                                      placeholder="Note aggiuntive...">${position.note || ''}</textarea>
-                        </div>
-                    </div>
+                            </div>
+                        `).join('')}
+                        <button onclick="addInfisso('${projectId}', '${position.id}')" class="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-green-500 hover:text-green-600">
+                            ➕ Aggiungi Altro Infisso
+                        </button>
+                    `}
                 </div>
             `;
         }
 
-        function NewProjectModal() {
+        function PersianeTab(projectId, position) {
+            if (!position.persiane) position.persiane = [];
+            
             return `
-                <div id="newProjectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div class="bg-white rounded-lg p-6 max-w-md w-full">
-                        <h3 class="text-xl font-bold mb-4">Nuovo Progetto</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nome Progetto *</label>
-                                <input type="text" id="projectName" class="w-full px-3 py-2 border rounded-lg" placeholder="Es: Appartamento Via Roma">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-                                <input type="text" id="projectClient" class="w-full px-3 py-2 border rounded-lg" placeholder="Nome cliente">
-                            </div>
-                            <div class="flex gap-2 pt-4">
-                                <button onclick="hideModal()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
-                                    Annulla
-                                </button>
-                                <button onclick="createProjectFromModal()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    Crea Progetto
-                                </button>
-                            </div>
-                        </div>
+                <div class="space-y-6">
+                    <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r">
+                        <h3 class="text-sm font-semibold text-orange-800 mb-1">🚪 PERSIANE</h3>
+                        <p class="text-sm text-orange-700">Configura le persiane per questa posizione.</p>
                     </div>
+
+                    ${position.persiane.length === 0 ? `
+                        <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <div class="text-5xl mb-3">🚪</div>
+                            <p class="text-gray-600 mb-4">Nessuna persiana aggiunta</p>
+                            <button onclick="addPersiana('${projectId}', '${position.id}')" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                                ➕ Aggiungi Persiana
+                            </button>
+                        </div>
+                    ` : `
+                        ${position.persiane.map((persiana, idx) => `
+                            <div class="border rounded-lg p-4 bg-white shadow-sm">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="font-semibold text-gray-800">Persiana #${idx + 1}</h4>
+                                    <button onclick="removePersiana('${projectId}', '${position.id}', ${idx})" class="text-red-600 hover:text-red-800">🗑️</button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantità</label>
+                                        <input type="number" value="${persiana.quantita || 1}" onchange="updatePersiana('${projectId}', '${position.id}', ${idx}, 'quantita', this.value)" class="w-full px-3 py-2 border rounded" min="1">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                                        <input type="text" value="${persiana.tipo || ''}" onchange="updatePersiana('${projectId}', '${position.id}', ${idx}, 'tipo', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: A battente">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Apertura</label>
+                                        <input type="text" value="${persiana.apertura || ''}" onchange="updatePersiana('${projectId}', '${position.id}', ${idx}, 'apertura', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: Verso esterno">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Colore</label>
+                                        <input type="text" value="${persiana.colore || ''}" onchange="updatePersiana('${projectId}', '${position.id}', ${idx}, 'colore', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: Verde">
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <button onclick="addPersiana('${projectId}', '${position.id}')" class="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-orange-500 hover:text-orange-600">
+                            ➕ Aggiungi Altra Persiana
+                        </button>
+                    `}
                 </div>
             `;
         }
 
-        // GLOBAL FUNCTIONS
-        window.goHome = function() {
-            state.currentScreen = 'home';
-            state.currentProject = null;
-            render();
-        };
+        function CassonettiTab(projectId, position) {
+            if (!position.cassonetti) position.cassonetti = [];
+            
+            return `
+                <div class="space-y-6">
+                    <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r">
+                        <h3 class="text-sm font-semibold text-amber-800 mb-1">⚙️ CASSONETTI</h3>
+                        <p class="text-sm text-amber-700">Configura i cassonetti per questa posizione.</p>
+                    </div>
 
+                    ${position.cassonetti.length === 0 ? `
+                        <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <div class="text-5xl mb-3">📦</div>
+                            <p class="text-gray-600 mb-4">Nessun cassonetto aggiunto</p>
+                            <button onclick="addCassonetto('${projectId}', '${position.id}')" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">
+                                ➕ Aggiungi Cassonetto
+                            </button>
+                        </div>
+                    ` : `
+                        ${position.cassonetti.map((cassonetto, idx) => `
+                            <div class="border rounded-lg p-4 bg-white shadow-sm">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="font-semibold text-gray-800">Cassonetto #${idx + 1}</h4>
+                                    <button onclick="removeCassonetto('${projectId}', '${position.id}', ${idx})" class="text-red-600 hover:text-red-800">🗑️</button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantità</label>
+                                        <input type="number" value="${cassonetto.quantita || 1}" onchange="updateCassonetto('${projectId}', '${position.id}', ${idx}, 'quantita', this.value)" class="w-full px-3 py-2 border rounded" min="1">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                                        <input type="text" value="${cassonetto.tipo || ''}" onchange="updateCassonetto('${projectId}', '${position.id}', ${idx}, 'tipo', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: Tradizionale">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Posizione Muro</label>
+                                        <input type="text" value="${cassonetto.posizioneMuro || ''}" onchange="updateCassonetto('${projectId}', '${position.id}', ${idx}, 'posizioneMuro', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: Interno">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Dimensioni</label>
+                                        <input type="text" value="${cassonetto.dimensioni || ''}" onchange="updateCassonetto('${projectId}', '${position.id}', ${idx}, 'dimensioni', this.value)" class="w-full px-3 py-2 border rounded" placeholder="Es: 150x30x20">
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <button onclick="addCassonetto('${projectId}', '${position.id}')" class="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-amber-500 hover:text-amber-600">
+                            ➕ Aggiungi Altro Cassonetto
+                        </button>
+                    `}
+                </div>
+            `;
+        }
+
+        // GLOBAL FUNCTIONS (exposed to onclick handlers)
         window.showNewProjectModal = function() {
-            document.getElementById('newProjectModal').classList.remove('hidden');
+            document.getElementById('modal').classList.remove('hidden');
         };
 
         window.hideModal = function() {
-            document.getElementById('newProjectModal').classList.add('hidden');
+            document.getElementById('modal').classList.add('hidden');
             document.getElementById('projectName').value = '';
             document.getElementById('projectClient').value = '';
         };
 
         window.createProjectFromModal = function() {
-            const name = document.getElementById('projectName').value.trim();
-            const client = document.getElementById('projectClient').value.trim();
+            const name = document.getElementById('projectName').value;
+            const client = document.getElementById('projectClient').value;
             if (name && client) {
                 addProject(name, client);
                 hideModal();
@@ -732,21 +546,184 @@
             }
         };
 
-        window.toggleAccordion = function(id) {
-            const content = document.getElementById(id);
-            const header = content.previousElementSibling;
-            
-            content.classList.toggle('active');
-            header.classList.toggle('active');
+        window.setPositionTab = function(projectId, positionId, tab) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position) {
+                    position._activeTab = tab;
+                    render();
+                }
+            }
         };
 
-        // RENDER
+        window.updatePositionField = function(projectId, positionId, field, value) {
+            updatePosition(projectId, positionId, { [field]: value });
+        };
+
+        window.updateMisure = function(projectId, positionId, field, value) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position) {
+                    if (!position.misurePosizione) position.misurePosizione = {};
+                    position.misurePosizione[field] = value === '' ? null : (isNaN(value) ? value : Number(value));
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                }
+            }
+        };
+
+        // INFISSI
+        window.addInfisso = function(projectId, positionId) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position) {
+                    if (!position.infissi) position.infissi = [];
+                    position.infissi.push({
+                        id: generateId('infisso'),
+                        tipo: 'Finestra',
+                        quantita: 1,
+                        apertura: '',
+                        materiale: '',
+                        colore: '',
+                        vetro: ''
+                    });
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        window.removeInfisso = function(projectId, positionId, index) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position && position.infissi) {
+                    position.infissi.splice(index, 1);
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        window.updateInfisso = function(projectId, positionId, index, field, value) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position && position.infissi && position.infissi[index]) {
+                    position.infissi[index][field] = field === 'quantita' ? Number(value) : value;
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        // PERSIANE
+        window.addPersiana = function(projectId, positionId) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position) {
+                    if (!position.persiane) position.persiane = [];
+                    position.persiane.push({
+                        id: generateId('persiana'),
+                        quantita: 1,
+                        tipo: '',
+                        apertura: '',
+                        colore: ''
+                    });
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        window.removePersiana = function(projectId, positionId, index) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position && position.persiane) {
+                    position.persiane.splice(index, 1);
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        window.updatePersiana = function(projectId, positionId, index, field, value) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position && position.persiane && position.persiane[index]) {
+                    position.persiane[index][field] = field === 'quantita' ? Number(value) : value;
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        // CASSONETTI
+        window.addCassonetto = function(projectId, positionId) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position) {
+                    if (!position.cassonetti) position.cassonetti = [];
+                    position.cassonetti.push({
+                        id: generateId('cassonetto'),
+                        quantita: 1,
+                        tipo: '',
+                        posizioneMuro: '',
+                        dimensioni: ''
+                    });
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        window.removeCassonetto = function(projectId, positionId, index) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position && position.cassonetti) {
+                    position.cassonetti.splice(index, 1);
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        window.updateCassonetto = function(projectId, positionId, index, field, value) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const position = project.positions.find(p => p.id === positionId);
+                if (position && position.cassonetti && position.cassonetti[index]) {
+                    position.cassonetti[index][field] = field === 'quantita' ? Number(value) : value;
+                    project.updatedAt = new Date().toISOString();
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        // RENDER FUNCTION
         function render() {
             const app = document.getElementById('app');
             app.innerHTML = `
                 ${Header()}
                 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    ${state.currentScreen === 'home' ? ProjectsList() : ProjectDetail()}
+                    ${ProjectsList()}
                 </main>
                 ${NewProjectModal()}
             `;

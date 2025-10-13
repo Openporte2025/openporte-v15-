@@ -141,41 +141,76 @@
 
                         <!-- CARATTERISTICHE MURO GLOBALI -->
                         <div class="mt-4 p-4 bg-blue-50 rounded">
-                            <h3 class="font-semibold mb-2">🏗️ Caratteristiche Muro (Globali)</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                <input type="number" placeholder="Prof. Muro Int." 
+                            <h3 class="font-semibold mb-3">🏗️ Caratteristiche Muro (Globali)</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <input type="number" placeholder="Prof. Muro Int. (cm)" 
                                        value="${project.caratteristicheMuro?.profMuroInt || ''}"
                                        onchange="updateCaratteristicheMuro('${project.id}', 'profMuroInt', this.value)"
                                        class="px-3 py-2 border rounded text-sm">
-                                <input type="number" placeholder="Prof. Piana Sopra" 
+                                <input type="number" placeholder="Prof. Piana Sopra (cm)" 
                                        value="${project.caratteristicheMuro?.profPianaSopra || ''}"
                                        onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSopra', this.value)"
                                        class="px-3 py-2 border rounded text-sm">
-                                <input type="number" placeholder="Prof. Piana Sotto" 
+                                <input type="number" placeholder="Prof. Piana Sotto (cm)" 
                                        value="${project.caratteristicheMuro?.profPianaSotto || ''}"
                                        onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSotto', this.value)"
                                        class="px-3 py-2 border rounded text-sm">
-                                <input type="number" placeholder="Spess. Infisso" 
+                                <input type="number" placeholder="Spess. Infisso (cm)" 
                                        value="${project.caratteristicheMuro?.spessoreInfisso || ''}"
                                        onchange="updateCaratteristicheMuro('${project.id}', 'spessoreInfisso', this.value)"
                                        class="px-3 py-2 border rounded text-sm">
-                                <input type="number" placeholder="Spess. Guida" 
+                                <input type="number" placeholder="Spess. Falso (cm)" 
+                                       value="${project.caratteristicheMuro?.spessoreFalso || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'spessoreFalso', this.value)"
+                                       class="px-3 py-2 border rounded text-sm">
+                                <input type="number" placeholder="Spess. Guida (cm)" 
                                        value="${project.caratteristicheMuro?.spessoreGuida || ''}"
                                        onchange="updateCaratteristicheMuro('${project.id}', 'spessoreGuida', this.value)"
                                        class="px-3 py-2 border rounded text-sm">
-                                <input type="number" placeholder="Prof. Muro Est." 
+                                <input type="number" placeholder="Spess. Distanziale (cm)" 
+                                       value="${project.caratteristicheMuro?.spessoreDistanziale || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'spessoreDistanziale', this.value)"
+                                       class="px-3 py-2 border rounded text-sm">
+                                <input type="number" placeholder="Prof. Muro Est. (cm)" 
                                        value="${project.caratteristicheMuro?.profMuroEst || ''}"
                                        onchange="updateCaratteristicheMuro('${project.id}', 'profMuroEst', this.value)"
                                        class="px-3 py-2 border rounded text-sm">
-                                <input type="number" placeholder="Largh. Telaio" 
+                                <input type="number" placeholder="Largh. Telaio Esistente (cm)" 
                                        value="${project.caratteristicheMuro?.larghezzaTelaio || ''}"
                                        onchange="updateCaratteristicheMuro('${project.id}', 'larghezzaTelaio', this.value)"
+                                       class="px-3 py-2 border rounded text-sm">
+                                <input type="number" placeholder="Alt. Telaio Esistente (cm)" 
+                                       value="${project.caratteristicheMuro?.altezzaTelaio || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'altezzaTelaio', this.value)"
+                                       class="px-3 py-2 border rounded text-sm">
+                                <input type="number" placeholder="Spalletta DX (cm)" 
+                                       value="${project.caratteristicheMuro?.spallettaDx || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'spallettaDx', this.value)"
+                                       class="px-3 py-2 border rounded text-sm">
+                                <input type="number" placeholder="Spalletta SX (cm)" 
+                                       value="${project.caratteristicheMuro?.spallettaSx || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'spallettaSx', this.value)"
+                                       class="px-3 py-2 border rounded text-sm">
+                                <input type="number" placeholder="Davanzale Int. (cm)" 
+                                       value="${project.caratteristicheMuro?.davanzaleInt || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'davanzaleInt', this.value)"
+                                       class="px-3 py-2 border rounded text-sm">
+                                <input type="number" placeholder="Davanzale Est. (cm)" 
+                                       value="${project.caratteristicheMuro?.davanzaleEst || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'davanzaleEst', this.value)"
                                        class="px-3 py-2 border rounded text-sm">
                                 <select onchange="updateCaratteristicheMuro('${project.id}', 'haFalso', this.value)"
                                         class="px-3 py-2 border rounded text-sm">
                                     <option value="">Ha Falso?</option>
                                     <option value="si" ${project.caratteristicheMuro?.haFalso === 'si' ? 'selected' : ''}>Sì</option>
                                     <option value="no" ${project.caratteristicheMuro?.haFalso === 'no' ? 'selected' : ''}>No</option>
+                                </select>
+                                <select onchange="updateCaratteristicheMuro('${project.id}', 'tipoMuro', this.value)"
+                                        class="px-3 py-2 border rounded text-sm">
+                                    <option value="">Tipo Muro</option>
+                                    <option ${project.caratteristicheMuro?.tipoMuro === 'mattoni' ? 'selected' : ''}>Mattoni</option>
+                                    <option ${project.caratteristicheMuro?.tipoMuro === 'cemento' ? 'selected' : ''}>Cemento</option>
+                                    <option ${project.caratteristicheMuro?.tipoMuro === 'cartongesso' ? 'selected' : ''}>Cartongesso</option>
                                 </select>
                             </div>
                         </div>
@@ -208,25 +243,25 @@
 
                     <!-- TABS -->
                     <div class="border-b mb-4">
-                        <div class="flex space-x-4">
+                        <div class="flex space-x-4 overflow-x-auto">
                             <button onclick="setTab('${pos.id}', 'ambiente')" 
-                                    class="px-4 py-2 font-semibold ${(pos.activeTab || 'ambiente') === 'ambiente' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                    class="px-4 py-2 font-semibold whitespace-nowrap ${(pos.activeTab || 'ambiente') === 'ambiente' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
                                 🏠 Ambiente
                             </button>
                             <button onclick="setTab('${pos.id}', 'misure')" 
-                                    class="px-4 py-2 font-semibold ${pos.activeTab === 'misure' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                    class="px-4 py-2 font-semibold whitespace-nowrap ${pos.activeTab === 'misure' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
                                 📏 Misure
                             </button>
                             <button onclick="setTab('${pos.id}', 'infissi')" 
-                                    class="px-4 py-2 font-semibold ${pos.activeTab === 'infissi' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                    class="px-4 py-2 font-semibold whitespace-nowrap ${pos.activeTab === 'infissi' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
                                 🪟 Infissi
                             </button>
                             <button onclick="setTab('${pos.id}', 'persiane')" 
-                                    class="px-4 py-2 font-semibold ${pos.activeTab === 'persiane' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                    class="px-4 py-2 font-semibold whitespace-nowrap ${pos.activeTab === 'persiane' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
                                 🚪 Persiane
                             </button>
                             <button onclick="setTab('${pos.id}', 'cassonetti')" 
-                                    class="px-4 py-2 font-semibold ${pos.activeTab === 'cassonetti' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                    class="px-4 py-2 font-semibold whitespace-nowrap ${pos.activeTab === 'cassonetti' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
                                 📦 Cassonetti
                             </button>
                         </div>
@@ -256,6 +291,7 @@
                                     <option ${pos.piano === 'terra' ? 'selected' : ''}>terra</option>
                                     <option ${pos.piano === 'primo' ? 'selected' : ''}>primo</option>
                                     <option ${pos.piano === 'secondo' ? 'selected' : ''}>secondo</option>
+                                    <option ${pos.piano === 'terzo' ? 'selected' : ''}>terzo</option>
                                 </select>
                             </div>
                             <div>
@@ -277,47 +313,150 @@
             if (tab === 'misure') {
                 return `
                     <div class="space-y-3">
-                        <div class="grid grid-cols-3 gap-2">
-                            <input type="number" placeholder="LF" value="${pos.misure?.LF || ''}" 
-                                   onchange="updateMisure('${project.id}', '${pos.id}', 'LF', this.value)"
-                                   class="px-2 py-1 border rounded text-sm">
-                            <input type="number" placeholder="HF" value="${pos.misure?.HF || ''}" 
-                                   onchange="updateMisure('${project.id}', '${pos.id}', 'HF', this.value)"
-                                   class="px-2 py-1 border rounded text-sm">
-                            <input type="number" placeholder="LV" value="${pos.misure?.LV || ''}" 
-                                   onchange="updateMisure('${project.id}', '${pos.id}', 'LV', this.value)"
-                                   class="px-2 py-1 border rounded text-sm">
-                            <input type="number" placeholder="HV" value="${pos.misure?.HV || ''}" 
-                                   onchange="updateMisure('${project.id}', '${pos.id}', 'HV', this.value)"
-                                   class="px-2 py-1 border rounded text-sm">
-                            <input type="number" placeholder="HVAR" value="${pos.misure?.HVAR || ''}" 
-                                   onchange="updateMisure('${project.id}', '${pos.id}', 'HVAR', this.value)"
-                                   class="px-2 py-1 border rounded text-sm">
+                        <!-- COPPIA 1: LF + HF (BLU) -->
+                        <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
+                            <p class="text-xs font-bold text-blue-700 mb-2">🔵 COPPIA 1: Foro</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="number" placeholder="LF" value="${pos.misure?.LF || ''}" 
+                                       onchange="updateMisure('${project.id}', '${pos.id}', 'LF', this.value)"
+                                       class="px-3 py-2 border rounded font-semibold">
+                                <input type="number" placeholder="HF" value="${pos.misure?.HF || ''}" 
+                                       onchange="updateMisure('${project.id}', '${pos.id}', 'HF', this.value)"
+                                       class="px-3 py-2 border rounded font-semibold">
+                            </div>
+                        </div>
+
+                        <!-- COPPIA 2: LVT + HVT (VERDE) -->
+                        <div class="bg-green-50 border-2 border-green-300 rounded-lg p-3">
+                            <p class="text-xs font-bold text-green-700 mb-2">🟢 COPPIA 2: Vecchio Telaio</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="number" placeholder="LVT" value="${pos.misure?.LVT || ''}" 
+                                       onchange="updateMisure('${project.id}', '${pos.id}', 'LVT', this.value)"
+                                       class="px-3 py-2 border rounded font-semibold">
+                                <input type="number" placeholder="HVT" value="${pos.misure?.HVT || ''}" 
+                                       onchange="updateMisure('${project.id}', '${pos.id}', 'HVT', this.value)"
+                                       class="px-3 py-2 border rounded font-semibold">
+                            </div>
+                        </div>
+
+                        <!-- COPPIA 3: TMV + HMT (VIOLA) -->
+                        <div class="bg-purple-50 border-2 border-purple-300 rounded-lg p-3">
+                            <p class="text-xs font-bold text-purple-700 mb-2">🟣 COPPIA 3: Misure Massime</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="number" placeholder="TMV" value="${pos.misure?.TMV || ''}" 
+                                       onchange="updateMisure('${project.id}', '${pos.id}', 'TMV', this.value)"
+                                       class="px-3 py-2 border rounded font-semibold">
+                                <input type="number" placeholder="HMT" value="${pos.misure?.HMT || ''}" 
+                                       onchange="updateMisure('${project.id}', '${pos.id}', 'HMT', this.value)"
+                                       class="px-3 py-2 border rounded font-semibold">
+                            </div>
+                        </div>
+
+                        <!-- COPPIA 4: LVAR + HVAR (ARANCIONE) -->
+                        <div class="bg-orange-50 border-2 border-orange-300 rounded-lg p-3">
+                            <p class="text-xs font-bold text-orange-700 mb-2">🟠 COPPIA 4: Variabili</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="number" placeholder="LVAR" value="${pos.misure?.LVAR || ''}" 
+                                       onchange="updateMisure('${project.id}', '${pos.id}', 'LVAR', this.value)"
+                                       class="px-3 py-2 border rounded font-semibold">
+                                <input type="number" placeholder="HVAR" value="${pos.misure?.HVAR || ''}" 
+                                       onchange="updateMisure('${project.id}', '${pos.id}', 'HVAR', this.value)"
+                                       class="px-3 py-2 border rounded font-semibold">
+                            </div>
                         </div>
                         
                         ${pos.overrideCaratteristiche ? `
-                            <div class="bg-yellow-100 p-3 rounded border-2 border-yellow-500">
-                                <p class="text-sm font-bold mb-2">⚠️ Override Caratteristiche Muro</p>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="number" placeholder="Prof. Muro Int." class="px-2 py-1 border rounded text-sm">
-                                    <input type="number" placeholder="Prof. Piana Sopra" class="px-2 py-1 border rounded text-sm">
+                            <div class="bg-yellow-100 p-4 rounded border-2 border-yellow-500 mt-3">
+                                <div class="flex justify-between items-center mb-3">
+                                    <p class="text-sm font-bold text-yellow-800">⚠️ Override Caratteristiche Muro - Personalizzato per questa posizione</p>
+                                    <button onclick="disableOverride('${project.id}', '${pos.id}')" 
+                                            class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700">
+                                        ↩️ Ripristina valori globali
+                                    </button>
                                 </div>
-                                <button onclick="disableOverride('${project.id}', '${pos.id}')" 
-                                        class="mt-2 text-xs bg-gray-600 text-white px-3 py-1 rounded">
-                                    Usa valori globali
-                                </button>
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                    <input type="number" placeholder="Prof. Muro Int." 
+                                           value="${pos.caratteristicheMuroOverride?.profMuroInt !== undefined ? pos.caratteristicheMuroOverride.profMuroInt : (project.caratteristicheMuro?.profMuroInt || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profMuroInt', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Prof. Piana Sopra" 
+                                           value="${pos.caratteristicheMuroOverride?.profPianaSopra !== undefined ? pos.caratteristicheMuroOverride.profPianaSopra : (project.caratteristicheMuro?.profPianaSopra || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profPianaSopra', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Prof. Piana Sotto" 
+                                           value="${pos.caratteristicheMuroOverride?.profPianaSotto !== undefined ? pos.caratteristicheMuroOverride.profPianaSotto : (project.caratteristicheMuro?.profPianaSotto || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profPianaSotto', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Spess. Infisso" 
+                                           value="${pos.caratteristicheMuroOverride?.spessoreInfisso !== undefined ? pos.caratteristicheMuroOverride.spessoreInfisso : (project.caratteristicheMuro?.spessoreInfisso || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'spessoreInfisso', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Spess. Falso" 
+                                           value="${pos.caratteristicheMuroOverride?.spessoreFalso !== undefined ? pos.caratteristicheMuroOverride.spessoreFalso : (project.caratteristicheMuro?.spessoreFalso || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'spessoreFalso', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Spess. Guida" 
+                                           value="${pos.caratteristicheMuroOverride?.spessoreGuida !== undefined ? pos.caratteristicheMuroOverride.spessoreGuida : (project.caratteristicheMuro?.spessoreGuida || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'spessoreGuida', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Spess. Distanziale" 
+                                           value="${pos.caratteristicheMuroOverride?.spessoreDistanziale !== undefined ? pos.caratteristicheMuroOverride.spessoreDistanziale : (project.caratteristicheMuro?.spessoreDistanziale || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'spessoreDistanziale', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Prof. Muro Est." 
+                                           value="${pos.caratteristicheMuroOverride?.profMuroEst !== undefined ? pos.caratteristicheMuroOverride.profMuroEst : (project.caratteristicheMuro?.profMuroEst || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profMuroEst', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Largh. Telaio" 
+                                           value="${pos.caratteristicheMuroOverride?.larghezzaTelaio !== undefined ? pos.caratteristicheMuroOverride.larghezzaTelaio : (project.caratteristicheMuro?.larghezzaTelaio || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'larghezzaTelaio', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Alt. Telaio" 
+                                           value="${pos.caratteristicheMuroOverride?.altezzaTelaio !== undefined ? pos.caratteristicheMuroOverride.altezzaTelaio : (project.caratteristicheMuro?.altezzaTelaio || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'altezzaTelaio', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Spalletta DX" 
+                                           value="${pos.caratteristicheMuroOverride?.spallettaDx !== undefined ? pos.caratteristicheMuroOverride.spallettaDx : (project.caratteristicheMuro?.spallettaDx || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'spallettaDx', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Spalletta SX" 
+                                           value="${pos.caratteristicheMuroOverride?.spallettaSx !== undefined ? pos.caratteristicheMuroOverride.spallettaSx : (project.caratteristicheMuro?.spallettaSx || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'spallettaSx', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Davanzale Int." 
+                                           value="${pos.caratteristicheMuroOverride?.davanzaleInt !== undefined ? pos.caratteristicheMuroOverride.davanzaleInt : (project.caratteristicheMuro?.davanzaleInt || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'davanzaleInt', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <input type="number" placeholder="Davanzale Est." 
+                                           value="${pos.caratteristicheMuroOverride?.davanzaleEst !== undefined ? pos.caratteristicheMuroOverride.davanzaleEst : (project.caratteristicheMuro?.davanzaleEst || '')}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'davanzaleEst', this.value)"
+                                           class="px-2 py-1 border rounded text-sm">
+                                    <select onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'haFalso', this.value)"
+                                            class="px-2 py-1 border rounded text-sm">
+                                        <option value="">Ha Falso?</option>
+                                        <option value="si" ${(pos.caratteristicheMuroOverride?.haFalso !== undefined ? pos.caratteristicheMuroOverride.haFalso : project.caratteristicheMuro?.haFalso) === 'si' ? 'selected' : ''}>Sì</option>
+                                        <option value="no" ${(pos.caratteristicheMuroOverride?.haFalso !== undefined ? pos.caratteristicheMuroOverride.haFalso : project.caratteristicheMuro?.haFalso) === 'no' ? 'selected' : ''}>No</option>
+                                    </select>
+                                    <select onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'tipoMuro', this.value)"
+                                            class="px-2 py-1 border rounded text-sm">
+                                        <option value="">Tipo Muro</option>
+                                        <option ${(pos.caratteristicheMuroOverride?.tipoMuro !== undefined ? pos.caratteristicheMuroOverride.tipoMuro : project.caratteristicheMuro?.tipoMuro) === 'mattoni' ? 'selected' : ''}>Mattoni</option>
+                                        <option ${(pos.caratteristicheMuroOverride?.tipoMuro !== undefined ? pos.caratteristicheMuroOverride.tipoMuro : project.caratteristicheMuro?.tipoMuro) === 'cemento' ? 'selected' : ''}>Cemento</option>
+                                        <option ${(pos.caratteristicheMuroOverride?.tipoMuro !== undefined ? pos.caratteristicheMuroOverride.tipoMuro : project.caratteristicheMuro?.tipoMuro) === 'cartongesso' ? 'selected' : ''}>Cartongesso</option>
+                                    </select>
+                                </div>
                             </div>
                         ` : `
                             <button onclick="enableOverride('${project.id}', '${pos.id}')" 
-                                    class="text-xs bg-yellow-600 text-white px-3 py-1 rounded">
-                                ✏️ Personalizza caratteristiche muro
+                                    class="text-xs bg-yellow-600 text-white px-3 py-1 rounded mt-3 hover:bg-yellow-700">
+                                ✏️ Personalizza caratteristiche muro per questa posizione
                             </button>
                         `}
                     </div>
                 `;
             }
 
-            return `<p class="text-gray-500">Tab ${tab} - Da implementare</p>`;
+            return `<p class="text-gray-500 text-center py-8">Tab ${tab} - Da implementare</p>`;
         }
 
         function NewProjectModal() {
@@ -411,6 +550,8 @@
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
                     pos.overrideCaratteristiche = true;
+                    // Inizializza con i valori globali
+                    pos.caratteristicheMuroOverride = {...project.caratteristicheMuro};
                     saveState();
                     render();
                 }
@@ -423,8 +564,20 @@
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
                     pos.overrideCaratteristiche = false;
+                    pos.caratteristicheMuroOverride = null;
                     saveState();
                     render();
+                }
+            }
+        };
+
+        window.updateCaratteristicheMuroOverride = (projectId, posId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos.caratteristicheMuroOverride) {
+                    pos.caratteristicheMuroOverride[field] = value;
+                    saveState();
                 }
             }
         };

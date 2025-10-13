@@ -64,6 +64,9 @@
                 };
                 project.positions.push(pos);
                 saveState();
+                // Apri la posizione appena creata
+                state.currentPosition = pos.id;
+                state.screen = 'position';
                 render();
             }
         }
@@ -73,10 +76,12 @@
                 <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
                     <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
                         <div class="flex items-center">
-                            ${state.screen !== 'list' ? `
+                            ${state.screen === 'position' ? `
+                                <button onclick="state.screen='project'; render()" class="mr-4 p-2 hover:bg-white/20 rounded">← Indietro</button>
+                            ` : state.screen !== 'list' ? `
                                 <button onclick="state.screen='list'; render()" class="mr-4 p-2 hover:bg-white/20 rounded">← Indietro</button>
                             ` : ''}
-                            <h1 class="text-2xl font-bold">Open Porte v1.6</h1>
+                            <h1 class="text-2xl font-bold">Open Porte v1.7</h1>
                         </div>
                         ${state.screen === 'list' ? `
                             <button onclick="showNewProjectModal()" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold">+ Nuovo Progetto</button>
@@ -110,178 +115,264 @@
             `;
         }
 
+        function PositionDetail() {
+            const project = state.projects.find(p => p.id === state.currentProject);
+            const pos = project?.positions.find(p => p.id === state.currentPosition);
+            
+            if (!pos || !project) return '<p>Posizione non trovata</p>';
+
+            const tab = pos.activeTab || 'ambiente';
+
+            return `
+                <div class="bg-white rounded-lg shadow p-6">
+                    <!-- HEADER CON NOME POSIZIONE -->
+                    <div class="mb-4">
+                        <input type="text" value="${pos.name}" 
+                               onchange="updatePosition('${project.id}', '${pos.id}', {name: this.value})"
+                               class="text-2xl font-bold border-b-2 bg-transparent outline-none w-full">
+                    </div>
+
+                    <!-- TABS -->
+                    <div class="border-b mb-4">
+                        <div class="flex space-x-4 overflow-x-auto">
+                            <button onclick="setTab('${pos.id}', 'ambiente')" 
+                                    class="px-4 py-2 font-semibold whitespace-nowrap ${tab === 'ambiente' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                🏠 Ambiente
+                            </button>
+                            <button onclick="setTab('${pos.id}', 'misure')" 
+                                    class="px-4 py-2 font-semibold whitespace-nowrap ${tab === 'misure' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                📏 Misure
+                            </button>
+                            ${project.prodotti?.infissi ? `
+                                <button onclick="setTab('${pos.id}', 'infissi')" 
+                                        class="px-4 py-2 font-semibold whitespace-nowrap ${tab === 'infissi' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                    🪟 Infissi
+                                </button>
+                            ` : ''}
+                            ${project.prodotti?.persiane ? `
+                                <button onclick="setTab('${pos.id}', 'persiane')" 
+                                        class="px-4 py-2 font-semibold whitespace-nowrap ${tab === 'persiane' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                    🚪 Persiane
+                                </button>
+                            ` : ''}
+                            ${project.prodotti?.cassonetti ? `
+                                <button onclick="setTab('${pos.id}', 'cassonetti')" 
+                                        class="px-4 py-2 font-semibold whitespace-nowrap ${tab === 'cassonetti' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
+                                    📦 Cassonetti
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- CONTENUTO TAB -->
+                    <div class="mt-4">
+                        ${getTabContent(project, pos)}
+                    </div>
+                </div>
+            `;
+        }
+
         function ProjectDetail() {
             const project = state.projects.find(p => p.id === state.currentProject);
             if (!project) return '<p>Progetto non trovato</p>';
 
             return `
                 <div class="space-y-6">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h2 class="text-2xl font-bold mb-4">${project.name}</h2>
-                        <p class="text-gray-600">Cliente: ${project.client}</p>
-                        
-                        <!-- DATI CLIENTE -->
-                        <div class="mt-4 p-4 bg-gray-50 rounded">
-                            <h3 class="font-semibold mb-2">📋 Dati Cliente (Opzionali)</h3>
-                            <div class="grid grid-cols-2 gap-3">
-                                <input type="text" placeholder="Città" value="${project.clientData?.citta || ''}" 
-                                       onchange="updateClientData('${project.id}', 'citta', this.value)" 
-                                       class="px-3 py-2 border rounded">
-                                <input type="text" placeholder="Via" value="${project.clientData?.via || ''}" 
-                                       onchange="updateClientData('${project.id}', 'via', this.value)" 
-                                       class="px-3 py-2 border rounded">
-                                <input type="tel" placeholder="Telefono" value="${project.clientData?.telefono || ''}" 
-                                       onchange="updateClientData('${project.id}', 'telefono', this.value)" 
-                                       class="px-3 py-2 border rounded">
-                                <input type="email" placeholder="Email" value="${project.clientData?.email || ''}" 
-                                       onchange="updateClientData('${project.id}', 'email', this.value)" 
-                                       class="px-3 py-2 border rounded">
+                    <!-- HEADER PROGETTO COLLASSABILE -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h2 class="text-2xl font-bold">${project.name}</h2>
+                                    <p class="text-gray-600">Cliente: ${project.client}</p>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- CARATTERISTICHE MURO GLOBALI -->
-                        <div class="mt-4 p-4 bg-blue-50 rounded">
-                            <h3 class="font-semibold mb-3">🏗️ Caratteristiche Muro (Globali) - Tutte le misure in MM</h3>
-                            <div class="space-y-3">
-                                <!-- RIGA 1: Profondità base -->
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Muro Interno (mm)</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${project.caratteristicheMuro?.profMuroInt || ''}"
-                                               onchange="updateCaratteristicheMuro('${project.id}', 'profMuroInt', this.value)"
-                                               class="w-full px-3 py-2 border rounded">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Piana Sopra (mm)</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${project.caratteristicheMuro?.profPianaSopra || ''}"
-                                               onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSopra', this.value)"
-                                               class="w-full px-3 py-2 border rounded">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Piana Sotto (mm)</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${project.caratteristicheMuro?.profPianaSotto || ''}"
-                                               onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSotto', this.value)"
-                                               class="w-full px-3 py-2 border rounded">
-                                    </div>
-                                </div>
-
-                                <!-- RIGA 2: Telaio -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Telaio Profondità (mm)</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${project.caratteristicheMuro?.telaioProfondita || ''}"
-                                               onchange="updateCaratteristicheMuro('${project.id}', 'telaioProfondita', this.value)"
-                                               class="w-full px-3 py-2 border rounded">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Telaio Larghezza (mm)</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${project.caratteristicheMuro?.telaioLarghezza || ''}"
-                                               onchange="updateCaratteristicheMuro('${project.id}', 'telaioLarghezza', this.value)"
-                                               class="w-full px-3 py-2 border rounded">
-                                    </div>
-                                </div>
-
-                                <!-- RIGA 3: Delta -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Delta Interno (mm)</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${project.caratteristicheMuro?.deltaInt || ''}"
-                                               onchange="updateCaratteristicheMuro('${project.id}', 'deltaInt', this.value)"
-                                               class="w-full px-3 py-2 border rounded">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Delta Esterno (mm)</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${project.caratteristicheMuro?.deltaEst || ''}"
-                                               onchange="updateCaratteristicheMuro('${project.id}', 'deltaEst', this.value)"
-                                               class="w-full px-3 py-2 border rounded">
-                                    </div>
-                                </div>
-
-                                <!-- RIGA 4: Guida esistente? -->
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Guida Esistente?</label>
-                                    <select onchange="updateCaratteristicheMuro('${project.id}', 'guidaEsistente', this.value); render();"
-                                            class="w-full md:w-1/3 px-3 py-2 border rounded">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si" ${project.caratteristicheMuro?.guidaEsistente === 'si' ? 'selected' : ''}>Sì</option>
-                                        <option value="no" ${project.caratteristicheMuro?.guidaEsistente === 'no' ? 'selected' : ''}>No</option>
-                                    </select>
-                                </div>
-
-                                ${project.caratteristicheMuro?.guidaEsistente === 'si' ? `
-                                    <!-- Campi GUIDA (solo se guida esistente = sì) -->
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-green-50 p-3 rounded border border-green-300">
+                    <!-- PULSANTI APERTURA MODALI -->
+                    <div class="flex gap-3">
+                        <button onclick="openClientModal('${project.id}')" 
+                                class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors">
+                            📋 Dati Cliente
+                        </button>
+                        <button onclick="openMuroModal('${project.id}')" 
+                                class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-3 px-4 rounded-lg transition-colors">
+                            🏗️ Caratteristiche Muro
+                        </button>
+                    </div>
+                                    <!-- RIGA 1 -->
+                                    <div class="grid grid-cols-3 gap-2">
                                         <div>
-                                            <label class="block text-xs font-medium text-green-700 mb-1">Prof. Distanziale (mm)</label>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Muro Int.</label>
                                             <input type="number" placeholder="0" 
-                                                   value="${project.caratteristicheMuro?.profDistanziale || ''}"
-                                                   onchange="updateCaratteristicheMuro('${project.id}', 'profDistanziale', this.value)"
-                                                   class="w-full px-3 py-2 border rounded">
+                                                   value="${project.caratteristicheMuro?.profMuroInt || ''}"
+                                                   onchange="updateCaratteristicheMuro('${project.id}', 'profMuroInt', this.value)"
+                                                   class="w-full px-2 py-1 border rounded text-sm">
                                         </div>
                                         <div>
-                                            <label class="block text-xs font-medium text-green-700 mb-1">Prof. Guida (mm)</label>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Piana Sopra</label>
                                             <input type="number" placeholder="0" 
-                                                   value="${project.caratteristicheMuro?.profGuida || ''}"
-                                                   onchange="updateCaratteristicheMuro('${project.id}', 'profGuida', this.value)"
-                                                   class="w-full px-3 py-2 border rounded">
+                                                   value="${project.caratteristicheMuro?.profPianaSopra || ''}"
+                                                   onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSopra', this.value)"
+                                                   class="w-full px-2 py-1 border rounded text-sm">
                                         </div>
                                         <div>
-                                            <label class="block text-xs font-medium text-green-700 mb-1">Larghezza Guida (mm)</label>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Piana Sotto</label>
                                             <input type="number" placeholder="0" 
-                                                   value="${project.caratteristicheMuro?.larghezzaGuida || ''}"
-                                                   onchange="updateCaratteristicheMuro('${project.id}', 'larghezzaGuida', this.value)"
-                                                   class="w-full px-3 py-2 border rounded">
+                                                   value="${project.caratteristicheMuro?.profPianaSotto || ''}"
+                                                   onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSotto', this.value)"
+                                                   class="w-full px-2 py-1 border rounded text-sm">
                                         </div>
                                     </div>
-                                ` : ''}
 
-                                <!-- Prof. Muro Esterno (sempre visibile) -->
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Muro Esterno (mm)</label>
-                                    <input type="number" placeholder="0" 
-                                           value="${project.caratteristicheMuro?.profMuroEst || ''}"
-                                           onchange="updateCaratteristicheMuro('${project.id}', 'profMuroEst', this.value)"
-                                           class="w-full md:w-1/3 px-3 py-2 border rounded">
-                                </div>
-
-                                <!-- RIGA 5: Falso esistente? -->
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Falso Esistente?</label>
-                                    <select onchange="updateCaratteristicheMuro('${project.id}', 'falsoEsistente', this.value); render();"
-                                            class="w-full md:w-1/3 px-3 py-2 border rounded">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si" ${project.caratteristicheMuro?.falsoEsistente === 'si' ? 'selected' : ''}>Sì</option>
-                                        <option value="no" ${project.caratteristicheMuro?.falsoEsistente === 'no' ? 'selected' : ''}>No</option>
-                                    </select>
-                                </div>
-
-                                ${project.caratteristicheMuro?.falsoEsistente === 'si' ? `
-                                    <!-- Spessore Falso (solo se falso esistente = sì) -->
-                                    <div class="bg-orange-50 p-3 rounded border border-orange-300">
-                                        <label class="block text-xs font-medium text-orange-700 mb-1">Spessore Falso (mm)</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${project.caratteristicheMuro?.spessoreFalso || ''}"
-                                               onchange="updateCaratteristicheMuro('${project.id}', 'spessoreFalso', this.value)"
-                                               class="w-full md:w-1/3 px-3 py-2 border rounded">
+                                    <!-- RIGA 2 -->
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Telaio Prof.</label>
+                                            <input type="number" placeholder="0" 
+                                                   value="${project.caratteristicheMuro?.telaioProfondita || ''}"
+                                                   onchange="updateCaratteristicheMuro('${project.id}', 'telaioProfondita', this.value)"
+                                                   class="w-full px-2 py-1 border rounded text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Telaio Largh.</label>
+                                            <input type="number" placeholder="0" 
+                                                   value="${project.caratteristicheMuro?.telaioLarghezza || ''}"
+                                                   onchange="updateCaratteristicheMuro('${project.id}', 'telaioLarghezza', this.value)"
+                                                   class="w-full px-2 py-1 border rounded text-sm">
+                                        </div>
                                     </div>
-                                ` : `
-                                    <!-- Distanza muro-infisso (solo se falso NON esistente) -->
-                                    <div class="bg-purple-50 p-3 rounded border border-purple-300">
-                                        <label class="block text-xs font-medium text-purple-700 mb-1">Distanza Muro/Infisso (mm)</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${project.caratteristicheMuro?.distanzaMuroInfisso || ''}"
-                                               onchange="updateCaratteristicheMuro('${project.id}', 'distanzaMuroInfisso', this.value)"
-                                               class="w-full md:w-1/3 px-3 py-2 border rounded">
+
+                                    <!-- RIGA 3 -->
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Delta Int.</label>
+                                            <input type="number" placeholder="0" 
+                                                   value="${project.caratteristicheMuro?.deltaInt || ''}"
+                                                   onchange="updateCaratteristicheMuro('${project.id}', 'deltaInt', this.value)"
+                                                   class="w-full px-2 py-1 border rounded text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Delta Est.</label>
+                                            <input type="number" placeholder="0" 
+                                                   value="${project.caratteristicheMuro?.deltaEst || ''}"
+                                                   onchange="updateCaratteristicheMuro('${project.id}', 'deltaEst', this.value)"
+                                                   class="w-full px-2 py-1 border rounded text-sm">
+                                        </div>
                                     </div>
-                                `}
+
+                                    <!-- Guida esistente -->
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">Guida Esistente?</label>
+                                        <select onchange="updateCaratteristicheMuroWithRender('${project.id}', 'guidaEsistente', this.value);"
+                                                class="w-1/2 px-2 py-1 border rounded text-sm">
+                                            <option value="">Seleziona...</option>
+                                            <option value="si" ${project.caratteristicheMuro?.guidaEsistente === 'si' ? 'selected' : ''}>Sì</option>
+                                            <option value="no" ${project.caratteristicheMuro?.guidaEsistente === 'no' ? 'selected' : ''}>No</option>
+                                        </select>
+                                    </div>
+
+                                    ${project.caratteristicheMuro?.guidaEsistente === 'si' ? `
+                                        <div class="grid grid-cols-3 gap-2 bg-green-50 p-2 rounded">
+                                            <div>
+                                                <label class="block text-xs font-medium text-green-700 mb-1">Prof. Distanziale</label>
+                                                <input type="number" placeholder="0" 
+                                                       value="${project.caratteristicheMuro?.profDistanziale || ''}"
+                                                       onchange="updateCaratteristicheMuro('${project.id}', 'profDistanziale', this.value)"
+                                                       class="w-full px-2 py-1 border rounded text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-green-700 mb-1">Prof. Guida</label>
+                                                <input type="number" placeholder="0" 
+                                                       value="${project.caratteristicheMuro?.profGuida || ''}"
+                                                       onchange="updateCaratteristicheMuro('${project.id}', 'profGuida', this.value)"
+                                                       class="w-full px-2 py-1 border rounded text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-green-700 mb-1">Largh. Guida</label>
+                                                <input type="number" placeholder="0" 
+                                                       value="${project.caratteristicheMuro?.larghezzaGuida || ''}"
+                                                       onchange="updateCaratteristicheMuro('${project.id}', 'larghezzaGuida', this.value)"
+                                                       class="w-full px-2 py-1 border rounded text-sm">
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    <!-- Prof Muro Est -->
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Muro Est.</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${project.caratteristicheMuro?.profMuroEst || ''}"
+                                               onchange="updateCaratteristicheMuro('${project.id}', 'profMuroEst', this.value)"
+                                               class="w-1/2 px-2 py-1 border rounded text-sm">
+                                    </div>
+
+                                    <!-- Falso esistente -->
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">Falso Esistente?</label>
+                                        <select onchange="updateCaratteristicheMuroWithRender('${project.id}', 'falsoEsistente', this.value);"
+                                                class="w-1/2 px-2 py-1 border rounded text-sm">
+                                            <option value="">Seleziona...</option>
+                                            <option value="si" ${project.caratteristicheMuro?.falsoEsistente === 'si' ? 'selected' : ''}>Sì</option>
+                                            <option value="no" ${project.caratteristicheMuro?.falsoEsistente === 'no' ? 'selected' : ''}>No</option>
+                                        </select>
+                                    </div>
+
+                                    ${project.caratteristicheMuro?.falsoEsistente === 'si' ? `
+                                        <div class="bg-orange-50 p-2 rounded space-y-2">
+                                            <div>
+                                                <label class="block text-xs font-medium text-orange-700 mb-1">Spessore Falso</label>
+                                                <input type="number" placeholder="0" 
+                                                       value="${project.caratteristicheMuro?.spessoreFalso || ''}"
+                                                       onchange="updateCaratteristicheMuro('${project.id}', 'spessoreFalso', this.value)"
+                                                       class="w-1/2 px-2 py-1 border rounded text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-orange-700 mb-1">+ Distanza Falso/Infisso</label>
+                                                <input type="number" placeholder="0" 
+                                                       value="${project.caratteristicheMuro?.distanzaFalsoInfisso || ''}"
+                                                       onchange="updateCaratteristicheMuro('${project.id}', 'distanzaFalsoInfisso', this.value)"
+                                                       class="w-1/2 px-2 py-1 border rounded text-sm">
+                                            </div>
+                                        </div>
+                                    ` : `
+                                        <div class="bg-purple-50 p-2 rounded">
+                                            <label class="block text-xs font-medium text-purple-700 mb-1">Distanza Muro/Infisso</label>
+                                            <input type="number" placeholder="0" 
+                                                   value="${project.caratteristicheMuro?.distanzaMuroInfisso || ''}"
+                                                   onchange="updateCaratteristicheMuro('${project.id}', 'distanzaMuroInfisso', this.value)"
+                                                   class="w-1/2 px-2 py-1 border rounded text-sm">
+                                        </div>
+                                    `}
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                    <!-- SELEZIONE PRODOTTI -->
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
+                        <h3 class="text-lg font-bold mb-3">🛠️ Prodotti nel Progetto</h3>
+                        <p class="text-sm text-gray-600 mb-3">Seleziona quali prodotti saranno presenti in questo progetto:</p>
+                        <div class="flex flex-wrap gap-3">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" ${project.prodotti?.infissi ? 'checked' : ''} 
+                                       onchange="updateProdotti('${project.id}', 'infissi', this.checked)"
+                                       class="mr-2">
+                                <span class="text-sm font-medium">🪟 Infissi</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" ${project.prodotti?.persiane ? 'checked' : ''} 
+                                       onchange="updateProdotti('${project.id}', 'persiane', this.checked)"
+                                       class="mr-2">
+                                <span class="text-sm font-medium">🚪 Persiane</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" ${project.prodotti?.cassonetti ? 'checked' : ''} 
+                                       onchange="updateProdotti('${project.id}', 'cassonetti', this.checked)"
+                                       class="mr-2">
+                                <span class="text-sm font-medium">📦 Cassonetti</span>
+                            </label>
                         </div>
                     </div>
 
@@ -303,42 +394,15 @@
 
         function PositionCard(project, pos) {
             return `
-                <div class="border rounded-lg p-4 bg-gradient-to-r from-purple-50 to-blue-50">
-                    <div class="mb-4">
-                        <input type="text" value="${pos.name}" 
-                               onchange="updatePosition('${project.id}', '${pos.id}', {name: this.value})"
-                               class="text-lg font-semibold border-b-2 bg-transparent outline-none">
+                <div class="border rounded-lg p-4 bg-gradient-to-r from-purple-50 to-blue-50 cursor-pointer hover:shadow-md transition-shadow"
+                     onclick="openPosition('${pos.id}')">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-lg font-semibold">${pos.name}</h4>
+                        <span class="text-gray-500">→</span>
                     </div>
-
-                    <!-- TABS -->
-                    <div class="border-b mb-4">
-                        <div class="flex space-x-4 overflow-x-auto">
-                            <button onclick="setTab('${pos.id}', 'ambiente')" 
-                                    class="px-4 py-2 font-semibold whitespace-nowrap ${(pos.activeTab || 'ambiente') === 'ambiente' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
-                                🏠 Ambiente
-                            </button>
-                            <button onclick="setTab('${pos.id}', 'misure')" 
-                                    class="px-4 py-2 font-semibold whitespace-nowrap ${pos.activeTab === 'misure' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
-                                📏 Misure
-                            </button>
-                            <button onclick="setTab('${pos.id}', 'infissi')" 
-                                    class="px-4 py-2 font-semibold whitespace-nowrap ${pos.activeTab === 'infissi' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
-                                🪟 Infissi
-                            </button>
-                            <button onclick="setTab('${pos.id}', 'persiane')" 
-                                    class="px-4 py-2 font-semibold whitespace-nowrap ${pos.activeTab === 'persiane' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
-                                🚪 Persiane
-                            </button>
-                            <button onclick="setTab('${pos.id}', 'cassonetti')" 
-                                    class="px-4 py-2 font-semibold whitespace-nowrap ${pos.activeTab === 'cassonetti' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}">
-                                📦 Cassonetti
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- TAB CONTENT -->
-                    <div class="mt-4">
-                        ${getTabContent(project, pos)}
+                    <div class="mt-2 text-sm text-gray-600">
+                        ${pos.piano ? `Piano: ${pos.piano}` : ''} 
+                        ${pos.ambiente ? `• Ambiente: ${pos.ambiente}` : ''}
                     </div>
                 </div>
             `;
@@ -509,7 +573,7 @@
                                     <!-- Guida esistente -->
                                     <div>
                                         <label class="block text-xs font-medium mb-1">Guida Esistente?</label>
-                                        <select onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'guidaEsistente', this.value); render();"
+                                        <select onchange="updateCaratteristicheMuroOverrideWithRender('${project.id}', '${pos.id}', 'guidaEsistente', this.value);"
                                                 class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
                                             <option value="">Seleziona...</option>
                                             <option value="si" ${((pos.caratteristicheMuroOverride?.guidaEsistente !== undefined ? pos.caratteristicheMuroOverride.guidaEsistente : project.caratteristicheMuro?.guidaEsistente) === 'si') ? 'selected' : ''}>Sì</option>
@@ -555,7 +619,7 @@
                                     <!-- Falso esistente -->
                                     <div>
                                         <label class="block text-xs font-medium mb-1">Falso Esistente?</label>
-                                        <select onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'falsoEsistente', this.value); render();"
+                                        <select onchange="updateCaratteristicheMuroOverrideWithRender('${project.id}', '${pos.id}', 'falsoEsistente', this.value);"
                                                 class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
                                             <option value="">Seleziona...</option>
                                             <option value="si" ${((pos.caratteristicheMuroOverride?.falsoEsistente !== undefined ? pos.caratteristicheMuroOverride.falsoEsistente : project.caratteristicheMuro?.falsoEsistente) === 'si') ? 'selected' : ''}>Sì</option>
@@ -564,16 +628,25 @@
                                     </div>
 
                                     ${((pos.caratteristicheMuroOverride?.falsoEsistente !== undefined ? pos.caratteristicheMuroOverride.falsoEsistente : project.caratteristicheMuro?.falsoEsistente) === 'si') ? `
-                                        <div class="bg-orange-50 p-2 rounded">
-                                            <label class="block text-xs font-medium text-orange-700 mb-1">Spessore Falso (mm)</label>
-                                            <input type="number" placeholder="0" 
-                                                   value="${pos.caratteristicheMuroOverride?.spessoreFalso !== undefined ? pos.caratteristicheMuroOverride.spessoreFalso : (project.caratteristicheMuro?.spessoreFalso || '')}"
-                                                   onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'spessoreFalso', this.value)"
-                                                   class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                                        <div class="bg-orange-50 p-2 rounded space-y-2">
+                                            <div>
+                                                <label class="block text-xs font-medium text-orange-700 mb-1">Spessore Falso</label>
+                                                <input type="number" placeholder="0" 
+                                                       value="${pos.caratteristicheMuroOverride?.spessoreFalso !== undefined ? pos.caratteristicheMuroOverride.spessoreFalso : (project.caratteristicheMuro?.spessoreFalso || '')}"
+                                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'spessoreFalso', this.value)"
+                                                       class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-orange-700 mb-1">+ Distanza Falso/Infisso</label>
+                                                <input type="number" placeholder="0" 
+                                                       value="${pos.caratteristicheMuroOverride?.distanzaFalsoInfisso !== undefined ? pos.caratteristicheMuroOverride.distanzaFalsoInfisso : (project.caratteristicheMuro?.distanzaFalsoInfisso || '')}"
+                                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'distanzaFalsoInfisso', this.value)"
+                                                       class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                                            </div>
                                         </div>
                                     ` : `
                                         <div class="bg-purple-50 p-2 rounded">
-                                            <label class="block text-xs font-medium text-purple-700 mb-1">Distanza Muro/Infisso (mm)</label>
+                                            <label class="block text-xs font-medium text-purple-700 mb-1">Distanza Muro/Infisso</label>
                                             <input type="number" placeholder="0" 
                                                    value="${pos.caratteristicheMuroOverride?.distanzaMuroInfisso !== undefined ? pos.caratteristicheMuroOverride.distanzaMuroInfisso : (project.caratteristicheMuro?.distanzaMuroInfisso || '')}"
                                                    onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'distanzaMuroInfisso', this.value)"
@@ -611,21 +684,106 @@
             `;
         }
 
+        window.openClientModal = () => {
+            document.getElementById('client-modal')?.classList.remove('hidden');
+        };
+
+        window.hideClientModal = () => {
+            document.getElementById('client-modal')?.classList.add('hidden');
+        };
+
+        window.openMuroModal = () => {
+            document.getElementById('muro-modal')?.classList.remove('hidden');
+        };
+
+        window.hideMuroModal = () => {
+            document.getElementById('muro-modal')?.classList.add('hidden');
+        };
+
+        window.updateCaratteristicheMuroModal = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.caratteristicheMuro) project.caratteristicheMuro = {};
+                project.caratteristicheMuro[field] = value;
+                saveState();
+                
+                // Aggiorna visibilità campi senza chiudere modal
+                if (field === 'guidaEsistente') {
+                    const guidaFields = document.getElementById(`guida-fields-${projectId}`);
+                    if (guidaFields) {
+                        guidaFields.style.display = value === 'si' ? 'block' : 'none';
+                    }
+                } else if (field === 'falsoEsistente') {
+                    const falsoFields = document.getElementById(`falso-fields-${projectId}`);
+                    const noFalsoFields = document.getElementById(`no-falso-fields-${projectId}`);
+                    if (falsoFields && noFalsoFields) {
+                        falsoFields.style.display = value === 'si' ? 'block' : 'none';
+                        noFalsoFields.style.display = value === 'no' ? 'block' : 'none';
+                    }
+                }
+            }
+        };
+
         window.showNewProjectModal = () => document.getElementById('modal').classList.remove('hidden');
         window.hideModal = () => document.getElementById('modal').classList.add('hidden');
         
+        window.toggleProjectInfo = (projectId) => {
+            const info = document.getElementById(`project-info-${projectId}`);
+            const arrow = document.getElementById(`arrow-${projectId}`);
+            if (info.style.display === 'none') {
+                info.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                info.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        };
+
+        window.toggleSection = (sectionId) => {
+            const section = document.getElementById(sectionId);
+            const arrow = document.getElementById(`arrow-${sectionId}`);
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                section.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        };
+
+        window.updateProdotti = (projectId, prodotto, checked) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.prodotti) project.prodotti = {};
+                project.prodotti[prodotto] = checked;
+                saveState();
+                render();
+            }
+        };
+
         window.createProject = () => {
             const name = document.getElementById('projectName').value;
             const client = document.getElementById('projectClient').value;
             if (name && client) {
                 addProject(name, client);
                 hideModal();
+                // Auto-apri l'ultimo progetto creato
+                const lastProject = state.projects[state.projects.length - 1];
+                state.currentProject = lastProject.id;
+                state.screen = 'project';
+                render();
             }
         };
 
         window.openProject = (id) => {
             state.currentProject = id;
             state.screen = 'project';
+            render();
+        };
+
+        window.openPosition = (id) => {
+            state.currentPosition = id;
+            state.screen = 'position';
             render();
         };
 
@@ -645,6 +803,11 @@
                 project.caratteristicheMuro[field] = value;
                 saveState();
             }
+        };
+
+        window.updateCaratteristicheMuroWithRender = (projectId, field, value) => {
+            updateCaratteristicheMuro(projectId, field, value);
+            render();
         };
 
         window.updatePosition = (projectId, posId, updates) => {
@@ -718,14 +881,214 @@
             }
         };
 
+        window.updateCaratteristicheMuroOverrideWithRender = (projectId, posId, field, value) => {
+            updateCaratteristicheMuroOverride(projectId, posId, field, value);
+            render();
+        };
+
+        function ClientDataModal() {
+            const project = state.projects.find(p => p.id === state.currentProject);
+            if (!project) return '';
+
+            return `
+                <div id="client-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50" onclick="if(event.target.id==='client-modal') hideClientModal()">
+                    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold">📋 Dati Cliente</h3>
+                            <button onclick="hideClientModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="text" placeholder="Città" value="${project.clientData?.citta || ''}" 
+                                   onchange="updateClientData('${project.id}', 'citta', this.value)" 
+                                   class="px-3 py-2 border rounded">
+                            <input type="text" placeholder="Via" value="${project.clientData?.via || ''}" 
+                                   onchange="updateClientData('${project.id}', 'via', this.value)" 
+                                   class="px-3 py-2 border rounded">
+                            <input type="tel" placeholder="Telefono" value="${project.clientData?.telefono || ''}" 
+                                   onchange="updateClientData('${project.id}', 'telefono', this.value)" 
+                                   class="px-3 py-2 border rounded">
+                            <input type="email" placeholder="Email" value="${project.clientData?.email || ''}" 
+                                   onchange="updateClientData('${project.id}', 'email', this.value)" 
+                                   class="px-3 py-2 border rounded">
+                        </div>
+                        <button onclick="hideClientModal()" class="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Chiudi
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function MuroModal() {
+            const project = state.projects.find(p => p.id === state.currentProject);
+            if (!project) return '';
+
+            return `
+                <div id="muro-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50" onclick="if(event.target.id==='muro-modal') hideMuroModal()">
+                    <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold">🏗️ Caratteristiche Muro (Globali) - Misure in MM</h3>
+                            <button onclick="hideMuroModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                        </div>
+                        <div class="space-y-3">
+                            <!-- RIGA 1 -->
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Muro Int.</label>
+                                    <input type="number" placeholder="0" 
+                                           value="${project.caratteristicheMuro?.profMuroInt || ''}"
+                                           onchange="updateClientData('${project.id}', 'profMuroInt', this.value, true)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Piana Sopra</label>
+                                    <input type="number" placeholder="0" 
+                                           value="${project.caratteristicheMuro?.profPianaSopra || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSopra', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Piana Sotto</label>
+                                    <input type="number" placeholder="0" 
+                                           value="${project.caratteristicheMuro?.profPianaSotto || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSotto', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                            </div>
+                            <!-- RIGA 2 -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Telaio Prof.</label>
+                                    <input type="number" placeholder="0" 
+                                           value="${project.caratteristicheMuro?.telaioProfondita || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'telaioProfondita', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Telaio Largh.</label>
+                                    <input type="number" placeholder="0" 
+                                           value="${project.caratteristicheMuro?.telaioLarghezza || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'telaioLarghezza', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                            </div>
+                            <!-- RIGA 3 -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Delta Int.</label>
+                                    <input type="number" placeholder="0" 
+                                           value="${project.caratteristicheMuro?.deltaInt || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'deltaInt', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Delta Est.</label>
+                                    <input type="number" placeholder="0" 
+                                           value="${project.caratteristicheMuro?.deltaEst || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'deltaEst', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                            </div>
+                            <!-- Guida esistente -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Guida Esistente?</label>
+                                <select id="guida-modal-${project.id}" 
+                                        onchange="updateCaratteristicheMuroModal('${project.id}', 'guidaEsistente', this.value)"
+                                        class="w-1/2 px-2 py-1 border rounded text-sm">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si" ${project.caratteristicheMuro?.guidaEsistente === 'si' ? 'selected' : ''}>Sì</option>
+                                    <option value="no" ${project.caratteristicheMuro?.guidaEsistente === 'no' ? 'selected' : ''}>No</option>
+                                </select>
+                            </div>
+                            <div id="guida-fields-${project.id}" style="display: ${project.caratteristicheMuro?.guidaEsistente === 'si' ? 'block' : 'none'}">
+                                <div class="grid grid-cols-3 gap-2 bg-green-50 p-2 rounded">
+                                    <div>
+                                        <label class="block text-xs font-medium text-green-700 mb-1">Prof. Distanziale</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${project.caratteristicheMuro?.profDistanziale || ''}"
+                                               onchange="updateCaratteristicheMuro('${project.id}', 'profDistanziale', this.value)"
+                                               class="w-full px-2 py-1 border rounded text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-green-700 mb-1">Prof. Guida</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${project.caratteristicheMuro?.profGuida || ''}"
+                                               onchange="updateCaratteristicheMuro('${project.id}', 'profGuida', this.value)"
+                                               class="w-full px-2 py-1 border rounded text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-green-700 mb-1">Largh. Guida</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${project.caratteristicheMuro?.larghezzaGuida || ''}"
+                                               onchange="updateCaratteristicheMuro('${project.id}', 'larghezzaGuida', this.value)"
+                                               class="w-full px-2 py-1 border rounded text-sm">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Prof Muro Est -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Prof. Muro Est.</label>
+                                <input type="number" placeholder="0" 
+                                       value="${project.caratteristicheMuro?.profMuroEst || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'profMuroEst', this.value)"
+                                       class="w-1/2 px-2 py-1 border rounded text-sm">
+                            </div>
+                            <!-- Falso esistente -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Falso Esistente?</label>
+                                <select id="falso-modal-${project.id}"
+                                        onchange="updateCaratteristicheMuroModal('${project.id}', 'falsoEsistente', this.value)"
+                                        class="w-1/2 px-2 py-1 border rounded text-sm">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si" ${project.caratteristicheMuro?.falsoEsistente === 'si' ? 'selected' : ''}>Sì</option>
+                                    <option value="no" ${project.caratteristicheMuro?.falsoEsistente === 'no' ? 'selected' : ''}>No</option>
+                                </select>
+                            </div>
+                            <div id="falso-fields-${project.id}" style="display: ${project.caratteristicheMuro?.falsoEsistente === 'si' ? 'block' : 'none'}">
+                                <div class="bg-orange-50 p-2 rounded space-y-2">
+                                    <div>
+                                        <label class="block text-xs font-medium text-orange-700 mb-1">Spessore Falso</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${project.caratteristicheMuro?.spessoreFalso || ''}"
+                                               onchange="updateCaratteristicheMuro('${project.id}', 'spessoreFalso', this.value)"
+                                               class="w-1/2 px-2 py-1 border rounded text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-orange-700 mb-1">+ Distanza Falso/Infisso</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${project.caratteristicheMuro?.distanzaFalsoInfisso || ''}"
+                                               onchange="updateCaratteristicheMuro('${project.id}', 'distanzaFalsoInfisso', this.value)"
+                                               class="w-1/2 px-2 py-1 border rounded text-sm">
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="no-falso-fields-${project.id}" style="display: ${project.caratteristicheMuro?.falsoEsistente === 'no' ? 'block' : 'none'}">
+                                <div class="bg-purple-50 p-2 rounded">
+                                    <label class="block text-xs font-medium text-purple-700 mb-1">Distanza Muro/Infisso</label>
+                                    <input type="number" placeholder="0" 
+                                           value="${project.caratteristicheMuro?.distanzaMuroInfisso || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'distanzaMuroInfisso', this.value)"
+                                           class="w-1/2 px-2 py-1 border rounded text-sm">
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="hideMuroModal()" class="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Chiudi
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         function render() {
             const app = document.getElementById('app');
             app.innerHTML = `
                 ${Header()}
                 <main class="max-w-7xl mx-auto px-4 py-8">
-                    ${state.screen === 'list' ? ProjectsList() : ProjectDetail()}
+                    ${state.screen === 'list' ? ProjectsList() : state.screen === 'position' ? PositionDetail() : ProjectDetail()}
                 </main>
                 ${NewProjectModal()}
+                ${state.screen === 'project' ? ClientDataModal() + MuroModal() : ''}
             `;
         }
 

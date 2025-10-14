@@ -1061,7 +1061,7 @@
                             </button>
                         ` : (!pos.infissi || pos.infissi.length === 0) ? `
                             <div class="bg-yellow-100 border border-yellow-400 rounded p-3 text-sm text-yellow-800">
-                                ⚠️ Questa posizione ha già altri prodotti (persiane o cassonetti).
+                                ⚠️ Non puoi aggiungere più di un infisso per posizione.
                             </div>
                         ` : ''}
                         
@@ -1082,7 +1082,7 @@
                             </button>
                         ` : (!pos.persiane || pos.persiane.length === 0) ? `
                             <div class="bg-yellow-100 border border-yellow-400 rounded p-3 text-sm text-yellow-800">
-                                ⚠️ Questa posizione ha già altri prodotti (infissi o cassonetti).
+                                ⚠️ Non puoi aggiungere più di una persiana per posizione.
                             </div>
                         ` : ''}
                         
@@ -1103,7 +1103,7 @@
                             </button>
                         ` : (!pos.cassonetti || pos.cassonetti.length === 0) ? `
                             <div class="bg-yellow-100 border border-yellow-400 rounded p-3 text-sm text-yellow-800">
-                                ⚠️ Questa posizione ha già altri prodotti (infissi o persiane).
+                                ⚠️ Non puoi aggiungere più di un cassonetto per posizione.
                             </div>
                         ` : ''}
                         
@@ -1122,12 +1122,13 @@
             const hasPersiane = pos.persiane && pos.persiane.length > 0;
             const hasCassonetti = pos.cassonetti && pos.cassonetti.length > 0;
             
+            // NUOVA LOGICA: Puoi sempre aggiungere un prodotto se non ne hai già uno dello stesso tipo
             if (productType === 'infissi') {
-                return !hasPersiane && !hasCassonetti;
+                return !hasInfissi;
             } else if (productType === 'persiane') {
-                return !hasInfissi && !hasCassonetti;
+                return !hasPersiane;
             } else if (productType === 'cassonetti') {
-                return !hasInfissi && !hasPersiane;
+                return !hasCassonetti;
             }
             
             return true;
@@ -1339,578 +1340,362 @@
             `;
         }
 
-        function InfissoRow(project, pos, inf, idx) {
-            const isExpanded = inf.expanded || false;
-            
+        function PersianaDetail(project, pos, pers) {
             return `
-                <tr class="border-b hover:bg-gray-50 transition-colors">
-                    <td class="px-3 py-2 font-bold text-blue-600">${idx + 1}</td>
-                    <td class="px-3 py-2">${inf.qta || 1}</td>
-                    <td class="px-3 py-2 font-semibold">${inf.tipo || '-'}</td>
-                    <td class="px-3 py-2">${inf.apertura || '-'}</td>
-                    <td class="px-3 py-2">${inf.telaio || '-'}</td>
-                    <td class="px-3 py-2">${inf.vetro || '-'}</td>
-                    <td class="px-3 py-2 text-center">
-                        <button onclick="toggleInfisso('${project.id}', '${pos.id}', ${idx})" 
-                                class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs mr-1">
-                            ${isExpanded ? '▲' : '▼'}
+                <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-purple-300">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-bold text-purple-700">🚪 Persiana</h4>
+                        <button onclick="removePersiana('${project.id}', '${pos.id}', 0)"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">
+                            🗑️ Elimina Persiana
                         </button>
-                        <button onclick="removeInfisso('${project.id}', '${pos.id}', ${idx})"
-                                class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">
-                            🗑️
-                        </button>
-                    </td>
-                </tr>
-                
-                ${isExpanded ? `
-                <tr class="bg-blue-50">
-                    <td colspan="7" class="px-4 py-4">
-                        <div class="space-y-4">
-                            <div class="bg-white p-4 rounded-lg border-2 border-blue-300">
-                                <h5 class="font-semibold text-sm mb-3 text-blue-700">📋 Dati Specifici</h5>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Quantità</label>
-                                        <select onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'qta', this.value)"
-                                                class="w-full px-2 py-1 border rounded text-sm">
-                                            ${[1,2,3,4,5,6,7,8].map(n => `<option value="${n}" ${(inf.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Tipo</label>
-                                        <select onchange="updateInfissoWithRender('${project.id}', '${pos.id}', ${idx}, 'tipo', this.value)"
-                                                class="w-full px-2 py-1 border rounded text-sm">
-                                            <option value="">Seleziona...</option>
-                                            <option value="F1" ${inf.tipo === 'F1' ? 'selected' : ''}>F1</option>
-                                            <option value="PF1" ${inf.tipo === 'PF1' ? 'selected' : ''}>PF1</option>
-                                            <option value="F2" ${inf.tipo === 'F2' ? 'selected' : ''}>F2</option>
-                                            <option value="PF2" ${inf.tipo === 'PF2' ? 'selected' : ''}>PF2</option>
-                                            <option value="F3" ${inf.tipo === 'F3' ? 'selected' : ''}>F3</option>
-                                            <option value="PF3" ${inf.tipo === 'PF3' ? 'selected' : ''}>PF3</option>
-                                            <option value="HST" ${inf.tipo === 'HST' ? 'selected' : ''}>HST</option>
-                                            <option value="SCORR.PARALL" ${inf.tipo === 'SCORR.PARALL' ? 'selected' : ''}>SCORR.PARALL</option>
-                                            <option value="FISSO" ${inf.tipo === 'FISSO' ? 'selected' : ''}>FISSO</option>
-                                            <option value="altro" ${inf.tipo === 'altro' ? 'selected' : ''}>Altro</option>
-                                        </select>
-                                    </div>
-                                    
-                                    ${inf.tipo === 'altro' ? `
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Specifica Tipo</label>
-                                        <input type="text" value="${inf.tipoAltro || ''}"
-                                               onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'tipoAltro', this.value)"
-                                               placeholder="Inserisci tipo..."
-                                               class="w-full px-2 py-1 border rounded text-sm">
-                                    </div>
-                                    ` : ''}
-                                    
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Apertura</label>
-                                        <select onchange="updateInfissoWithRender('${project.id}', '${pos.id}', ${idx}, 'apertura', this.value)"
-                                                class="w-full px-2 py-1 border rounded text-sm">
-                                            <option value="">Seleziona...</option>
-                                            <option value="SX" ${inf.apertura === 'SX' ? 'selected' : ''}>SX</option>
-                                            <option value="DX" ${inf.apertura === 'DX' ? 'selected' : ''}>DX</option>
-                                            <option value="Fisso" ${inf.apertura === 'Fisso' ? 'selected' : ''}>Fisso</option>
-                                            <option value="Ribalta" ${inf.apertura === 'Ribalta' ? 'selected' : ''}>Ribalta</option>
-                                            <option value="Sp. SX" ${inf.apertura === 'Sp. SX' ? 'selected' : ''}>Sp. SX</option>
-                                            <option value="Sp. DX" ${inf.apertura === 'Sp. DX' ? 'selected' : ''}>Sp. DX</option>
-                                            <option value="altro" ${inf.apertura === 'altro' ? 'selected' : ''}>Altro</option>
-                                        </select>
-                                    </div>
-                                    
-                                    ${inf.apertura === 'altro' ? `
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Specifica Apertura</label>
-                                        <input type="text" value="${inf.aperturaAltro || ''}"
-                                               onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'aperturaAltro', this.value)"
-                                               placeholder="Inserisci apertura..."
-                                               class="w-full px-2 py-1 border rounded text-sm">
-                                    </div>
-                                    ` : ''}
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- DATI SPECIFICI -->
+                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                            <h5 class="font-semibold text-sm mb-3 text-purple-700">📋 Dati Specifici</h5>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <!-- Quantità -->
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Quantità</label>
+                                    <select onchange="updatePersiana('${project.id}', '${pos.id}', 0, 'qta', this.value)"
+                                            class="w-full px-2 py-1 border rounded text-sm">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${(pers.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
+                                    </select>
                                 </div>
-                            </div>
-                            
-                            <div class="bg-green-50 p-4 rounded-lg border-2 border-green-300">
-                                <h5 class="font-semibold text-sm mb-2 text-green-700">⚙️ Configurazione <span class="text-xs font-normal text-gray-600">(da config globale - modificabile)</span></h5>
                                 
-                                <div class="space-y-3">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Finitura Interna</label>
-                                            <select onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'finituraInt', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="pvc" ${inf.finituraInt === 'pvc' ? 'selected' : ''}>PVC</option>
-                                                <option value="legno" ${inf.finituraInt === 'legno' ? 'selected' : ''}>LEGNO</option>
-                                                <option value="alluminio" ${inf.finituraInt === 'alluminio' ? 'selected' : ''}>ALLUMINIO</option>
-                                                <option value="ceramica" ${inf.finituraInt === 'ceramica' ? 'selected' : ''}>CERAMICA</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Finitura Esterna</label>
-                                            <select onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'finituraEst', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="pvc" ${inf.finituraEst === 'pvc' ? 'selected' : ''}>PVC</option>
-                                                <option value="alluminio" ${inf.finituraEst === 'alluminio' ? 'selected' : ''}>ALLUMINIO</option>
-                                                <option value="ceramica" ${inf.finituraEst === 'ceramica' ? 'selected' : ''}>CERAMICA</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Colore Interno</label>
-                                            <input type="text" value="${inf.coloreInt || ''}"
-                                                   onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'coloreInt', this.value)"
-                                                   placeholder="Es: Bianco, RAL 9010"
-                                                   class="w-full px-2 py-1 border rounded text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Colore Esterno</label>
-                                            <input type="text" value="${inf.coloreEst || ''}"
-                                                   onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'coloreEst', this.value)"
-                                                   placeholder="Es: Marrone, RAL 8014"
-                                                   class="w-full px-2 py-1 border rounded text-sm">
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Tipo Anta</label>
-                                            <select onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'tipoAnta', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="step-line" ${inf.tipoAnta === 'step-line' ? 'selected' : ''}>STEP-LINE</option>
-                                                <option value="nova-line" ${inf.tipoAnta === 'nova-line' ? 'selected' : ''}>NOVA-LINE</option>
-                                                <option value="slim-line" ${inf.tipoAnta === 'slim-line' ? 'selected' : ''}>SLIM-LINE</option>
-                                                <option value="classic-line" ${inf.tipoAnta === 'classic-line' ? 'selected' : ''}>CLASSIC-LINE</option>
-                                                <option value="step-line-door" ${inf.tipoAnta === 'step-line-door' ? 'selected' : ''}>STEP-LINE DOOR</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Telaio</label>
-                                            <select onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'telaio', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="961" ${inf.telaio === '961' ? 'selected' : ''}>961</option>
-                                                <option value="962" ${inf.telaio === '962' ? 'selected' : ''}>962</option>
-                                                <option value="966" ${inf.telaio === '966' ? 'selected' : ''}>966</option>
-                                                <option value="965" ${inf.telaio === '965' ? 'selected' : ''}>965</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Allarme</label>
-                                            <select onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'allarme', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="si" ${inf.allarme === 'si' ? 'selected' : ''}>Sì</option>
-                                                <option value="no" ${inf.allarme === 'no' ? 'selected' : ''}>No</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Vetro</label>
-                                            <select onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'vetro', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="doppio" ${inf.vetro === 'doppio' ? 'selected' : ''}>doppio</option>
-                                                <option value="doppio-sat" ${inf.vetro === 'doppio-sat' ? 'selected' : ''}>doppio sat</option>
-                                                <option value="triplo" ${inf.vetro === 'triplo' ? 'selected' : ''}>triplo</option>
-                                                <option value="triplo-sat" ${inf.vetro === 'triplo-sat' ? 'selected' : ''}>triplo sat</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Tagli Telaio</label>
-                                            <select onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'tagliTelaio', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="sopra" ${inf.tagliTelaio === 'sopra' ? 'selected' : ''}>sopra</option>
-                                                <option value="sotto" ${inf.tagliTelaio === 'sotto' ? 'selected' : ''}>sotto</option>
-                                                <option value="sopra-sotto" ${inf.tagliTelaio === 'sopra-sotto' ? 'selected' : ''}>sopra/sotto</option>
-                                                <option value="dx" ${inf.tagliTelaio === 'dx' ? 'selected' : ''}>dx</option>
-                                                <option value="sx" ${inf.tagliTelaio === 'sx' ? 'selected' : ''}>sx</option>
-                                                <option value="dx-sx" ${inf.tagliTelaio === 'dx-sx' ? 'selected' : ''}>dx/sx</option>
-                                                <option value="4-lati" ${inf.tagliTelaio === '4-lati' ? 'selected' : ''}>4 lati</option>
-                                                <option value="sopra-laterali" ${inf.tagliTelaio === 'sopra-laterali' ? 'selected' : ''}>sopra/laterali</option>
-                                                <option value="sotto-laterali" ${inf.tagliTelaio === 'sotto-laterali' ? 'selected' : ''}>sotto/laterali</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Tipo Tagli</label>
-                                            <input type="text" value="${inf.tipoTagli || ''}"
-                                                   onchange="updateInfisso('${project.id}', '${pos.id}', ${idx}, 'tipoTagli', this.value)"
-                                                   placeholder="Es: standard, 45°"
-                                                   class="w-full px-2 py-1 border rounded text-sm">
-                                        </div>
-                                    </div>
+                                <!-- Tipo -->
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Tipo</label>
+                                    <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', 0, 'tipo', this.value)"
+                                            class="w-full px-2 py-1 border rounded text-sm">
+                                        <option value="">Seleziona...</option>
+                                        <option value="F1" ${pers.tipo === 'F1' ? 'selected' : ''}>F1</option>
+                                        <option value="PF1" ${pers.tipo === 'PF1' ? 'selected' : ''}>PF1</option>
+                                        <option value="F2" ${pers.tipo === 'F2' ? 'selected' : ''}>F2</option>
+                                        <option value="PF2" ${pers.tipo === 'PF2' ? 'selected' : ''}>PF2</option>
+                                        <option value="F3" ${pers.tipo === 'F3' ? 'selected' : ''}>F3</option>
+                                        <option value="PF3" ${pers.tipo === 'PF3' ? 'selected' : ''}>PF3</option>
+                                        <option value="SCORREVOLE" ${pers.tipo === 'SCORREVOLE' ? 'selected' : ''}>SCORREVOLE</option>
+                                        <option value="altro" ${pers.tipo === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
+                                    </select>
                                 </div>
+                                
+                                ${pers.tipo === 'altro' ? `
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Specifica Tipo</label>
+                                    <input type="text" value="${pers.tipoAltro || ''}"
+                                           onchange="updatePersiana('${project.id}', '${pos.id}', 0, 'tipoAltro', this.value)"
+                                           placeholder="Inserisci tipo..."
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                ` : ''}
+                                
+                                <!-- Apertura -->
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Apertura</label>
+                                    <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', 0, 'apertura', this.value)"
+                                            class="w-full px-2 py-1 border rounded text-sm">
+                                        <option value="">Seleziona...</option>
+                                        <option value="SP SX" ${pers.apertura === 'SP SX' ? 'selected' : ''}>SP SX</option>
+                                        <option value="SP DX" ${pers.apertura === 'SP DX' ? 'selected' : ''}>SP DX</option>
+                                        <option value="LIB-SX" ${pers.apertura === 'LIB-SX' ? 'selected' : ''}>LIB-SX</option>
+                                        <option value="LIB-DX" ${pers.apertura === 'LIB-DX' ? 'selected' : ''}>LIB-DX</option>
+                                        <option value="SCORR-SX" ${pers.apertura === 'SCORR-SX' ? 'selected' : ''}>SCORR-SX</option>
+                                        <option value="SCORR-DX" ${pers.apertura === 'SCORR-DX' ? 'selected' : ''}>SCORR-DX</option>
+                                        <option value="altro" ${pers.apertura === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
+                                    </select>
+                                </div>
+                                
+                                ${pers.apertura === 'altro' ? `
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Specifica Apertura</label>
+                                    <input type="text" value="${pers.aperturaAltro || ''}"
+                                           onchange="updatePersiana('${project.id}', '${pos.id}', 0, 'aperturaAltro', this.value)"
+                                           placeholder="Inserisci apertura..."
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                ` : ''}
                             </div>
                         </div>
-                    </td>
-                </tr>
-                ` : ''}
-            `;
-        }
-
-        function PersianaRow(project, pos, pers, idx) {
-            const isExpanded = pers.expanded || false;
-            
-            return `
-                <tr class="border-b hover:bg-gray-50 transition-colors">
-                    <td class="px-3 py-2 font-bold text-purple-600">${idx + 1}</td>
-                    <td class="px-3 py-2">${pers.qta || 1}</td>
-                    <td class="px-3 py-2 font-semibold">${pers.tipo || '-'}</td>
-                    <td class="px-3 py-2">${pers.apertura || '-'}</td>
-                    <td class="px-3 py-2">${pers.modello || '-'}</td>
-                    <td class="px-3 py-2">${pers.fissaggio || '-'}</td>
-                    <td class="px-3 py-2 text-center">
-                        <button onclick="togglePersiana('${project.id}', '${pos.id}', ${idx})" 
-                                class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs mr-1">
-                            ${isExpanded ? '▲' : '▼'}
-                        </button>
-                        <button onclick="removePersiana('${project.id}', '${pos.id}', ${idx})"
-                                class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">
-                            🗑️
-                        </button>
-                    </td>
-                </tr>
-                
-                ${isExpanded ? `
-                <tr class="bg-purple-50">
-                    <td colspan="7" class="px-4 py-4">
-                        <div class="space-y-4">
-                            <div class="bg-white p-4 rounded-lg border-2 border-purple-300">
-                                <h5 class="font-semibold text-sm mb-3 text-purple-700">📋 Dati Specifici</h5>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        
+                        <!-- CONFIGURAZIONE -->
+                        <div class="bg-purple-100 p-4 rounded-lg border border-purple-200">
+                            <h5 class="font-semibold text-sm mb-3 text-purple-700">⚙️ Configurazione</h5>
+                            
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                     <div>
-                                        <label class="block text-xs font-medium mb-1">Quantità</label>
-                                        <select onchange="updatePersiana('${project.id}', '${pos.id}', ${idx}, 'qta', this.value)"
-                                                class="w-full px-2 py-1 border rounded text-sm">
-                                            ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${(pers.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Tipo</label>
-                                        <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', ${idx}, 'tipo', this.value)"
+                                        <label class="block text-xs font-medium mb-1">Modello</label>
+                                        <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', 0, 'modello', this.value)"
                                                 class="w-full px-2 py-1 border rounded text-sm">
                                             <option value="">Seleziona...</option>
-                                            <option value="F1" ${pers.tipo === 'F1' ? 'selected' : ''}>F1</option>
-                                            <option value="PF1" ${pers.tipo === 'PF1' ? 'selected' : ''}>PF1</option>
-                                            <option value="F2" ${pers.tipo === 'F2' ? 'selected' : ''}>F2</option>
-                                            <option value="PF2" ${pers.tipo === 'PF2' ? 'selected' : ''}>PF2</option>
-                                            <option value="F3" ${pers.tipo === 'F3' ? 'selected' : ''}>F3</option>
-                                            <option value="PF3" ${pers.tipo === 'PF3' ? 'selected' : ''}>PF3</option>
-                                            <option value="SCORREVOLE" ${pers.tipo === 'SCORREVOLE' ? 'selected' : ''}>SCORREVOLE</option>
-                                            <option value="altro" ${pers.tipo === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
+                                            <option value="Aurora" ${pers.modello === 'Aurora' ? 'selected' : ''}>Aurora</option>
+                                            <option value="Vanitosa" ${pers.modello === 'Vanitosa' ? 'selected' : ''}>Vanitosa</option>
+                                            <option value="Oscura" ${pers.modello === 'Oscura' ? 'selected' : ''}>Oscura</option>
+                                            <option value="Alto Adige" ${pers.modello === 'Alto Adige' ? 'selected' : ''}>Alto Adige</option>
+                                            <option value="altro" ${pers.modello === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
                                         </select>
                                     </div>
                                     
-                                    ${pers.tipo === 'altro' ? `
+                                    ${pers.modello === 'altro' ? `
                                     <div>
-                                        <label class="block text-xs font-medium mb-1">Specifica Tipo</label>
-                                        <input type="text" value="${pers.tipoAltro || ''}"
-                                               onchange="updatePersiana('${project.id}', '${pos.id}', ${idx}, 'tipoAltro', this.value)"
-                                               placeholder="Inserisci tipo..."
+                                        <label class="block text-xs font-medium mb-1">Specifica Modello</label>
+                                        <input type="text" value="${pers.modelloAltro || ''}"
+                                               onchange="updatePersiana('${project.id}', '${pos.id}', 0, 'modelloAltro', this.value)"
+                                               placeholder="Inserisci modello..."
                                                class="w-full px-2 py-1 border rounded text-sm">
                                     </div>
                                     ` : ''}
                                     
                                     <div>
-                                        <label class="block text-xs font-medium mb-1">Apertura</label>
-                                        <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', ${idx}, 'apertura', this.value)"
+                                        <label class="block text-xs font-medium mb-1">Fissaggio</label>
+                                        <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', 0, 'fissaggio', this.value)"
                                                 class="w-full px-2 py-1 border rounded text-sm">
                                             <option value="">Seleziona...</option>
-                                            <option value="SP SX" ${pers.apertura === 'SP SX' ? 'selected' : ''}>SP SX</option>
-                                            <option value="SP DX" ${pers.apertura === 'SP DX' ? 'selected' : ''}>SP DX</option>
-                                            <option value="LIB-SX" ${pers.apertura === 'LIB-SX' ? 'selected' : ''}>LIB-SX</option>
-                                            <option value="LIB-DX" ${pers.apertura === 'LIB-DX' ? 'selected' : ''}>LIB-DX</option>
-                                            <option value="SCORR-SX" ${pers.apertura === 'SCORR-SX' ? 'selected' : ''}>SCORR-SX</option>
-                                            <option value="SCORR-DX" ${pers.apertura === 'SCORR-DX' ? 'selected' : ''}>SCORR-DX</option>
-                                            <option value="altro" ${pers.apertura === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
+                                            <option value="A MURO" ${pers.fissaggio === 'A MURO' ? 'selected' : ''}>A MURO</option>
+                                            <option value="TELAIO" ${pers.fissaggio === 'TELAIO' ? 'selected' : ''}>TELAIO</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                ${pers.fissaggio === 'TELAIO' ? `
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">Tipo Telaio</label>
+                                        <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', 0, 'tipoTelaio', this.value)"
+                                                class="w-full px-2 py-1 border rounded text-sm">
+                                            <option value="">Seleziona...</option>
+                                            <option value="TH 62" ${pers.tipoTelaio === 'TH 62' ? 'selected' : ''}>TH 62</option>
+                                            <option value="TH 40" ${pers.tipoTelaio === 'TH 40' ? 'selected' : ''}>TH 40</option>
+                                            <option value="TH 82" ${pers.tipoTelaio === 'TH 82' ? 'selected' : ''}>TH 82</option>
+                                            <option value="altro" ${pers.tipoTelaio === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
                                         </select>
                                     </div>
                                     
-                                    ${pers.apertura === 'altro' ? `
+                                    ${pers.tipoTelaio === 'altro' ? `
                                     <div>
-                                        <label class="block text-xs font-medium mb-1">Specifica Apertura</label>
-                                        <input type="text" value="${pers.aperturaAltro || ''}"
-                                               onchange="updatePersiana('${project.id}', '${pos.id}', ${idx}, 'aperturaAltro', this.value)"
-                                               placeholder="Inserisci apertura..."
+                                        <label class="block text-xs font-medium mb-1">Specifica Tipo Telaio</label>
+                                        <input type="text" value="${pers.tipoTelaioAltro || ''}"
+                                               onchange="updatePersiana('${project.id}', '${pos.id}', 0, 'tipoTelaioAltro', this.value)"
+                                               placeholder="Inserisci tipo telaio..."
                                                class="w-full px-2 py-1 border rounded text-sm">
                                     </div>
                                     ` : ''}
                                 </div>
-                            </div>
-                            
-                            <div class="bg-purple-50 p-4 rounded-lg border-2 border-purple-300">
-                                <h5 class="font-semibold text-sm mb-2 text-purple-700">⚙️ Configurazione <span class="text-xs font-normal text-gray-600">(da config globale - modificabile)</span></h5>
+                                ` : ''}
                                 
-                                <div class="space-y-3">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Modello</label>
-                                            <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', ${idx}, 'modello', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="Aurora" ${pers.modello === 'Aurora' ? 'selected' : ''}>Aurora</option>
-                                                <option value="Vanitosa" ${pers.modello === 'Vanitosa' ? 'selected' : ''}>Vanitosa</option>
-                                                <option value="Oscura" ${pers.modello === 'Oscura' ? 'selected' : ''}>Oscura</option>
-                                                <option value="Alto Adige" ${pers.modello === 'Alto Adige' ? 'selected' : ''}>Alto Adige</option>
-                                                <option value="altro" ${pers.modello === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
-                                            </select>
-                                        </div>
-                                        
-                                        ${pers.modello === 'altro' ? `
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Specifica Modello</label>
-                                            <input type="text" value="${pers.modelloAltro || ''}"
-                                                   onchange="updatePersiana('${project.id}', '${pos.id}', ${idx}, 'modelloAltro', this.value)"
-                                                   placeholder="Inserisci modello..."
-                                                   class="w-full px-2 py-1 border rounded text-sm">
-                                        </div>
-                                        ` : ''}
-                                        
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Fissaggio</label>
-                                            <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', ${idx}, 'fissaggio', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="A MURO" ${pers.fissaggio === 'A MURO' ? 'selected' : ''}>A MURO</option>
-                                                <option value="TELAIO" ${pers.fissaggio === 'TELAIO' ? 'selected' : ''}>TELAIO</option>
-                                            </select>
-                                        </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">Colore Persiana</label>
+                                        <input type="text" value="${pers.colorePersiana || ''}"
+                                               onchange="updatePersiana('${project.id}', '${pos.id}', 0, 'colorePersiana', this.value)"
+                                               placeholder="Es: Bianco, Verde"
+                                               class="w-full px-2 py-1 border rounded text-sm">
                                     </div>
                                     
                                     ${pers.fissaggio === 'TELAIO' ? `
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Tipo Telaio</label>
-                                            <select onchange="updatePersianaWithRender('${project.id}', '${pos.id}', ${idx}, 'tipoTelaio', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="TH 62" ${pers.tipoTelaio === 'TH 62' ? 'selected' : ''}>TH 62</option>
-                                                <option value="TH 40" ${pers.tipoTelaio === 'TH 40' ? 'selected' : ''}>TH 40</option>
-                                                <option value="TH 82" ${pers.tipoTelaio === 'TH 82' ? 'selected' : ''}>TH 82</option>
-                                                <option value="altro" ${pers.tipoTelaio === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
-                                            </select>
-                                        </div>
-                                        
-                                        ${pers.tipoTelaio === 'altro' ? `
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Specifica Tipo Telaio</label>
-                                            <input type="text" value="${pers.tipoTelaioAltro || ''}"
-                                                   onchange="updatePersiana('${project.id}', '${pos.id}', ${idx}, 'tipoTelaioAltro', this.value)"
-                                                   placeholder="Inserisci tipo telaio..."
-                                                   class="w-full px-2 py-1 border rounded text-sm">
-                                        </div>
-                                        ` : ''}
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">Colore Telaio</label>
+                                        <input type="text" value="${pers.coloreTelaio || ''}"
+                                               onchange="updatePersiana('${project.id}', '${pos.id}', 0, 'coloreTelaio', this.value)"
+                                               placeholder="Es: Bianco, Marrone"
+                                               class="w-full px-2 py-1 border rounded text-sm">
                                     </div>
                                     ` : ''}
-                                    
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Colore Persiana</label>
-                                            <input type="text" value="${pers.colorePersiana || ''}"
-                                                   onchange="updatePersiana('${project.id}', '${pos.id}', ${idx}, 'colorePersiana', this.value)"
-                                                   placeholder="Es: Bianco, Verde"
-                                                   class="w-full px-2 py-1 border rounded text-sm">
-                                        </div>
-                                        
-                                        ${pers.fissaggio === 'TELAIO' ? `
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Colore Telaio</label>
-                                            <input type="text" value="${pers.coloreTelaio || ''}"
-                                                   onchange="updatePersiana('${project.id}', '${pos.id}', ${idx}, 'coloreTelaio', this.value)"
-                                                   placeholder="Es: Bianco, Marrone"
-                                                   class="w-full px-2 py-1 border rounded text-sm">
-                                        </div>
-                                        ` : ''}
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-medium mb-1">Battuta</label>
-                                            <select onchange="updatePersiana('${project.id}', '${pos.id}', ${idx}, 'battuta', this.value)"
-                                                    class="w-full px-2 py-1 border rounded text-sm">
-                                                <option value="">Seleziona...</option>
-                                                <option value="3 LATI" ${pers.battuta === '3 LATI' ? 'selected' : ''}>3 LATI</option>
-                                                <option value="4 LATI" ${pers.battuta === '4 LATI' ? 'selected' : ''}>4 LATI</option>
-                                                <option value="2 LATI LATERALI" ${pers.battuta === '2 LATI LATERALI' ? 'selected' : ''}>2 LATI LATERALI</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
-                                <h5 class="font-semibold text-sm mb-2 text-blue-700">📸 Foto Persiana</h5>
-                                
-                                <div class="mb-2">
-                                    <input type="file" 
-                                           id="foto-persiana-input-${pos.id}-${idx}" 
-                                           accept="image/*" 
-                                           onchange="addFotoPersiana('${project.id}', '${pos.id}', ${idx}, this)"
-                                           class="hidden">
-                                    <button onclick="document.getElementById('foto-persiana-input-${pos.id}-${idx}').click()" 
-                                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold">
-                                        📷 Carica Foto
-                                    </button>
-                                    <p class="text-xs text-gray-600 mt-1">1 foto per persiana</p>
                                 </div>
                                 
-                                ${pers.foto ? `
-                                    <div class="relative group inline-block">
-                                        <img src="${pers.foto.data}" 
-                                             onclick="showFotoModal('${pers.foto.data}')"
-                                             class="w-32 h-32 object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-all">
-                                        <button onclick="removeFotoPersiana('${project.id}', '${pos.id}', ${idx})"
-                                                class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            ✕
-                                        </button>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">Battuta</label>
+                                        <select onchange="updatePersiana('${project.id}', '${pos.id}', 0, 'battuta', this.value)"
+                                                class="w-full px-2 py-1 border rounded text-sm">
+                                            <option value="">Seleziona...</option>
+                                            <option value="3 LATI" ${pers.battuta === '3 LATI' ? 'selected' : ''}>3 LATI</option>
+                                            <option value="4 LATI" ${pers.battuta === '4 LATI' ? 'selected' : ''}>4 LATI</option>
+                                            <option value="2 LATI LATERALI" ${pers.battuta === '2 LATI LATERALI' ? 'selected' : ''}>2 LATI LATERALI</option>
+                                        </select>
                                     </div>
-                                ` : '<p class="text-xs text-gray-500 italic">Nessuna foto caricata</p>'}
+                                </div>
                             </div>
                         </div>
-                    </td>
-                </tr>
-                ` : ''}
+                        
+                        <!-- FOTO -->
+                        <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
+                            <h5 class="font-semibold text-sm mb-2 text-blue-700">📸 Foto Persiana</h5>
+                            
+                            <div class="mb-2">
+                                <input type="file" 
+                                       id="foto-persiana-input-${pos.id}-0" 
+                                       accept="image/*" 
+                                       onchange="addFotoPersiana('${project.id}', '${pos.id}', 0, this)"
+                                       class="hidden">
+                                <button onclick="document.getElementById('foto-persiana-input-${pos.id}-0').click()" 
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold">
+                                    📷 Carica Foto
+                                </button>
+                                <p class="text-xs text-gray-600 mt-1">1 foto per persiana</p>
+                            </div>
+                            
+                            ${pers.foto ? `
+                                <div class="relative group inline-block">
+                                    <img src="${pers.foto.data}" 
+                                         onclick="showFotoModal('${pers.foto.data}')"
+                                         class="w-32 h-32 object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-all">
+                                    <button onclick="removeFotoPersiana('${project.id}', '${pos.id}', 0)"
+                                            class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        ✕
+                                    </button>
+                                </div>
+                            ` : '<p class="text-xs text-gray-500 italic">Nessuna foto caricata</p>'}
+                        </div>
+                    </div>
+                </div>
             `;
         }
 
-        function CassonettoRow(project, pos, cass, idx) {
-            const isExpanded = cass.expanded || false;
-            
+        function CassonettoDetail(project, pos, cass) {
             return `
-                <tr class="border-b hover:bg-gray-50 transition-colors">
-                    <td class="px-3 py-2 font-bold text-orange-600">${idx + 1}</td>
-                    <td class="px-3 py-2">${cass.qta || 1}</td>
-                    <td class="px-3 py-2 font-semibold">${cass.tipo || '-'}</td>
-                    <td class="px-3 py-2">${cass.azienda || '-'}</td>
-                    <td class="px-3 py-2">${cass.colore || '-'}</td>
-                    <td class="px-3 py-2 text-center">
-                        <button onclick="toggleCassonetto('${project.id}', '${pos.id}', ${idx})" 
-                                class="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs mr-1">
-                            ${isExpanded ? '▲' : '▼'}
+                <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-orange-300">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-bold text-orange-700">📦 Cassonetto</h4>
+                        <button onclick="removeCassonetto('${project.id}', '${pos.id}', 0)"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">
+                            🗑️ Elimina Cassonetto
                         </button>
-                        <button onclick="removeCassonetto('${project.id}', '${pos.id}', ${idx})"
-                                class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">
-                            🗑️
-                        </button>
-                    </td>
-                </tr>
-                
-                ${isExpanded ? `
-                <tr class="bg-orange-50">
-                    <td colspan="6" class="px-4 py-4">
-                        <div class="space-y-4">
-                            <div class="bg-white p-4 rounded-lg border-2 border-orange-300">
-                                <h5 class="font-semibold text-sm mb-3 text-orange-700">📋 Dati Generali</h5>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Quantità</label>
-                                        <select onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'qta', this.value)"
-                                                class="w-full px-2 py-1 border rounded text-sm">
-                                            ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${(cass.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Tipo Cassonetto</label>
-                                        <select onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'tipo', this.value)"
-                                                class="w-full px-2 py-1 border rounded text-sm">
-                                            <option value="">Seleziona...</option>
-                                            <option value="monoblocco" ${cass.tipo === 'monoblocco' ? 'selected' : ''}>MONOBLOCCO</option>
-                                            <option value="isole" ${cass.tipo === 'isole' ? 'selected' : ''}>SOLO ISOLE CASSONETTO</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Azienda</label>
-                                        <input type="text" value="${cass.azienda || ''}"
-                                               onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'azienda', this.value)"
-                                               placeholder="Azienda produttrice"
-                                               class="w-full px-2 py-1 border rounded text-sm">
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Colore</label>
-                                        <input type="text" value="${cass.colore || ''}"
-                                               onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'colore', this.value)"
-                                               placeholder="Es: Bianco, RAL 9010"
-                                               class="w-full px-2 py-1 border rounded text-sm">
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Sovrapposizione/Sostituzione</label>
-                                        <select onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'sovrappSostit', this.value)"
-                                                class="w-full px-2 py-1 border rounded text-sm">
-                                            <option value="">Seleziona...</option>
-                                            <option value="sovrapposizione" ${cass.sovrappSostit === 'sovrapposizione' ? 'selected' : ''}>SOVRAPPOSIZIONE</option>
-                                            <option value="sostituzione" ${cass.sovrappSostit === 'sostituzione' ? 'selected' : ''}>SOSTITUZIONE</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Cassonetto a Soffitto</label>
-                                        <select onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'aSoffitto', this.value)"
-                                                class="w-full px-2 py-1 border rounded text-sm">
-                                            <option value="">Seleziona...</option>
-                                            <option value="si" ${cass.aSoffitto === 'si' ? 'selected' : ''}>SÌ</option>
-                                            <option value="no" ${cass.aSoffitto === 'no' ? 'selected' : ''}>NO</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-amber-50 p-4 rounded-lg border-2 border-amber-300">
-                                <h5 class="font-semibold text-sm mb-3 text-amber-700">📏 Misure Cassonetto (mm)</h5>
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                    <input type="number" placeholder="LS" value="${cass.LS || ''}" 
-                                           onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'LS', this.value)"
-                                           class="px-2 py-1 border rounded text-sm font-semibold">
-                                    <input type="number" placeholder="SRSX" value="${cass.SRSX || ''}" 
-                                           onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'SRSX', this.value)"
-                                           class="px-2 py-1 border rounded text-sm font-semibold">
-                                    <input type="number" placeholder="ZSX" value="${cass.ZSX || ''}" 
-                                           onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'ZSX', this.value)"
-                                           class="px-2 py-1 border rounded text-sm font-semibold">
-                                    <input type="number" placeholder="SRDX" value="${cass.SRDX || ''}" 
-                                           onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'SRDX', this.value)"
-                                           class="px-2 py-1 border rounded text-sm font-semibold">
-                                    <input type="number" placeholder="ZDX" value="${cass.ZDX || ''}" 
-                                           onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'ZDX', this.value)"
-                                           class="px-2 py-1 border rounded text-sm font-semibold">
-                                    <input type="number" placeholder="HCASS" value="${cass.HCASS || ''}" 
-                                           onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'HCASS', this.value)"
-                                           class="px-2 py-1 border rounded text-sm font-semibold">
-                                    <input type="number" placeholder="B" value="${cass.B || ''}" 
-                                           onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'B', this.value)"
-                                           class="px-2 py-1 border rounded text-sm font-semibold">
-                                    <input type="number" placeholder="C" value="${cass.C || ''}" 
-                                           onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'C', this.value)"
-                                           class="px-2 py-1 border rounded text-sm font-semibold">
-                                    <input type="number" placeholder="B SUPERIORE" value="${cass.BSuperiore || ''}" 
-                                           onchange="updateCassonetto('${project.id}', '${pos.id}', ${idx}, 'BSuperiore', this.value)"
-                                           class="px-2 py-1 border rounded text-sm font-semibold">
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- DATI GENERALI -->
+                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <h5 class="font-semibold text-sm mb-3 text-orange-700">📋 Dati Generali</h5>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Quantità</label>
+                                    <select onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'qta', this.value)"
+                                            class="w-full px-2 py-1 border rounded text-sm">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${(cass.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
+                                    </select>
                                 </div>
                                 
-                                <div class="mt-3 p-2 bg-yellow-100 rounded border border-yellow-400">
-                                    <p class="text-xs font-semibold text-yellow-800">ℹ️ Note:</p>
-                                    <p class="text-xs text-yellow-700">
-                                        Se SRSX = ZSX → Muro a SX | Se SRDX = ZDX → Muro a DX
-                                    </p>
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Tipo Cassonetto</label>
+                                    <select onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'tipo', this.value)"
+                                            class="w-full px-2 py-1 border rounded text-sm">
+                                        <option value="">Seleziona...</option>
+                                        <option value="monoblocco" ${cass.tipo === 'monoblocco' ? 'selected' : ''}>MONOBLOCCO</option>
+                                        <option value="isole" ${cass.tipo === 'isole' ? 'selected' : ''}>SOLO ISOLE CASSONETTO</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Azienda</label>
+                                    <input type="text" value="${cass.azienda || ''}"
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'azienda', this.value)"
+                                           placeholder="Azienda produttrice"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Colore</label>
+                                    <input type="text" value="${cass.colore || ''}"
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'colore', this.value)"
+                                           placeholder="Es: Bianco, RAL 9010"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Sovrapposizione/Sostituzione</label>
+                                    <select onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'sovrappSostit', this.value)"
+                                            class="w-full px-2 py-1 border rounded text-sm">
+                                        <option value="">Seleziona...</option>
+                                        <option value="sovrapposizione" ${cass.sovrappSostit === 'sovrapposizione' ? 'selected' : ''}>SOVRAPPOSIZIONE</option>
+                                        <option value="sostituzione" ${cass.sovrappSostit === 'sostituzione' ? 'selected' : ''}>SOSTITUZIONE</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-medium mb-1">Cassonetto a Soffitto</label>
+                                    <select onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'aSoffitto', this.value)"
+                                            class="w-full px-2 py-1 border rounded text-sm">
+                                        <option value="">Seleziona...</option>
+                                        <option value="si" ${cass.aSoffitto === 'si' ? 'selected' : ''}>SÌ</option>
+                                        <option value="no" ${cass.aSoffitto === 'no' ? 'selected' : ''}>NO</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
-                    </td>
-                </tr>
-                ` : ''}
+                        
+                        <!-- MISURE CASSONETTO -->
+                        <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                            <h5 class="font-semibold text-sm mb-3 text-amber-700">📏 Misure Cassonetto (mm)</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">LS</label>
+                                    <input type="number" placeholder="0" value="${cass.LS || ''}" 
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'LS', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">SRSX</label>
+                                    <input type="number" placeholder="0" value="${cass.SRSX || ''}" 
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'SRSX', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">ZSX</label>
+                                    <input type="number" placeholder="0" value="${cass.ZSX || ''}" 
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'ZSX', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">SRDX</label>
+                                    <input type="number" placeholder="0" value="${cass.SRDX || ''}" 
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'SRDX', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">ZDX</label>
+                                    <input type="number" placeholder="0" value="${cass.ZDX || ''}" 
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'ZDX', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">HCASS</label>
+                                    <input type="number" placeholder="0" value="${cass.HCASS || ''}" 
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'HCASS', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">B</label>
+                                    <input type="number" placeholder="0" value="${cass.B || ''}" 
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'B', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">C</label>
+                                    <input type="number" placeholder="0" value="${cass.C || ''}" 
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'C', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">B SUPERIORE</label>
+                                    <input type="number" placeholder="0" value="${cass.BSuperiore || ''}" 
+                                           onchange="updateCassonetto('${project.id}', '${pos.id}', 0, 'BSuperiore', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm font-semibold">
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3 p-2 bg-yellow-100 rounded border border-yellow-400">
+                                <p class="text-xs font-semibold text-yellow-800">ℹ️ Note:</p>
+                                <p class="text-xs text-yellow-700">
+                                    Se SRSX = ZSX → Muro a SX | Se SRDX = ZDX → Muro a DX
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
         }
 
@@ -2237,40 +2022,31 @@
                 if (pos) {
                     if (!pos.infissi) pos.infissi = [];
                     
-                    const nuovoInfisso = {
-                        qta: 1,
-                        tipo: '',
-                        tipoAltro: '',
-                        apertura: '',
-                        aperturaAltro: '',
-                        finituraInt: project.configInfissi?.finituraInt || '',
-                        finituraEst: project.configInfissi?.finituraEst || '',
-                        coloreInt: project.configInfissi?.coloreInt || '',
-                        coloreEst: project.configInfissi?.coloreEst || '',
-                        tipoAnta: project.configInfissi?.tipoAnta || '',
-                        telaio: project.configInfissi?.telaio || '',
-                        allarme: project.configInfissi?.allarme || '',
-                        vetro: project.configInfissi?.vetro || '',
-                        tagliTelaio: project.configInfissi?.tagliTelaio || '',
-                        tipoTagli: project.configInfissi?.tipoTagli || '',
-                        expanded: true
-                    };
-                    
-                    pos.infissi.push(nuovoInfisso);
-                    saveState();
-                    render();
-                }
-            }
-        };
-        
-        window.toggleInfisso = (projectId, posId, infissoIdx) => {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                const pos = project.positions.find(p => p.id === posId);
-                if (pos && pos.infissi && pos.infissi[infissoIdx]) {
-                    pos.infissi[infissoIdx].expanded = !pos.infissi[infissoIdx].expanded;
-                    saveState();
-                    render();
+                    // Solo se non c'è già un infisso
+                    if (pos.infissi.length === 0) {
+                        const nuovoInfisso = {
+                            qta: 1,
+                            tipo: '',
+                            tipoAltro: '',
+                            apertura: '',
+                            aperturaAltro: '',
+                            finituraInt: project.configInfissi?.finituraInt || '',
+                            finituraEst: project.configInfissi?.finituraEst || '',
+                            coloreInt: project.configInfissi?.coloreInt || '',
+                            coloreEst: project.configInfissi?.coloreEst || '',
+                            tipoAnta: project.configInfissi?.tipoAnta || '',
+                            telaio: project.configInfissi?.telaio || '',
+                            allarme: project.configInfissi?.allarme || '',
+                            vetro: project.configInfissi?.vetro || '',
+                            tagliTelaio: project.configInfissi?.tagliTelaio || '',
+                            tipoTagli: project.configInfissi?.tipoTagli || '',
+                            expanded: true
+                        };
+                        
+                        pos.infissi.push(nuovoInfisso);
+                        saveState();
+                        render();
+                    }
                 }
             }
         };
@@ -2335,18 +2111,6 @@
                     };
                     
                     pos.persiane.push(nuovaPersiana);
-                    saveState();
-                    render();
-                }
-            }
-        };
-        
-        window.togglePersiana = (projectId, posId, persianaIdx) => {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                const pos = project.positions.find(p => p.id === posId);
-                if (pos && pos.persiane && pos.persiane[persianaIdx]) {
-                    pos.persiane[persianaIdx].expanded = !pos.persiane[persianaIdx].expanded;
                     saveState();
                     render();
                 }
@@ -2462,18 +2226,6 @@
                     };
                     
                     pos.cassonetti.push(nuovoCassonetto);
-                    saveState();
-                    render();
-                }
-            }
-        };
-        
-        window.toggleCassonetto = (projectId, posId, cassonettoIdx) => {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                const pos = project.positions.find(p => p.id === posId);
-                if (pos && pos.cassonetti && pos.cassonetti[cassonettoIdx]) {
-                    pos.cassonetti[cassonettoIdx].expanded = !pos.cassonetti[cassonettoIdx].expanded;
                     saveState();
                     render();
                 }

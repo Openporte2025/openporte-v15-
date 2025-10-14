@@ -945,15 +945,135 @@
                     <div class="bg-white rounded-xl smooth-shadow overflow-hidden">
                         <div class="p-6 cursor-pointer hover:bg-gray-50 transition-colors flex justify-between items-center"
                              onclick="toggleSection('infissi-config')">
-                            <h3 class="section-header font-semibold text-lg text-gray-700">${icons.window} Configurazione Infissi</h3>
+                            <h3 class="section-header font-semibold text-lg text-gray-700">${icons.window} Configurazione Infissi Globale</h3>
                             <span id="arrow-infissi-config" class="transition-transform">
                                 ${icons.chevronDown}
                             </span>
                         </div>
                         <div id="section-infissi-config" class="hidden p-6 pt-0 border-t">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Add infissi configuration fields here -->
-                                <p class="text-sm text-gray-500 col-span-full">Configurazione infissi globale</p>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">1. Azienda</label>
+                                        <select onchange="updateConfigInfissi('${project.id}', 'azienda', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="finstral" ${project.configInfissi?.azienda === 'finstral' ? 'selected' : ''}>FINSTRAL</option>
+                                            <option value="essepi" ${project.configInfissi?.azienda === 'essepi' ? 'selected' : ''}>ESSEPI</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">2. Tipo Anta</label>
+                                        <select onchange="updateConfigInfissi('${project.id}', 'tipoAnta', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="step-line" ${project.configInfissi?.tipoAnta === 'step-line' ? 'selected' : ''}>STEP-LINE</option>
+                                            <option value="nova-line" ${project.configInfissi?.tipoAnta === 'nova-line' ? 'selected' : ''}>NOVA-LINE</option>
+                                            <option value="slim-line" ${project.configInfissi?.tipoAnta === 'slim-line' ? 'selected' : ''}>SLIM-LINE</option>
+                                            <option value="classic-line" ${project.configInfissi?.tipoAnta === 'classic-line' ? 'selected' : ''}>CLASSIC-LINE</option>
+                                            <option value="step-line-door" ${project.configInfissi?.tipoAnta === 'step-line-door' ? 'selected' : ''}>STEP-LINE DOOR</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">3. Finitura Interna</label>
+                                        <select onchange="updateConfigInfissi('${project.id}', 'finituraInt', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="pvc" ${project.configInfissi?.finituraInt === 'pvc' ? 'selected' : ''}>PVC</option>
+                                            <option value="legno" ${project.configInfissi?.finituraInt === 'legno' ? 'selected' : ''}>LEGNO</option>
+                                            <option value="alluminio" ${project.configInfissi?.finituraInt === 'alluminio' ? 'selected' : ''}>ALLUMINIO</option>
+                                            <option value="ceramica" ${project.configInfissi?.finituraInt === 'ceramica' ? 'selected' : ''}>CERAMICA</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">4. Finitura Esterna</label>
+                                        <select onchange="updateConfigInfissi('${project.id}', 'finituraEst', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="pvc" ${project.configInfissi?.finituraEst === 'pvc' ? 'selected' : ''}>PVC</option>
+                                            <option value="alluminio" ${project.configInfissi?.finituraEst === 'alluminio' ? 'selected' : ''}>ALLUMINIO</option>
+                                            <option value="ceramica" ${project.configInfissi?.finituraEst === 'ceramica' ? 'selected' : ''}>CERAMICA</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">5. Colore Interno</label>
+                                        <input type="text" placeholder="Es: Bianco, RAL 9010, ecc."
+                                               value="${project.configInfissi?.coloreInt || ''}"
+                                               onchange="updateConfigInfissi('${project.id}', 'coloreInt', this.value)"
+                                               class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">6. Colore Esterno</label>
+                                        <input type="text" placeholder="Es: Marrone, RAL 8014, ecc."
+                                               value="${project.configInfissi?.coloreEst || ''}"
+                                               onchange="updateConfigInfissi('${project.id}', 'coloreEst', this.value)"
+                                               class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">7. Telaio</label>
+                                        <select onchange="updateConfigInfissi('${project.id}', 'telaio', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="961" ${project.configInfissi?.telaio === '961' ? 'selected' : ''}>961</option>
+                                            <option value="962" ${project.configInfissi?.telaio === '962' ? 'selected' : ''}>962</option>
+                                            <option value="966" ${project.configInfissi?.telaio === '966' ? 'selected' : ''}>966</option>
+                                            <option value="965" ${project.configInfissi?.telaio === '965' ? 'selected' : ''}>965</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">8. Allarme</label>
+                                        <select onchange="updateConfigInfissi('${project.id}', 'allarme', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="si" ${project.configInfissi?.allarme === 'si' ? 'selected' : ''}>Sì</option>
+                                            <option value="no" ${project.configInfissi?.allarme === 'no' ? 'selected' : ''}>No</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">9. Vetro</label>
+                                        <select onchange="updateConfigInfissi('${project.id}', 'vetro', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="doppio" ${project.configInfissi?.vetro === 'doppio' ? 'selected' : ''}>Doppio</option>
+                                            <option value="doppio-sat" ${project.configInfissi?.vetro === 'doppio-sat' ? 'selected' : ''}>Doppio SAT</option>
+                                            <option value="triplo" ${project.configInfissi?.vetro === 'triplo' ? 'selected' : ''}>Triplo</option>
+                                            <option value="triplo-sat" ${project.configInfissi?.vetro === 'triplo-sat' ? 'selected' : ''}>Triplo SAT</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">10. Tagli Telaio</label>
+                                        <select onchange="updateConfigInfissi('${project.id}', 'tagliTelaio', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="sopra" ${project.configInfissi?.tagliTelaio === 'sopra' ? 'selected' : ''}>Sopra</option>
+                                            <option value="sotto" ${project.configInfissi?.tagliTelaio === 'sotto' ? 'selected' : ''}>Sotto</option>
+                                            <option value="sopra-sotto" ${project.configInfissi?.tagliTelaio === 'sopra-sotto' ? 'selected' : ''}>Sopra/Sotto</option>
+                                            <option value="dx" ${project.configInfissi?.tagliTelaio === 'dx' ? 'selected' : ''}>DX</option>
+                                            <option value="sx" ${project.configInfissi?.tagliTelaio === 'sx' ? 'selected' : ''}>SX</option>
+                                            <option value="dx-sx" ${project.configInfissi?.tagliTelaio === 'dx-sx' ? 'selected' : ''}>DX/SX</option>
+                                            <option value="4-lati" ${project.configInfissi?.tagliTelaio === '4-lati' ? 'selected' : ''}>4 Lati</option>
+                                            <option value="sopra-laterali" ${project.configInfissi?.tagliTelaio === 'sopra-laterali' ? 'selected' : ''}>Sopra/Laterali</option>
+                                            <option value="sotto-laterali" ${project.configInfissi?.tagliTelaio === 'sotto-laterali' ? 'selected' : ''}>Sotto/Laterali</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">11. Tipo Tagli</label>
+                                        <input type="text" placeholder="Es: standard, 45°, ecc."
+                                               value="${project.configInfissi?.tipoTagli || ''}"
+                                               onchange="updateConfigInfissi('${project.id}', 'tipoTagli', this.value)"
+                                               class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -965,15 +1085,112 @@
                     <div class="bg-white rounded-xl smooth-shadow overflow-hidden">
                         <div class="p-6 cursor-pointer hover:bg-gray-50 transition-colors flex justify-between items-center"
                              onclick="toggleSection('persiane-config')">
-                            <h3 class="section-header font-semibold text-lg text-gray-700">${icons.door} Configurazione Persiane</h3>
+                            <h3 class="section-header font-semibold text-lg text-gray-700">${icons.door} Configurazione Persiane Globale</h3>
                             <span id="arrow-persiane-config" class="transition-transform">
                                 ${icons.chevronDown}
                             </span>
                         </div>
                         <div id="section-persiane-config" class="hidden p-6 pt-0 border-t">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Add persiane configuration fields here -->
-                                <p class="text-sm text-gray-500 col-span-full">Configurazione persiane globale</p>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">1. Azienda</label>
+                                        <select onchange="updateConfigPersiane('${project.id}', 'azienda', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="p-persiane" ${project.configPersiane?.azienda === 'p-persiane' ? 'selected' : ''}>P.Persiane</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">2. Modello</label>
+                                        <select id="modello-persiane-${project.id}" 
+                                                onchange="updateConfigPersianeConditional('${project.id}', 'modello', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="Aurora" ${project.configPersiane?.modello === 'Aurora' ? 'selected' : ''}>Aurora</option>
+                                            <option value="Vanitosa" ${project.configPersiane?.modello === 'Vanitosa' ? 'selected' : ''}>Vanitosa</option>
+                                            <option value="Oscura" ${project.configPersiane?.modello === 'Oscura' ? 'selected' : ''}>Oscura</option>
+                                            <option value="Alto Adige" ${project.configPersiane?.modello === 'Alto Adige' ? 'selected' : ''}>Alto Adige</option>
+                                            <option value="altro" ${project.configPersiane?.modello === 'altro' ? 'selected' : ''}>Altro (specifica)</option>
+                                        </select>
+                                    </div>
+
+                                    ${project.configPersiane?.modello === 'altro' ? `
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">Specifica Modello</label>
+                                        <input type="text" value="${project.configPersiane?.modelloAltro || ''}"
+                                               onchange="updateConfigPersiane('${project.id}', 'modelloAltro', this.value)"
+                                               placeholder="Inserisci modello..."
+                                               class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                    </div>
+                                    ` : ''}
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">3. Fissaggio</label>
+                                        <select id="fissaggio-persiane-${project.id}" 
+                                                onchange="updateFissaggioPersiane('${project.id}', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="A MURO" ${project.configPersiane?.fissaggio === 'A MURO' ? 'selected' : ''}>A MURO</option>
+                                            <option value="TELAIO" ${project.configPersiane?.fissaggio === 'TELAIO' ? 'selected' : ''}>TELAIO</option>
+                                        </select>
+                                    </div>
+
+                                    ${project.configPersiane?.fissaggio === 'TELAIO' ? `
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">4. Tipo Telaio</label>
+                                        <select id="tipo-telaio-persiane-${project.id}" 
+                                                onchange="updateConfigPersianeConditional('${project.id}', 'tipoTelaio', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="TH 62" ${project.configPersiane?.tipoTelaio === 'TH 62' ? 'selected' : ''}>TH 62</option>
+                                            <option value="TH 40" ${project.configPersiane?.tipoTelaio === 'TH 40' ? 'selected' : ''}>TH 40</option>
+                                            <option value="TH 82" ${project.configPersiane?.tipoTelaio === 'TH 82' ? 'selected' : ''}>TH 82</option>
+                                            <option value="altro" ${project.configPersiane?.tipoTelaio === 'altro' ? 'selected' : ''}>Altro (specifica)</option>
+                                        </select>
+                                    </div>
+
+                                    ${project.configPersiane?.tipoTelaio === 'altro' ? `
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">Specifica Tipo Telaio</label>
+                                        <input type="text" value="${project.configPersiane?.tipoTelaioAltro || ''}"
+                                               onchange="updateConfigPersiane('${project.id}', 'tipoTelaioAltro', this.value)"
+                                               placeholder="Inserisci tipo telaio..."
+                                               class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                    </div>
+                                    ` : ''}
+                                    ` : ''}
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">5. Colore Persiana</label>
+                                        <input type="text" placeholder="Es: Bianco, Verde, ecc."
+                                               value="${project.configPersiane?.colorePersiana || ''}"
+                                               onchange="updateConfigPersiane('${project.id}', 'colorePersiana', this.value)"
+                                               class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                    </div>
+
+                                    ${project.configPersiane?.fissaggio === 'TELAIO' ? `
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">6. Colore Telaio</label>
+                                        <input type="text" placeholder="Es: Bianco, Marrone, ecc."
+                                               value="${project.configPersiane?.coloreTelaio || ''}"
+                                               onchange="updateConfigPersiane('${project.id}', 'coloreTelaio', this.value)"
+                                               class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                    </div>
+                                    ` : ''}
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">7. Battuta</label>
+                                        <select onchange="updateConfigPersiane('${project.id}', 'battuta', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="3 LATI" ${project.configPersiane?.battuta === '3 LATI' ? 'selected' : ''}>3 LATI</option>
+                                            <option value="4 LATI" ${project.configPersiane?.battuta === '4 LATI' ? 'selected' : ''}>4 LATI</option>
+                                            <option value="2 LATI LATERALI" ${project.configPersiane?.battuta === '2 LATI LATERALI' ? 'selected' : ''}>2 LATI LATERALI</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -985,15 +1202,40 @@
                     <div class="bg-white rounded-xl smooth-shadow overflow-hidden">
                         <div class="p-6 cursor-pointer hover:bg-gray-50 transition-colors flex justify-between items-center"
                              onclick="toggleSection('cassonetti-config')">
-                            <h3 class="section-header font-semibold text-lg text-gray-700">${icons.box} Configurazione Cassonetti</h3>
+                            <h3 class="section-header font-semibold text-lg text-gray-700">${icons.box} Configurazione Cassonetti Globale</h3>
                             <span id="arrow-cassonetti-config" class="transition-transform">
                                 ${icons.chevronDown}
                             </span>
                         </div>
                         <div id="section-cassonetti-config" class="hidden p-6 pt-0 border-t">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Add cassonetti configuration fields here -->
-                                <p class="text-sm text-gray-500 col-span-full">Configurazione cassonetti globale</p>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">1. Tipo Cassonetto</label>
+                                        <select onchange="updateConfigCassonetti('${project.id}', 'tipo', this.value)"
+                                                class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="monoblocco" ${project.configCassonetti?.tipo === 'monoblocco' ? 'selected' : ''}>MONOBLOCCO</option>
+                                            <option value="isole" ${project.configCassonetti?.tipo === 'isole' ? 'selected' : ''}>SOLO ISOLE CASSONETTO</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">2. Azienda</label>
+                                        <input type="text" placeholder="Es: Azienda produttrice"
+                                               value="${project.configCassonetti?.azienda || ''}"
+                                               onchange="updateConfigCassonetti('${project.id}', 'azienda', this.value)"
+                                               class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-2">3. Colore</label>
+                                        <input type="text" placeholder="Es: Bianco, RAL 9010, ecc."
+                                               value="${project.configCassonetti?.colore || ''}"
+                                               onchange="updateConfigCassonetti('${project.id}', 'colore', this.value)"
+                                               class="w-full input-modern px-4 py-2.5 rounded-lg">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1485,11 +1727,53 @@
             }
         };
 
-        window.updateCaratteristicheMuro = (projectId, field, value) => {
+        window.updateConfigInfissi = (projectId, field, value) => {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
-                if (!project.caratteristicheMuro) project.caratteristicheMuro = {};
-                project.caratteristicheMuro[field] = value;
+                if (!project.configInfissi) project.configInfissi = {};
+                project.configInfissi[field] = value;
+                project.updatedAt = new Date().toISOString();
+                saveState();
+            }
+        };
+
+        window.updateConfigPersiane = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configPersiane) project.configPersiane = {};
+                project.configPersiane[field] = value;
+                project.updatedAt = new Date().toISOString();
+                saveState();
+            }
+        };
+
+        window.updateConfigPersianeConditional = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configPersiane) project.configPersiane = {};
+                project.configPersiane[field] = value;
+                project.updatedAt = new Date().toISOString();
+                saveState();
+                render(); // Re-render to show/hide conditional fields
+            }
+        };
+
+        window.updateFissaggioPersiane = (projectId, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configPersiane) project.configPersiane = {};
+                project.configPersiane.fissaggio = value;
+                project.updatedAt = new Date().toISOString();
+                saveState();
+                render(); // Re-render to show/hide telaio fields
+            }
+        };
+
+        window.updateConfigCassonetti = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configCassonetti) project.configCassonetti = {};
+                project.configCassonetti[field] = value;
                 project.updatedAt = new Date().toISOString();
                 saveState();
             }

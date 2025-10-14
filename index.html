@@ -309,7 +309,8 @@
                                     <!-- Guida esistente -->
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Guida Esistente?</label>
-                                        <select onchange="updateCaratteristicheMuroWithRender('${project.id}', 'guidaEsistente', this.value);"
+                                        <select id="guida-select-${project.id}" 
+                                                onchange="updateGuidaEsistente('${project.id}', this.value)"
                                                 class="w-1/2 px-2 py-1 border rounded text-sm">
                                             <option value="">Seleziona...</option>
                                             <option value="si" ${project.caratteristicheMuro?.guidaEsistente === 'si' ? 'selected' : ''}>Sì</option>
@@ -317,7 +318,7 @@
                                         </select>
                                     </div>
 
-                                    ${project.caratteristicheMuro?.guidaEsistente === 'si' ? `
+                                    <div id="guida-fields-${project.id}" style="display: ${project.caratteristicheMuro?.guidaEsistente === 'si' ? 'block' : 'none'}">
                                         <div class="grid grid-cols-3 gap-2 bg-green-50 p-2 rounded">
                                             <div>
                                                 <label class="block text-xs font-medium text-green-700 mb-1">Prof. Distanziale</label>
@@ -341,7 +342,7 @@
                                                        class="w-full px-2 py-1 border rounded text-sm">
                                             </div>
                                         </div>
-                                    ` : ''}
+                                    </div>
 
                                     <!-- Prof Muro Est -->
                                     <div>
@@ -355,7 +356,8 @@
                                     <!-- Falso esistente -->
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 mb-1">Falso Esistente?</label>
-                                        <select onchange="updateCaratteristicheMuroWithRender('${project.id}', 'falsoEsistente', this.value);"
+                                        <select id="falso-select-${project.id}"
+                                                onchange="updateFalsoEsistente('${project.id}', this.value)"
                                                 class="w-1/2 px-2 py-1 border rounded text-sm">
                                             <option value="">Seleziona...</option>
                                             <option value="si" ${project.caratteristicheMuro?.falsoEsistente === 'si' ? 'selected' : ''}>Sì</option>
@@ -363,7 +365,7 @@
                                         </select>
                                     </div>
 
-                                    ${project.caratteristicheMuro?.falsoEsistente === 'si' ? `
+                                    <div id="falso-si-fields-${project.id}" style="display: ${project.caratteristicheMuro?.falsoEsistente === 'si' ? 'block' : 'none'}">
                                         <div class="bg-orange-50 p-2 rounded space-y-2">
                                             <div>
                                                 <label class="block text-xs font-medium text-orange-700 mb-1">Spessore Falso</label>
@@ -380,7 +382,9 @@
                                                        class="w-1/2 px-2 py-1 border rounded text-sm">
                                             </div>
                                         </div>
-                                    ` : `
+                                    </div>
+
+                                    <div id="falso-no-fields-${project.id}" style="display: ${project.caratteristicheMuro?.falsoEsistente === 'no' ? 'block' : 'none'}">
                                         <div class="bg-purple-50 p-2 rounded">
                                             <label class="block text-xs font-medium text-purple-700 mb-1">Distanza Muro/Infisso</label>
                                             <input type="number" placeholder="0" 
@@ -388,7 +392,7 @@
                                                    onchange="updateCaratteristicheMuro('${project.id}', 'distanzaMuroInfisso', this.value)"
                                                    class="w-1/2 px-2 py-1 border rounded text-sm">
                                         </div>
-                                    `}
+                                    </div>
                             </div>
                         </div>
                     </div>
@@ -846,6 +850,38 @@
             }
         };
 
+        window.updateGuidaEsistente = (projectId, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.caratteristicheMuro) project.caratteristicheMuro = {};
+                project.caratteristicheMuro.guidaEsistente = value;
+                saveState();
+                
+                // Aggiorna visibilità senza render
+                const guidaFields = document.getElementById(`guida-fields-${projectId}`);
+                if (guidaFields) {
+                    guidaFields.style.display = value === 'si' ? 'block' : 'none';
+                }
+            }
+        };
+
+        window.updateFalsoEsistente = (projectId, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.caratteristicheMuro) project.caratteristicheMuro = {};
+                project.caratteristicheMuro.falsoEsistente = value;
+                saveState();
+                
+                // Aggiorna visibilità senza render
+                const falsoSiFields = document.getElementById(`falso-si-fields-${projectId}`);
+                const falsoNoFields = document.getElementById(`falso-no-fields-${projectId}`);
+                if (falsoSiFields && falsoNoFields) {
+                    falsoSiFields.style.display = value === 'si' ? 'block' : 'none';
+                    falsoNoFields.style.display = value === 'no' ? 'block' : 'none';
+                }
+            }
+        };
+
         window.updateCaratteristicheMuro = (projectId, field, value) => {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
@@ -855,10 +891,6 @@
             }
         };
 
-        window.updateCaratteristicheMuroWithRender = (projectId, field, value) => {
-            updateCaratteristicheMuro(projectId, field, value);
-            render();
-        };
 
         window.updatePosition = (projectId, posId, updates) => {
             const project = state.projects.find(p => p.id === projectId);

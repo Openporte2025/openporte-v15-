@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Porte v3.0 - Fase 12 Tapparelle</title>
+    <title>Open Porte v3.0 - Fase 14 Zanzariere</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -210,6 +210,7 @@
                 configPersiane: {},
                 configCassonetti: {},
                 configTapparelle: {},
+                configZanzariere: {},
                 positions: [],
                 createdAt: new Date().toISOString()
             };
@@ -233,6 +234,7 @@
                     persiane: [],
                     cassonetti: [],
                     tapparelle: [],
+                    zanzariere: [],
                     foto: [],
                     note: ''
                 };
@@ -259,7 +261,7 @@
                                     </button>
                                 ` : ''}
                                 <h1 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                                    Open Porte v3.0 - Fase 12 🎯
+                                    Open Porte v3.0 - Fase 14 🦟
                                 </h1>
                             </div>
                             <div class="flex items-center gap-2">
@@ -332,9 +334,10 @@
                             {num: 3, label: 'Config. Infissi'},
                             {num: 4, label: 'Config. Persiane'},
                             {num: 5, label: 'Config. Tapparelle'},
-                            {num: 6, label: 'Config. Cassonetti'},
-                            {num: 7, label: 'Muro'},
-                            {num: 8, label: 'Posizioni'}
+                            {num: 6, label: 'Config. Zanzariere'},
+                            {num: 7, label: 'Config. Cassonetti'},
+                            {num: 8, label: 'Muro'},
+                            {num: 9, label: 'Posizioni'}
                         ].map(step => `
                             <div class="flex flex-col items-center cursor-pointer flex-shrink-0" onclick="state.setupStep=${step.num}; render()">
                                 <div class="step-indicator ${state.setupStep === step.num ? 'active' : state.setupStep > step.num ? 'completed' : 'bg-gray-200'}">
@@ -352,9 +355,10 @@
                           state.setupStep === 3 ? renderStep3ConfigInfissi(project) :
                           state.setupStep === 4 ? renderStep4ConfigPersiane(project) :
                           state.setupStep === 5 ? renderStep5ConfigTapparelle(project) :
-                          state.setupStep === 6 ? renderStep6ConfigCassonetti(project) :
-                          state.setupStep === 7 ? renderStep7WallFeatures(project) :
-                          renderStep8Positions(project)}
+                          state.setupStep === 6 ? renderStep6ConfigZanzariere(project) :
+                          state.setupStep === 7 ? renderStep7ConfigCassonetti(project) :
+                          state.setupStep === 8 ? renderStep8WallFeatures(project) :
+                          renderStep9Positions(project)}
                         
                         <!-- Navigation -->
                         <div class="flex justify-between mt-6 pt-4 border-t">
@@ -362,8 +366,8 @@
                                     class="px-4 py-2 border rounded-lg hover:bg-gray-50 ${state.setupStep === 1 ? 'invisible' : ''}">
                                 ← Indietro
                             </button>
-                            ${state.setupStep < 8 ? `
-                                <button onclick="state.setupStep = Math.min(8, state.setupStep + 1); saveState(); render()" 
+                            ${state.setupStep < 9 ? `
+                                <button onclick="state.setupStep = Math.min(9, state.setupStep + 1); saveState(); render()" 
                                         class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg">
                                     Avanti →
                                 </button>
@@ -488,6 +492,19 @@
                             </div>
                         </label>
 
+                        <label class="product-pill ${project.prodotti?.zanzariere ? 'selected bg-green-50 border-green-500 text-green-700' : 'border-gray-300'}">
+                            <input type="checkbox" 
+                                   ${project.prodotti?.zanzariere ? 'checked' : ''}
+                                   onchange="updateProdotti('${project.id}', 'zanzariere', this.checked)"
+                                   onclick="event.stopPropagation()"
+                                   class="sr-only">
+                            <span class="text-xl">🦟</span>
+                            <div>
+                                <div class="font-semibold">Zanzariere</div>
+                                <div class="text-xs opacity-75">Protezione insetti</div>
+                            </div>
+                        </label>
+
                         <label class="product-pill ${project.prodotti?.cassonetti ? 'selected bg-orange-50 border-orange-500 text-orange-700' : 'border-gray-300'}">
                             <input type="checkbox" 
                                    ${project.prodotti?.cassonetti ? 'checked' : ''}
@@ -540,35 +557,29 @@
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium mb-1">1. Azienda</label>
-                                <select onchange="updateConfigInfissi('${project.id}', 'azienda', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="finstral" ${project.configInfissi?.azienda === 'finstral' ? 'selected' : ''}>FINSTRAL</option>
-                                    <option value="essepi" ${project.configInfissi?.azienda === 'essepi' ? 'selected' : ''}>ESSEPI</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configInfissi', 'azienda', project.configInfissi?.azienda, [
+                                    {value: 'finstral', label: 'FINSTRAL'},
+                                    {value: 'essepi', label: 'ESSEPI'}
+                                ])}
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">2. Finitura Interna</label>
-                                <select onchange="updateConfigInfissi('${project.id}', 'finituraInt', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="pvc" ${project.configInfissi?.finituraInt === 'pvc' ? 'selected' : ''}>PVC</option>
-                                    <option value="legno" ${project.configInfissi?.finituraInt === 'legno' ? 'selected' : ''}>LEGNO</option>
-                                    <option value="alluminio" ${project.configInfissi?.finituraInt === 'alluminio' ? 'selected' : ''}>ALLUMINIO</option>
-                                    <option value="ceramica" ${project.configInfissi?.finituraInt === 'ceramica' ? 'selected' : ''}>CERAMICA</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configInfissi', 'finituraInt', project.configInfissi?.finituraInt, [
+                                    {value: 'pvc', label: 'PVC'},
+                                    {value: 'legno', label: 'LEGNO'},
+                                    {value: 'alluminio', label: 'ALLUMINIO'},
+                                    {value: 'ceramica', label: 'CERAMICA'}
+                                ])}
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">3. Finitura Esterna</label>
-                                <select onchange="updateConfigInfissi('${project.id}', 'finituraEst', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="pvc" ${project.configInfissi?.finituraEst === 'pvc' ? 'selected' : ''}>PVC</option>
-                                    <option value="alluminio" ${project.configInfissi?.finituraEst === 'alluminio' ? 'selected' : ''}>ALLUMINIO</option>
-                                    <option value="ceramica" ${project.configInfissi?.finituraEst === 'ceramica' ? 'selected' : ''}>CERAMICA</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configInfissi', 'finituraEst', project.configInfissi?.finituraEst, [
+                                    {value: 'pvc', label: 'PVC'},
+                                    {value: 'alluminio', label: 'ALLUMINIO'},
+                                    {value: 'ceramica', label: 'CERAMICA'}
+                                ])}
                             </div>
                             
                             <div>
@@ -589,66 +600,56 @@
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">6. Tipo Anta</label>
-                                <select onchange="updateConfigInfissi('${project.id}', 'tipoAnta', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="step-line" ${project.configInfissi?.tipoAnta === 'step-line' ? 'selected' : ''}>STEP-LINE</option>
-                                    <option value="nova-line" ${project.configInfissi?.tipoAnta === 'nova-line' ? 'selected' : ''}>NOVA-LINE</option>
-                                    <option value="slim-line" ${project.configInfissi?.tipoAnta === 'slim-line' ? 'selected' : ''}>SLIM-LINE</option>
-                                    <option value="classic-line" ${project.configInfissi?.tipoAnta === 'classic-line' ? 'selected' : ''}>CLASSIC-LINE</option>
-                                    <option value="step-line-door" ${project.configInfissi?.tipoAnta === 'step-line-door' ? 'selected' : ''}>STEP-LINE DOOR</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configInfissi', 'tipoAnta', project.configInfissi?.tipoAnta, [
+                                    {value: 'step-line', label: 'STEP-LINE'},
+                                    {value: 'nova-line', label: 'NOVA-LINE'},
+                                    {value: 'slim-line', label: 'SLIM-LINE'},
+                                    {value: 'classic-line', label: 'CLASSIC-LINE'},
+                                    {value: 'step-line-door', label: 'STEP-LINE DOOR'}
+                                ])}
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">7. Telaio</label>
-                                <select onchange="updateConfigInfissi('${project.id}', 'telaio', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="961" ${project.configInfissi?.telaio === '961' ? 'selected' : ''}>961</option>
-                                    <option value="962" ${project.configInfissi?.telaio === '962' ? 'selected' : ''}>962</option>
-                                    <option value="966" ${project.configInfissi?.telaio === '966' ? 'selected' : ''}>966</option>
-                                    <option value="965" ${project.configInfissi?.telaio === '965' ? 'selected' : ''}>965</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configInfissi', 'telaio', project.configInfissi?.telaio, [
+                                    {value: '961', label: '961'},
+                                    {value: '962', label: '962'},
+                                    {value: '966', label: '966'},
+                                    {value: '965', label: '965'}
+                                ])}
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">8. Allarme</label>
-                                <select onchange="updateConfigInfissi('${project.id}', 'allarme', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="si" ${project.configInfissi?.allarme === 'si' ? 'selected' : ''}>Sì</option>
-                                    <option value="no" ${project.configInfissi?.allarme === 'no' ? 'selected' : ''}>No</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configInfissi', 'allarme', project.configInfissi?.allarme, [
+                                    {value: 'si', label: 'Sì'},
+                                    {value: 'no', label: 'No'}
+                                ])}
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">9. Vetro</label>
-                                <select onchange="updateConfigInfissi('${project.id}', 'vetro', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="doppio" ${project.configInfissi?.vetro === 'doppio' ? 'selected' : ''}>doppio</option>
-                                    <option value="doppio-sat" ${project.configInfissi?.vetro === 'doppio-sat' ? 'selected' : ''}>doppio sat</option>
-                                    <option value="triplo" ${project.configInfissi?.vetro === 'triplo' ? 'selected' : ''}>triplo</option>
-                                    <option value="triplo-sat" ${project.configInfissi?.vetro === 'triplo-sat' ? 'selected' : ''}>triplo sat</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configInfissi', 'vetro', project.configInfissi?.vetro, [
+                                    {value: 'doppio', label: 'doppio'},
+                                    {value: 'doppio-sat', label: 'doppio sat'},
+                                    {value: 'triplo', label: 'triplo'},
+                                    {value: 'triplo-sat', label: 'triplo sat'}
+                                ])}
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">10. Tagli Telaio</label>
-                                <select onchange="updateConfigInfissi('${project.id}', 'tagliTelaio', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="sopra" ${project.configInfissi?.tagliTelaio === 'sopra' ? 'selected' : ''}>sopra</option>
-                                    <option value="sotto" ${project.configInfissi?.tagliTelaio === 'sotto' ? 'selected' : ''}>sotto</option>
-                                    <option value="sopra-sotto" ${project.configInfissi?.tagliTelaio === 'sopra-sotto' ? 'selected' : ''}>sopra/sotto</option>
-                                    <option value="dx" ${project.configInfissi?.tagliTelaio === 'dx' ? 'selected' : ''}>dx</option>
-                                    <option value="sx" ${project.configInfissi?.tagliTelaio === 'sx' ? 'selected' : ''}>sx</option>
-                                    <option value="dx-sx" ${project.configInfissi?.tagliTelaio === 'dx-sx' ? 'selected' : ''}>dx/sx</option>
-                                    <option value="4-lati" ${project.configInfissi?.tagliTelaio === '4-lati' ? 'selected' : ''}>4 lati</option>
-                                    <option value="sopra-laterali" ${project.configInfissi?.tagliTelaio === 'sopra-laterali' ? 'selected' : ''}>sopra/laterali</option>
-                                    <option value="sotto-laterali" ${project.configInfissi?.tagliTelaio === 'sotto-laterali' ? 'selected' : ''}>sotto/laterali</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configInfissi', 'tagliTelaio', project.configInfissi?.tagliTelaio, [
+                                    {value: 'sopra', label: 'sopra'},
+                                    {value: 'sotto', label: 'sotto'},
+                                    {value: 'sopra-sotto', label: 'sopra/sotto'},
+                                    {value: 'dx', label: 'dx'},
+                                    {value: 'sx', label: 'sx'},
+                                    {value: 'dx-sx', label: 'dx/sx'},
+                                    {value: '4-lati', label: '4 lati'},
+                                    {value: 'sopra-laterali', label: 'sopra/laterali'},
+                                    {value: 'sotto-laterali', label: 'sotto/laterali'}
+                                ])}
                             </div>
                             
                             <div>
@@ -663,6 +664,62 @@
                 </div>
             `;
         }
+
+        function renderEditableSelect(projectId, configType, field, currentValue, options) {
+            const uniqueId = `${configType}-${field}-${projectId}`;
+            const isCustom = currentValue && !options.find(opt => opt.value === currentValue);
+            
+            return `
+                <div class="flex gap-2">
+                    <select id="${uniqueId}-select" 
+                            onchange="handleEditableSelectChange('${projectId}', '${configType}', '${field}', this.value, '${uniqueId}')"
+                            class="flex-1 px-3 py-2 border rounded-lg ${isCustom ? 'hidden' : ''}">
+                        <option value="">Seleziona...</option>
+                        ${options.map(opt => `
+                            <option value="${opt.value}" ${currentValue === opt.value ? 'selected' : ''}>${opt.label}</option>
+                        `).join('')}
+                        <option value="__custom__">✏️ Altro e scrivo</option>
+                    </select>
+                    <input type="text" 
+                           id="${uniqueId}-input"
+                           value="${isCustom ? currentValue : ''}"
+                           placeholder="Scrivi valore personalizzato..."
+                           onchange="handleEditableInputChange('${projectId}', '${configType}', '${field}', this.value, '${uniqueId}')"
+                           class="flex-1 px-3 py-2 border rounded-lg ${isCustom ? '' : 'hidden'}">
+                    <button onclick="toggleEditableSelect('${uniqueId}', ${isCustom})"
+                            class="px-3 py-2 border rounded-lg hover:bg-gray-50 ${isCustom ? '' : 'hidden'}"
+                            id="${uniqueId}-back">
+                        ← Menu
+                    </button>
+                </div>
+            `;
+        }
+
+        window.handleEditableSelectChange = (projectId, configType, field, value, uniqueId) => {
+            if (value === '__custom__') {
+                document.getElementById(`${uniqueId}-select`).classList.add('hidden');
+                document.getElementById(`${uniqueId}-input`).classList.remove('hidden');
+                document.getElementById(`${uniqueId}-back`).classList.remove('hidden');
+                document.getElementById(`${uniqueId}-input`).focus();
+            } else {
+                const updateFunc = `update${configType.charAt(0).toUpperCase() + configType.slice(1)}`;
+                window[updateFunc](projectId, field, value);
+            }
+        };
+
+        window.handleEditableInputChange = (projectId, configType, field, value, uniqueId) => {
+            const updateFunc = `update${configType.charAt(0).toUpperCase() + configType.slice(1)}`;
+            window[updateFunc](projectId, field, value);
+        };
+
+        window.toggleEditableSelect = (uniqueId, isCurrentlyCustom) => {
+            if (isCurrentlyCustom) {
+                document.getElementById(`${uniqueId}-select`).classList.remove('hidden');
+                document.getElementById(`${uniqueId}-input`).classList.add('hidden');
+                document.getElementById(`${uniqueId}-back`).classList.add('hidden');
+                document.getElementById(`${uniqueId}-select`).value = '';
+            }
+        };
 
         function renderStep4ConfigPersiane(project) {
             if (!project.prodotti?.persiane) {
@@ -684,33 +741,20 @@
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium mb-1">1. Azienda</label>
-                                <select onchange="updateConfigPersiane('${project.id}', 'azienda', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="p-persiane" ${project.configPersiane?.azienda === 'p-persiane' ? 'selected' : ''}>P.Persiane</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configPersiane', 'azienda', project.configPersiane?.azienda, [
+                                    {value: 'p-persiane', label: 'P.Persiane'}
+                                ])}
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">2. Modello</label>
-                                <select id="modello-persiane-${project.id}" onchange="updateConfigPersianeConditional('${project.id}', 'modello', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="Aurora" ${project.configPersiane?.modello === 'Aurora' ? 'selected' : ''}>Aurora</option>
-                                    <option value="Vanitosa" ${project.configPersiane?.modello === 'Vanitosa' ? 'selected' : ''}>Vanitosa</option>
-                                    <option value="Oscura" ${project.configPersiane?.modello === 'Oscura' ? 'selected' : ''}>Oscura</option>
-                                    <option value="Alto Adige" ${project.configPersiane?.modello === 'Alto Adige' ? 'selected' : ''}>Alto Adige</option>
-                                    <option value="altro" ${project.configPersiane?.modello === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configPersiane', 'modello', project.configPersiane?.modello, [
+                                    {value: 'Aurora', label: 'Aurora'},
+                                    {value: 'Vanitosa', label: 'Vanitosa'},
+                                    {value: 'Oscura', label: 'Oscura'},
+                                    {value: 'Alto Adige', label: 'Alto Adige'}
+                                ])}
                             </div>
-                        </div>
-                        
-                        <div id="modello-altro-${project.id}" style="display: ${project.configPersiane?.modello === 'altro' ? 'block' : 'none'}">
-                            <label class="block text-sm font-medium mb-1">Specifica Modello</label>
-                            <input type="text" value="${project.configPersiane?.modelloAltro || ''}"
-                                   onchange="updateConfigPersiane('${project.id}', 'modelloAltro', this.value)"
-                                   placeholder="Inserisci modello..."
-                                   class="w-full px-3 py-2 border rounded-lg">
                         </div>
                         
                         <div>
@@ -726,22 +770,11 @@
                         <div id="tipo-telaio-persiane-container-${project.id}" style="display: ${project.configPersiane?.fissaggio === 'TELAIO' ? 'block' : 'none'}">
                             <div>
                                 <label class="block text-sm font-medium mb-1">4. Tipo Telaio</label>
-                                <select id="tipo-telaio-persiane-select-${project.id}" onchange="updateConfigPersianeConditional('${project.id}', 'tipoTelaio', this.value)"
-                                        class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="TH 62" ${project.configPersiane?.tipoTelaio === 'TH 62' ? 'selected' : ''}>TH 62</option>
-                                    <option value="TH 40" ${project.configPersiane?.tipoTelaio === 'TH 40' ? 'selected' : ''}>TH 40</option>
-                                    <option value="TH 82" ${project.configPersiane?.tipoTelaio === 'TH 82' ? 'selected' : ''}>TH 82</option>
-                                    <option value="altro" ${project.configPersiane?.tipoTelaio === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
-                                </select>
-                            </div>
-                            
-                            <div id="tipo-telaio-altro-${project.id}" style="display: ${project.configPersiane?.tipoTelaio === 'altro' ? 'block' : 'none'}; margin-top: 12px;">
-                                <label class="block text-sm font-medium mb-1">Specifica Tipo Telaio</label>
-                                <input type="text" value="${project.configPersiane?.tipoTelaioAltro || ''}"
-                                       onchange="updateConfigPersiane('${project.id}', 'tipoTelaioAltro', this.value)"
-                                       placeholder="Inserisci tipo telaio..."
-                                       class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
+                                ${renderEditableSelect(project.id, 'configPersiane', 'tipoTelaio', project.configPersiane?.tipoTelaio, [
+                                    {value: 'TH 62', label: 'TH 62'},
+                                    {value: 'TH 40', label: 'TH 40'},
+                                    {value: 'TH 82', label: 'TH 82'}
+                                ])}
                             </div>
                         </div>
                         
@@ -765,13 +798,11 @@
                         
                         <div>
                             <label class="block text-sm font-medium mb-1">7. Battuta</label>
-                            <select onchange="updateConfigPersiane('${project.id}', 'battuta', this.value)"
-                                    class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
-                                <option value="">Seleziona...</option>
-                                <option value="3 LATI" ${project.configPersiane?.battuta === '3 LATI' ? 'selected' : ''}>3 LATI</option>
-                                <option value="4 LATI" ${project.configPersiane?.battuta === '4 LATI' ? 'selected' : ''}>4 LATI</option>
-                                <option value="2 LATI LATERALI" ${project.configPersiane?.battuta === '2 LATI LATERALI' ? 'selected' : ''}>2 LATI LATERALI</option>
-                            </select>
+                            ${renderEditableSelect(project.id, 'configPersiane', 'battuta', project.configPersiane?.battuta, [
+                                {value: '3 LATI', label: '3 LATI'},
+                                {value: '4 LATI', label: '4 LATI'},
+                                {value: '2 LATI LATERALI', label: '2 LATI LATERALI'}
+                            ])}
                         </div>
                     </div>
                 </div>
@@ -798,23 +829,19 @@
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium mb-1">1. Azienda</label>
-                                <select onchange="updateConfigTapparelle('${project.id}', 'azienda', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="Plasticino" ${project.configTapparelle?.azienda === 'Plasticino' ? 'selected' : ''}>Plasticino</option>
-                                    <option value="New solar" ${project.configTapparelle?.azienda === 'New solar' ? 'selected' : ''}>New solar</option>
-                                    <option value="Estella" ${project.configTapparelle?.azienda === 'Estella' ? 'selected' : ''}>Estella</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configTapparelle', 'azienda', project.configTapparelle?.azienda, [
+                                    {value: 'Plasticino', label: 'Plasticino'},
+                                    {value: 'New solar', label: 'New solar'},
+                                    {value: 'Estella', label: 'Estella'}
+                                ])}
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">2. Modello</label>
-                                <select onchange="updateConfigTapparelle('${project.id}', 'modello', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="Mini" ${project.configTapparelle?.modello === 'Mini' ? 'selected' : ''}>Mini</option>
-                                    <option value="Alluminio" ${project.configTapparelle?.modello === 'Alluminio' ? 'selected' : ''}>Alluminio</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configTapparelle', 'modello', project.configTapparelle?.modello, [
+                                    {value: 'Mini', label: 'Mini'},
+                                    {value: 'Alluminio', label: 'Alluminio'}
+                                ])}
                             </div>
                             
                             <div>
@@ -827,24 +854,20 @@
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">4. Manuale/Motorizzato</label>
-                                <select onchange="updateConfigTapparelle('${project.id}', 'tipologia', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="Manuale" ${project.configTapparelle?.tipologia === 'Manuale' ? 'selected' : ''}>Manuale</option>
-                                    <option value="Motorizzata" ${project.configTapparelle?.tipologia === 'Motorizzata' ? 'selected' : ''}>Motorizzata</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configTapparelle', 'tipologia', project.configTapparelle?.tipologia, [
+                                    {value: 'Manuale', label: 'Manuale'},
+                                    {value: 'Motorizzata', label: 'Motorizzata'}
+                                ])}
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">5. Sost. Esistente</label>
-                                <select onchange="updateConfigTapparelle('${project.id}', 'sostEsistente', this.value)"
-                                        class="w-full px-3 py-2 border rounded-lg">
-                                    <option value="">Seleziona...</option>
-                                    <option value="Sost. Rullo Sì" ${project.configTapparelle?.sostEsistente === 'Sost. Rullo Sì' ? 'selected' : ''}>Sost. Rullo Sì</option>
-                                    <option value="Sost. Rullo No" ${project.configTapparelle?.sostEsistente === 'Sost. Rullo No' ? 'selected' : ''}>Sost. Rullo No</option>
-                                    <option value="Sost. tutto" ${project.configTapparelle?.sostEsistente === 'Sost. tutto' ? 'selected' : ''}>Sost. tutto</option>
-                                    <option value="Non Sost. Niente" ${project.configTapparelle?.sostEsistente === 'Non Sost. Niente' ? 'selected' : ''}>Non Sost. Niente</option>
-                                </select>
+                                ${renderEditableSelect(project.id, 'configTapparelle', 'sostEsistente', project.configTapparelle?.sostEsistente, [
+                                    {value: 'Sost. Rullo Sì', label: 'Sost. Rullo Sì'},
+                                    {value: 'Sost. Rullo No', label: 'Sost. Rullo No'},
+                                    {value: 'Sost. tutto', label: 'Sost. tutto'},
+                                    {value: 'Non Sost. Niente', label: 'Non Sost. Niente'}
+                                ])}
                             </div>
                             
                             <div>
@@ -868,7 +891,83 @@
             `;
         }
 
-        function renderStep6ConfigCassonetti(project) {
+        function renderStep6ConfigZanzariere(project) {
+            if (!project.prodotti?.zanzariere) {
+                return `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Le zanzariere non sono state selezionate. Salta questo step.</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🦟</span> Configurazione Zanzariere Default
+                    </h2>
+                    <p class="text-gray-600 mb-4">Imposta i valori di default per tutte le zanzariere:</p>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-blue-700 font-medium">ℹ️ Info: Il tipo F/PF verrà rilevato automaticamente dall'infisso della posizione. Se non presente, potrai selezionarlo manualmente nella singola posizione.</p>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">1. Azienda</label>
+                                ${renderEditableSelect(project.id, 'configZanzariere', 'azienda', project.configZanzariere?.azienda, [
+                                    {value: 'Finstral', label: 'Finstral'},
+                                    {value: 'Palagina', label: 'Palagina'}
+                                ])}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">2. Modello PF</label>
+                                ${renderEditableSelect(project.id, 'configZanzariere', 'modelloPF', project.configZanzariere?.modelloPF, [
+                                    {value: 'Extrema', label: 'Extrema'},
+                                    {value: 'Sintesi', label: 'Sintesi'},
+                                    {value: 'Plisse 22', label: 'Plisse 22'}
+                                ])}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">3. Tipo PF</label>
+                                ${renderEditableSelect(project.id, 'configZanzariere', 'tipoPF', project.configZanzariere?.tipoPF, [
+                                    {value: 'Centrale', label: 'Centrale'},
+                                    {value: 'Finstral FISSA', label: 'Finstral FISSA'},
+                                    {value: 'Finstral ad ANTA', label: 'Finstral ad ANTA'}
+                                ])}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">4. Modello F</label>
+                                ${renderEditableSelect(project.id, 'configZanzariere', 'modelloF', project.configZanzariere?.modelloF, [
+                                    {value: 'Plisse 22', label: 'Plisse 22'},
+                                    {value: 'Serie X', label: 'Serie X'}
+                                ])}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">5. Tipo F</label>
+                                ${renderEditableSelect(project.id, 'configZanzariere', 'tipoF', project.configZanzariere?.tipoF, [
+                                    {value: 'Finstral FISSA', label: 'Finstral FISSA'}
+                                ])}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">6. Colore</label>
+                                <input type="text" placeholder="Es: Bianco, Grigio"
+                                       value="${project.configZanzariere?.colore || ''}"
+                                       onchange="updateConfigZanzariere('${project.id}', 'colore', this.value)"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStep7ConfigCassonetti(project) {
             if (!project.prodotti?.cassonetti) {
                 return `
                     <div class="text-center py-8">
@@ -887,12 +986,12 @@
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium mb-1">1. Tipo Cassonetto</label>
-                            <select onchange="updateConfigCassonetti('${project.id}', 'tipo', this.value)"
-                                    class="w-full px-3 py-2 border rounded-lg">
-                                <option value="">Seleziona...</option>
-                                <option value="monoblocco" ${project.configCassonetti?.tipo === 'monoblocco' ? 'selected' : ''}>MONOBLOCCO</option>
-                                <option value="isole" ${project.configCassonetti?.tipo === 'isole' ? 'selected' : ''}>SOLO ISOLE CASSONETTO</option>
-                            </select>
+                            ${renderEditableSelect(project.id, 'configCassonetti', 'tipo', project.configCassonetti?.tipo, [
+                                {value: 'Cassonetto', label: 'Cassonetto'},
+                                {value: 'Monoblocco', label: 'Monoblocco'},
+                                {value: 'Solo isolamento', label: 'Solo isolamento'},
+                                {value: 'Cassonetto con isolamento aggiuntivo', label: 'Cassonetto con isolamento aggiuntivo'}
+                            ])}
                         </div>
                         
                         <div>
@@ -915,7 +1014,7 @@
             `;
         }
 
-        function renderStep7WallFeatures(project) {
+        function renderStep8WallFeatures(project) {
             return `
                 <div>
                     <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
@@ -1064,7 +1163,7 @@
             `;
         }
 
-        function renderStep8Positions(project) {
+        function renderStep9Positions(project) {
             return `
                 <div>
                     <div class="flex justify-between items-center mb-4">
@@ -1099,6 +1198,7 @@
                                                     ${pos.infissi?.length ? ` • 🪟 ${pos.infissi.length}` : ''}
                                                     ${pos.persiane?.length ? ` • 🚪 ${pos.persiane.length}` : ''}
                                                     ${pos.tapparelle?.length ? ` • 🎚️ ${pos.tapparelle.length}` : ''}
+                                                    ${pos.zanzariere?.length ? ` • 🦟 ${pos.zanzariere.length}` : ''}
                                                     ${pos.cassonetti?.length ? ` • 📦 ${pos.cassonetti.length}` : ''}
                                                 </p>
                                             </div>
@@ -1207,6 +1307,12 @@
                                     🎚️ Tapparelle (${pos.tapparelle?.length || 0})
                                 </button>
                             ` : ''}
+                            ${project.prodotti?.zanzariere ? `
+                                <button onclick="setPositionTab('${pos.id}', 'zanzariere')"
+                                        class="tab-btn ${pos.activeTab === 'zanzariere' ? 'active' : ''}">
+                                    🦟 Zanzariere (${pos.zanzariere?.length || 0})
+                                </button>
+                            ` : ''}
                             ${project.prodotti?.cassonetti ? `
                                 <button onclick="setPositionTab('${pos.id}', 'cassonetti')"
                                         class="tab-btn ${pos.activeTab === 'cassonetti' ? 'active' : ''}">
@@ -1241,6 +1347,9 @@
             }
             if (tab === 'tapparelle') {
                 return renderTapparelleTab(project, pos);
+            }
+            if (tab === 'zanzariere') {
+                return renderZanzariereTab(project, pos);
             }
             if (tab === 'cassonetti') {
                 return renderCassonettiTab(project, pos);
@@ -1505,43 +1614,30 @@
                                 
                                 <div>
                                     <label class="text-xs">Tipo</label>
-                                    <select onchange="updateProductWithRender('${project.id}', '${pos.id}', 'infissi', ${idx}, 'tipo', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        ${['F1','PF1','F2','PF2','F3','PF3','HST','SCORR.PARALL','FISSO','altro'].map(t => 
-                                            `<option value="${t}" ${inf.tipo === t ? 'selected' : ''}>${t}</option>`
-                                        ).join('')}
-                                    </select>
+                                    ${renderProductEditableSelect(project.id, pos.id, 'infissi', idx, 'tipo', inf.tipo, [
+                                        {value: 'F1', label: 'F1'},
+                                        {value: 'PF1', label: 'PF1'},
+                                        {value: 'F2', label: 'F2'},
+                                        {value: 'PF2', label: 'PF2'},
+                                        {value: 'F3', label: 'F3'},
+                                        {value: 'PF3', label: 'PF3'},
+                                        {value: 'HST', label: 'HST'},
+                                        {value: 'SCORR.PARALL', label: 'SCORR.PARALL'},
+                                        {value: 'FISSO', label: 'FISSO'}
+                                    ])}
                                 </div>
-                                
-                                ${inf.tipo === 'altro' ? `
-                                <div>
-                                    <label class="text-xs">Specifica Tipo</label>
-                                    <input type="text" value="${inf.tipoAltro || ''}"
-                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', ${idx}, 'tipoAltro', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                                ` : ''}
                                 
                                 <div>
                                     <label class="text-xs">Apertura</label>
-                                    <select onchange="updateProductWithRender('${project.id}', '${pos.id}', 'infissi', ${idx}, 'apertura', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        ${['SX','DX','Fisso','Ribalta','Sp. SX','Sp. DX','altro'].map(a => 
-                                            `<option value="${a}" ${inf.apertura === a ? 'selected' : ''}>${a}</option>`
-                                        ).join('')}
-                                    </select>
+                                    ${renderProductEditableSelect(project.id, pos.id, 'infissi', idx, 'apertura', inf.apertura, [
+                                        {value: 'SX', label: 'SX'},
+                                        {value: 'DX', label: 'DX'},
+                                        {value: 'Fisso', label: 'Fisso'},
+                                        {value: 'Ribalta', label: 'Ribalta'},
+                                        {value: 'Sp. SX', label: 'Sp. SX'},
+                                        {value: 'Sp. DX', label: 'Sp. DX'}
+                                    ])}
                                 </div>
-                                
-                                ${inf.apertura === 'altro' ? `
-                                <div>
-                                    <label class="text-xs">Specifica Apertura</label>
-                                    <input type="text" value="${inf.aperturaAltro || ''}"
-                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', ${idx}, 'aperturaAltro', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                                ` : ''}
                             </div>
                         </div>
                         
@@ -1580,6 +1676,56 @@
                 </div>
             `;
         }
+
+        function renderProductEditableSelect(projectId, posId, productType, idx, field, currentValue, options) {
+            const uniqueId = `${productType}-${idx}-${field}-${posId}`;
+            const isCustom = currentValue && !options.find(opt => opt.value === currentValue);
+            
+            return `
+                <div class="flex gap-1">
+                    <select id="${uniqueId}-select" 
+                            onchange="handleProductEditableSelectChange('${projectId}', '${posId}', '${productType}', ${idx}, '${field}', this.value, '${uniqueId}')"
+                            class="flex-1 compact-input border rounded ${isCustom ? 'hidden' : ''}">
+                        <option value="">--</option>
+                        ${options.map(opt => `
+                            <option value="${opt.value}" ${currentValue === opt.value ? 'selected' : ''}>${opt.label}</option>
+                        `).join('')}
+                        <option value="__custom__">✏️ Altro</option>
+                    </select>
+                    <input type="text" 
+                           id="${uniqueId}-input"
+                           value="${isCustom ? currentValue : ''}"
+                           placeholder="Scrivi..."
+                           onchange="updateProduct('${projectId}', '${posId}', '${productType}', ${idx}, '${field}', this.value)"
+                           class="flex-1 compact-input border rounded ${isCustom ? '' : 'hidden'}">
+                    <button onclick="toggleProductEditableSelect('${uniqueId}', ${isCustom})"
+                            class="px-1 py-1 border rounded hover:bg-gray-50 text-xs ${isCustom ? '' : 'hidden'}"
+                            id="${uniqueId}-back">
+                        ←
+                    </button>
+                </div>
+            `;
+        }
+
+        window.handleProductEditableSelectChange = (projectId, posId, productType, idx, field, value, uniqueId) => {
+            if (value === '__custom__') {
+                document.getElementById(`${uniqueId}-select`).classList.add('hidden');
+                document.getElementById(`${uniqueId}-input`).classList.remove('hidden');
+                document.getElementById(`${uniqueId}-back`).classList.remove('hidden');
+                document.getElementById(`${uniqueId}-input`).focus();
+            } else {
+                updateProduct(projectId, posId, productType, idx, field, value);
+            }
+        };
+
+        window.toggleProductEditableSelect = (uniqueId, isCurrentlyCustom) => {
+            if (isCurrentlyCustom) {
+                document.getElementById(`${uniqueId}-select`).classList.remove('hidden');
+                document.getElementById(`${uniqueId}-input`).classList.add('hidden');
+                document.getElementById(`${uniqueId}-back`).classList.add('hidden');
+                document.getElementById(`${uniqueId}-select`).value = '';
+            }
+        };
 
         function renderPersianeTab(project, pos) {
             const products = pos.persiane || [];
@@ -1629,43 +1775,28 @@
                                 
                                 <div>
                                     <label class="text-xs">Tipo</label>
-                                    <select onchange="updateProductWithRender('${project.id}', '${pos.id}', 'persiane', ${idx}, 'tipo', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        ${['F1','PF1','F2','PF2','F3','PF3','SCORREVOLE','altro'].map(t => 
-                                            `<option value="${t}" ${pers.tipo === t ? 'selected' : ''}>${t}</option>`
-                                        ).join('')}
-                                    </select>
+                                    ${renderProductEditableSelect(project.id, pos.id, 'persiane', idx, 'tipo', pers.tipo, [
+                                        {value: 'F1', label: 'F1'},
+                                        {value: 'PF1', label: 'PF1'},
+                                        {value: 'F2', label: 'F2'},
+                                        {value: 'PF2', label: 'PF2'},
+                                        {value: 'F3', label: 'F3'},
+                                        {value: 'PF3', label: 'PF3'},
+                                        {value: 'SCORREVOLE', label: 'SCORREVOLE'}
+                                    ])}
                                 </div>
-                                
-                                ${pers.tipo === 'altro' ? `
-                                <div>
-                                    <label class="text-xs">Specifica Tipo</label>
-                                    <input type="text" value="${pers.tipoAltro || ''}"
-                                           onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', ${idx}, 'tipoAltro', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                                ` : ''}
                                 
                                 <div>
                                     <label class="text-xs">Apertura</label>
-                                    <select onchange="updateProductWithRender('${project.id}', '${pos.id}', 'persiane', ${idx}, 'apertura', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        ${['SP SX','SP DX','LIB-SX','LIB-DX','SCORR-SX','SCORR-DX','altro'].map(a => 
-                                            `<option value="${a}" ${pers.apertura === a ? 'selected' : ''}>${a}</option>`
-                                        ).join('')}
-                                    </select>
+                                    ${renderProductEditableSelect(project.id, pos.id, 'persiane', idx, 'apertura', pers.apertura, [
+                                        {value: 'SP SX', label: 'SP SX'},
+                                        {value: 'SP DX', label: 'SP DX'},
+                                        {value: 'LIB-SX', label: 'LIB-SX'},
+                                        {value: 'LIB-DX', label: 'LIB-DX'},
+                                        {value: 'SCORR-SX', label: 'SCORR-SX'},
+                                        {value: 'SCORR-DX', label: 'SCORR-DX'}
+                                    ])}
                                 </div>
-                                
-                                ${pers.apertura === 'altro' ? `
-                                <div>
-                                    <label class="text-xs">Specifica Apertura</label>
-                                    <input type="text" value="${pers.aperturaAltro || ''}"
-                                           onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', ${idx}, 'aperturaAltro', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                                ` : ''}
                             </div>
                         </div>
                         
@@ -1841,6 +1972,193 @@
             `;
         }
 
+        function renderZanzariereTab(project, pos) {
+            const products = pos.zanzariere || [];
+
+            // Detect F or PF from infissi
+            let detectedType = '';
+            if (pos.infissi && pos.infissi.length > 0) {
+                const infissoTipo = pos.infissi[0].tipo || '';
+                if (infissoTipo.startsWith('PF')) {
+                    detectedType = 'PF';
+                } else if (infissoTipo.startsWith('F')) {
+                    detectedType = 'F';
+                }
+            }
+
+            return `
+                <div class="space-y-4">
+                    ${detectedType ? `
+                        <div class="bg-green-50 border-2 border-green-300 rounded-lg p-3">
+                            <p class="text-sm text-green-700 font-medium">
+                                ✅ Tipo rilevato automaticamente dall'infisso: <strong>${detectedType}</strong>
+                            </p>
+                        </div>
+                    ` : `
+                        <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
+                            <p class="text-sm text-blue-700 font-medium">
+                                ℹ️ Nessun infisso presente. Seleziona manualmente F o PF per ogni zanzariera.
+                            </p>
+                        </div>
+                    `}
+
+                    <button onclick="addProduct('${project.id}', '${pos.id}', 'zanzariere')"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium">
+                        + Aggiungi Zanzariera
+                    </button>
+
+                    ${products.map((prod, idx) => renderZanzarieraDetail(project, pos, prod, idx, detectedType)).join('')}
+                </div>
+            `;
+        }
+
+        function renderZanzarieraDetail(project, pos, zanz, idx, detectedType) {
+            // Use detected type or manual selection
+            const tipoFPF = zanz.tipoFPF || detectedType || '';
+            const isF = tipoFPF === 'F';
+            const isPF = tipoFPF === 'PF';
+
+            return `
+                <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-green-300">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-bold text-green-700">🦟 Zanzariera ${idx + 1}</h4>
+                        <button onclick="removeProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx})"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">
+                            🗑️ Elimina
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- TIPO F/PF -->
+                        <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+                            <h5 class="font-semibold text-sm mb-3 text-yellow-800">🎯 Tipo Infisso Associato</h5>
+                            ${detectedType ? `
+                                <div class="flex items-center gap-3">
+                                    <span class="text-lg font-bold text-green-600">${detectedType}</span>
+                                    <span class="text-sm text-gray-600">(rilevato automaticamente)</span>
+                                    <button onclick="manualOverrideZanzariera('${project.id}', '${pos.id}', ${idx})"
+                                            class="ml-auto px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700">
+                                        ✏️ Modifica Manualmente
+                                    </button>
+                                </div>
+                            ` : `
+                                <div>
+                                    <label class="text-sm font-medium mb-2 block">Seleziona tipo:</label>
+                                    <div class="flex gap-3">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="tipo-fpf-${pos.id}-${idx}" value="F"
+                                                   ${isF ? 'checked' : ''}
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx}, 'tipoFPF', 'F'); render();">
+                                            <span class="font-semibold">F (Finestra)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="tipo-fpf-${pos.id}-${idx}" value="PF"
+                                                   ${isPF ? 'checked' : ''}
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx}, 'tipoFPF', 'PF'); render();">
+                                            <span class="font-semibold">PF (Porta Finestra)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+
+                        <!-- DATI SPECIFICI -->
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h5 class="font-semibold text-sm mb-3 text-green-700">📋 Dati Specifici</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="text-xs">Quantità</label>
+                                    <select onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx}, 'qta', this.value)"
+                                            class="w-full compact-input border rounded">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${(zanz.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- CONFIGURAZIONE -->
+                        <div class="bg-green-100 p-4 rounded-lg border border-green-200">
+                            <h5 class="font-semibold text-sm mb-3 text-green-700">⚙️ Configurazione</h5>
+                            
+                            ${!tipoFPF ? `
+                                <p class="text-sm text-gray-600 italic">⚠️ Seleziona prima se F o PF</p>
+                            ` : `
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="text-xs">Azienda</label>
+                                        <input type="text" 
+                                               value="${zanz.azienda || ''}"
+                                               placeholder="${project.configZanzariere?.azienda || '--'}"
+                                               onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx}, 'azienda', this.value)"
+                                               class="w-full compact-input border rounded">
+                                    </div>
+                                    
+                                    ${isPF ? `
+                                        <div>
+                                            <label class="text-xs">Modello PF</label>
+                                            <input type="text" 
+                                                   value="${zanz.modelloPF || ''}"
+                                                   placeholder="${project.configZanzariere?.modelloPF || '--'}"
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx}, 'modelloPF', this.value)"
+                                                   class="w-full compact-input border rounded">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs">Tipo PF</label>
+                                            <input type="text" 
+                                                   value="${zanz.tipoPF || ''}"
+                                                   placeholder="${project.configZanzariere?.tipoPF || '--'}"
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx}, 'tipoPF', this.value)"
+                                                   class="w-full compact-input border rounded">
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${isF ? `
+                                        <div>
+                                            <label class="text-xs">Modello F</label>
+                                            <input type="text" 
+                                                   value="${zanz.modelloF || ''}"
+                                                   placeholder="${project.configZanzariere?.modelloF || '--'}"
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx}, 'modelloF', this.value)"
+                                                   class="w-full compact-input border rounded">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs">Tipo F</label>
+                                            <input type="text" 
+                                                   value="${zanz.tipoF || ''}"
+                                                   placeholder="${project.configZanzariere?.tipoF || '--'}"
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx}, 'tipoF', this.value)"
+                                                   class="w-full compact-input border rounded">
+                                        </div>
+                                    ` : ''}
+                                    
+                                    <div>
+                                        <label class="text-xs">Colore</label>
+                                        <input type="text" 
+                                               value="${zanz.colore || ''}"
+                                               placeholder="${project.configZanzariere?.colore || '--'}"
+                                               onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', ${idx}, 'colore', this.value)"
+                                               class="w-full compact-input border rounded">
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.manualOverrideZanzariera = (projectId, posId, idx) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos.zanzariere && pos.zanzariere[idx]) {
+                    pos.zanzariere[idx].tipoFPF = '';
+                    saveState();
+                    render();
+                }
+            }
+        };
+
         function renderCassonettiTab(project, pos) {
             const products = pos.cassonetti || [];
             const canAdd = products.length === 0;
@@ -1887,8 +2205,16 @@
                                     </select>
                                 </div>
                                 
+                                <div>
+                                    <label class="text-xs">Tipo</label>
+                                    <input type="text" 
+                                           value="${cass.tipo || ''}"
+                                           placeholder="${project.configCassonetti?.tipo || '--'}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetti', ${idx}, 'tipo', this.value)"
+                                           class="w-full compact-input border rounded">
+                                </div>
+                                
                                 ${Object.entries({
-                                    tipo: 'Tipo',
                                     azienda: 'Azienda',
                                     colore: 'Colore',
                                     sovrappSostit: 'Sovrapp/Sostit',
@@ -2115,27 +2441,6 @@
             }
         };
 
-        window.updateConfigPersianeConditional = (projectId, field, value) => {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                if (!project.configPersiane) project.configPersiane = {};
-                project.configPersiane[field] = value;
-                saveState();
-                
-                if (field === 'modello') {
-                    const modelloAltro = document.getElementById(`modello-altro-${projectId}`);
-                    if (modelloAltro) {
-                        modelloAltro.style.display = value === 'altro' ? 'block' : 'none';
-                    }
-                } else if (field === 'tipoTelaio') {
-                    const tipoTelaioAltro = document.getElementById(`tipo-telaio-altro-${projectId}`);
-                    if (tipoTelaioAltro) {
-                        tipoTelaioAltro.style.display = value === 'altro' ? 'block' : 'none';
-                    }
-                }
-            }
-        };
-
         window.updateFissaggioPersiane = (projectId, value) => {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
@@ -2160,6 +2465,15 @@
             if (project) {
                 if (!project.configTapparelle) project.configTapparelle = {};
                 project.configTapparelle[field] = value;
+                saveState();
+            }
+        };
+
+        window.updateConfigZanzariere = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configZanzariere) project.configZanzariere = {};
+                project.configZanzariere[field] = value;
                 saveState();
             }
         };
@@ -2288,6 +2602,7 @@
                     const config = type === 'infissi' ? project.configInfissi :
                                   type === 'persiane' ? project.configPersiane :
                                   type === 'tapparelle' ? project.configTapparelle :
+                                  type === 'zanzariere' ? project.configZanzariere :
                                   project.configCassonetti;
                     
                     const product = {
@@ -2298,6 +2613,22 @@
                     // Add motori array if tapparella
                     if (type === 'tapparelle') {
                         product.motori = [];
+                    }
+                    
+                    // Auto-detect F/PF for zanzariere
+                    if (type === 'zanzariere') {
+                        let detectedType = '';
+                        if (pos.infissi && pos.infissi.length > 0) {
+                            const infissoTipo = pos.infissi[0].tipo || '';
+                            if (infissoTipo.startsWith('PF')) {
+                                detectedType = 'PF';
+                            } else if (infissoTipo.startsWith('F')) {
+                                detectedType = 'F';
+                            }
+                        }
+                        if (detectedType) {
+                            product.tipoFPF = detectedType;
+                        }
                     }
                     
                     pos[type].push(product);

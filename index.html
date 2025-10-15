@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Porte v3.0 - Optimized</title>
+    <title>Open Porte v3.0 - Complete</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -107,16 +107,6 @@
             background: #888;
             border-radius: 3px;
         }
-        .flow-container {
-            display: flex;
-            gap: 1rem;
-            overflow-x: auto;
-            padding-bottom: 1rem;
-        }
-        .flow-step {
-            min-width: 300px;
-            flex: 1;
-        }
         .notification {
             position: fixed;
             top: 1rem;
@@ -165,7 +155,7 @@
             projects: [],
             currentProject: null,
             currentPosition: null,
-            setupStep: 1 // For project setup flow
+            setupStep: 1
         };
 
         // Load/Save Functions
@@ -267,7 +257,7 @@
                                     </button>
                                 ` : ''}
                                 <h1 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                                    Open Porte v3.0
+                                    Open Porte v3.0 Complete
                                 </h1>
                             </div>
                             <div class="flex items-center gap-2">
@@ -292,7 +282,7 @@
                 return `
                     <div class="min-h-[70vh] flex items-center justify-center">
                         <div class="text-center bg-white rounded-2xl p-8 shadow-xl">
-                            <div class="text-6xl mb-4">📁</div>
+                            <div class="text-6xl mb-4">📋</div>
                             <h2 class="text-2xl font-bold mb-2">Benvenuto in Open Porte</h2>
                             <p class="text-gray-600 mb-6">Inizia creando il tuo primo progetto</p>
                             <button onclick="showNewProjectModal()" 
@@ -314,7 +304,7 @@
                                     <h3 class="font-bold text-lg">${p.name}</h3>
                                     <p class="text-sm text-gray-600">${p.client}</p>
                                 </div>
-                                <span class="text-2xl">🏗️</span>
+                                <span class="text-2xl">🗂️</span>
                             </div>
                             <div class="flex justify-between items-center text-sm">
                                 <span class="text-gray-500">${p.positions.length} posizioni</span>
@@ -337,9 +327,11 @@
                         ${[
                             {num: 1, label: 'Dati Cliente'},
                             {num: 2, label: 'Prodotti'},
-                            {num: 3, label: 'Configurazioni'},
-                            {num: 4, label: 'Caratteristiche Muro'},
-                            {num: 5, label: 'Posizioni'}
+                            {num: 3, label: 'Config. Infissi'},
+                            {num: 4, label: 'Config. Persiane'},
+                            {num: 5, label: 'Config. Cassonetti'},
+                            {num: 6, label: 'Muro'},
+                            {num: 7, label: 'Posizioni'}
                         ].map(step => `
                             <div class="flex flex-col items-center cursor-pointer" onclick="state.setupStep=${step.num}; render()">
                                 <div class="step-indicator ${state.setupStep === step.num ? 'active' : state.setupStep > step.num ? 'completed' : 'bg-gray-200'}">
@@ -354,9 +346,11 @@
                     <div class="bg-white rounded-xl shadow-lg p-6">
                         ${state.setupStep === 1 ? renderStep1ClientData(project) :
                           state.setupStep === 2 ? renderStep2Products(project) :
-                          state.setupStep === 3 ? renderStep3Configurations(project) :
-                          state.setupStep === 4 ? renderStep4WallFeatures(project) :
-                          renderStep5Positions(project)}
+                          state.setupStep === 3 ? renderStep3ConfigInfissi(project) :
+                          state.setupStep === 4 ? renderStep4ConfigPersiane(project) :
+                          state.setupStep === 5 ? renderStep5ConfigCassonetti(project) :
+                          state.setupStep === 6 ? renderStep6WallFeatures(project) :
+                          renderStep7Positions(project)}
                         
                         <!-- Navigation -->
                         <div class="flex justify-between mt-6 pt-4 border-t">
@@ -364,8 +358,8 @@
                                     class="px-4 py-2 border rounded-lg hover:bg-gray-50 ${state.setupStep === 1 ? 'invisible' : ''}">
                                 ← Indietro
                             </button>
-                            ${state.setupStep < 5 ? `
-                                <button onclick="state.setupStep = Math.min(5, state.setupStep + 1); saveState(); render()" 
+                            ${state.setupStep < 7 ? `
+                                <button onclick="state.setupStep = Math.min(7, state.setupStep + 1); saveState(); render()" 
                                         class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg">
                                     Avanti →
                                 </button>
@@ -509,241 +503,461 @@
             `;
         }
 
-        function renderStep3Configurations(project) {
+        function renderStep3ConfigInfissi(project) {
+            if (!project.prodotti?.infissi) {
+                return `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Gli infissi non sono stati selezionati. Salta questo step.</p>
+                    </div>
+                `;
+            }
+
             return `
                 <div>
                     <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-                        <span class="text-2xl">⚙️</span> Configurazioni Prodotti (Valori di Default)
+                        <span class="text-2xl">🪟</span> Configurazione Infissi Default
                     </h2>
-                    <p class="text-gray-600 mb-4">Imposta i valori di default che verranno applicati a tutti i prodotti:</p>
-
-                    ${project.prodotti?.infissi ? `
-                        <div class="section-card mb-4">
-                            <h3 class="font-semibold text-blue-700 mb-3 flex items-center gap-2">
-                                🪟 Configurazione Infissi Default
-                            </h3>
-                            <div class="config-grid">
-                                <div>
-                                    <label class="text-xs font-medium">Azienda</label>
-                                    <select onchange="updateConfigInfissi('${project.id}', 'azienda', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">Seleziona...</option>
-                                        <option value="finstral" ${project.configInfissi?.azienda === 'finstral' ? 'selected' : ''}>FINSTRAL</option>
-                                        <option value="essepi" ${project.configInfissi?.azienda === 'essepi' ? 'selected' : ''}>ESSEPI</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Finitura Int</label>
-                                    <select onchange="updateConfigInfissi('${project.id}', 'finituraInt', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        <option value="pvc" ${project.configInfissi?.finituraInt === 'pvc' ? 'selected' : ''}>PVC</option>
-                                        <option value="legno" ${project.configInfissi?.finituraInt === 'legno' ? 'selected' : ''}>Legno</option>
-                                        <option value="alluminio" ${project.configInfissi?.finituraInt === 'alluminio' ? 'selected' : ''}>Alluminio</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Finitura Est</label>
-                                    <select onchange="updateConfigInfissi('${project.id}', 'finituraEst', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        <option value="pvc" ${project.configInfissi?.finituraEst === 'pvc' ? 'selected' : ''}>PVC</option>
-                                        <option value="alluminio" ${project.configInfissi?.finituraEst === 'alluminio' ? 'selected' : ''}>Alluminio</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Colore Int</label>
-                                    <input type="text" placeholder="Bianco"
-                                           value="${project.configInfissi?.coloreInt || ''}"
-                                           onchange="updateConfigInfissi('${project.id}', 'coloreInt', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Colore Est</label>
-                                    <input type="text" placeholder="Marrone"
-                                           value="${project.configInfissi?.coloreEst || ''}"
-                                           onchange="updateConfigInfissi('${project.id}', 'coloreEst', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Tipo Anta</label>
-                                    <select onchange="updateConfigInfissi('${project.id}', 'tipoAnta', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        <option value="step-line" ${project.configInfissi?.tipoAnta === 'step-line' ? 'selected' : ''}>Step-Line</option>
-                                        <option value="nova-line" ${project.configInfissi?.tipoAnta === 'nova-line' ? 'selected' : ''}>Nova-Line</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Vetro</label>
-                                    <select onchange="updateConfigInfissi('${project.id}', 'vetro', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        <option value="doppio" ${project.configInfissi?.vetro === 'doppio' ? 'selected' : ''}>Doppio</option>
-                                        <option value="triplo" ${project.configInfissi?.vetro === 'triplo' ? 'selected' : ''}>Triplo</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Allarme</label>
-                                    <select onchange="updateConfigInfissi('${project.id}', 'allarme', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        <option value="si" ${project.configInfissi?.allarme === 'si' ? 'selected' : ''}>Sì</option>
-                                        <option value="no" ${project.configInfissi?.allarme === 'no' ? 'selected' : ''}>No</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    ${project.prodotti?.persiane ? `
-                        <div class="section-card mb-4">
-                            <h3 class="font-semibold text-purple-700 mb-3 flex items-center gap-2">
-                                🚪 Configurazione Persiane Default
-                            </h3>
-                            <div class="config-grid">
-                                <div>
-                                    <label class="text-xs font-medium">Modello</label>
-                                    <input type="text" placeholder="Aurora"
-                                           value="${project.configPersiane?.modello || ''}"
-                                           onchange="updateConfigPersiane('${project.id}', 'modello', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Fissaggio</label>
-                                    <select onchange="updateConfigPersiane('${project.id}', 'fissaggio', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        <option value="A MURO" ${project.configPersiane?.fissaggio === 'A MURO' ? 'selected' : ''}>A Muro</option>
-                                        <option value="TELAIO" ${project.configPersiane?.fissaggio === 'TELAIO' ? 'selected' : ''}>Telaio</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Colore</label>
-                                    <input type="text" placeholder="Verde"
-                                           value="${project.configPersiane?.colorePersiana || ''}"
-                                           onchange="updateConfigPersiane('${project.id}', 'colorePersiana', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Battuta</label>
-                                    <select onchange="updateConfigPersiane('${project.id}', 'battuta', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        <option value="3 LATI" ${project.configPersiane?.battuta === '3 LATI' ? 'selected' : ''}>3 Lati</option>
-                                        <option value="4 LATI" ${project.configPersiane?.battuta === '4 LATI' ? 'selected' : ''}>4 Lati</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    ${project.prodotti?.cassonetti ? `
-                        <div class="section-card">
-                            <h3 class="font-semibold text-orange-700 mb-3 flex items-center gap-2">
-                                📦 Configurazione Cassonetti Default
-                            </h3>
-                            <div class="config-grid">
-                                <div>
-                                    <label class="text-xs font-medium">Tipo</label>
-                                    <select onchange="updateConfigCassonetti('${project.id}', 'tipo', this.value)"
-                                            class="w-full compact-input border rounded">
-                                        <option value="">--</option>
-                                        <option value="monoblocco" ${project.configCassonetti?.tipo === 'monoblocco' ? 'selected' : ''}>Monoblocco</option>
-                                        <option value="isole" ${project.configCassonetti?.tipo === 'isole' ? 'selected' : ''}>Solo Isole</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Azienda</label>
-                                    <input type="text" placeholder="Nome azienda"
-                                           value="${project.configCassonetti?.azienda || ''}"
-                                           onchange="updateConfigCassonetti('${project.id}', 'azienda', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium">Colore</label>
-                                    <input type="text" placeholder="Bianco"
-                                           value="${project.configCassonetti?.colore || ''}"
-                                           onchange="updateConfigCassonetti('${project.id}', 'colore', this.value)"
-                                           class="w-full compact-input border rounded">
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        function renderStep4WallFeatures(project) {
-            return `
-                <div>
-                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-                        <span class="text-2xl">🏗️</span> Caratteristiche Muro (Misure in mm)
-                    </h2>
+                    <p class="text-gray-600 mb-4">Imposta i valori di default per tutti gli infissi:</p>
                     
-                    <div class="grid-compact">
-                        <div>
-                            <label class="text-xs font-medium">Prof. Muro Int</label>
-                            <input type="number" placeholder="0"
-                                   value="${project.caratteristicheMuro?.profMuroInt || ''}"
-                                   onchange="updateCaratteristicheMuro('${project.id}', 'profMuroInt', this.value)"
-                                   class="w-full compact-input border rounded">
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium">Prof. Piana Sopra</label>
-                            <input type="number" placeholder="0"
-                                   value="${project.caratteristicheMuro?.profPianaSopra || ''}"
-                                   onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSopra', this.value)"
-                                   class="w-full compact-input border rounded">
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium">Prof. Piana Sotto</label>
-                            <input type="number" placeholder="0"
-                                   value="${project.caratteristicheMuro?.profPianaSotto || ''}"
-                                   onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSotto', this.value)"
-                                   class="w-full compact-input border rounded">
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium">Telaio Prof</label>
-                            <input type="number" placeholder="0"
-                                   value="${project.caratteristicheMuro?.telaioProfondita || ''}"
-                                   onchange="updateCaratteristicheMuro('${project.id}', 'telaioProfondita', this.value)"
-                                   class="w-full compact-input border rounded">
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium">Telaio Largh</label>
-                            <input type="number" placeholder="0"
-                                   value="${project.caratteristicheMuro?.telaioLarghezza || ''}"
-                                   onchange="updateCaratteristicheMuro('${project.id}', 'telaioLarghezza', this.value)"
-                                   class="w-full compact-input border rounded">
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium">Delta Int</label>
-                            <input type="number" placeholder="0"
-                                   value="${project.caratteristicheMuro?.deltaInt || ''}"
-                                   onchange="updateCaratteristicheMuro('${project.id}', 'deltaInt', this.value)"
-                                   class="w-full compact-input border rounded">
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium">Delta Est</label>
-                            <input type="number" placeholder="0"
-                                   value="${project.caratteristicheMuro?.deltaEst || ''}"
-                                   onchange="updateCaratteristicheMuro('${project.id}', 'deltaEst', this.value)"
-                                   class="w-full compact-input border rounded">
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium">Prof. Muro Est</label>
-                            <input type="number" placeholder="0"
-                                   value="${project.caratteristicheMuro?.profMuroEst || ''}"
-                                   onchange="updateCaratteristicheMuro('${project.id}', 'profMuroEst', this.value)"
-                                   class="w-full compact-input border rounded">
+                    <div class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">1. Azienda</label>
+                                <select onchange="updateConfigInfissi('${project.id}', 'azienda', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="finstral" ${project.configInfissi?.azienda === 'finstral' ? 'selected' : ''}>FINSTRAL</option>
+                                    <option value="essepi" ${project.configInfissi?.azienda === 'essepi' ? 'selected' : ''}>ESSEPI</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">2. Finitura Interna</label>
+                                <select onchange="updateConfigInfissi('${project.id}', 'finituraInt', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="pvc" ${project.configInfissi?.finituraInt === 'pvc' ? 'selected' : ''}>PVC</option>
+                                    <option value="legno" ${project.configInfissi?.finituraInt === 'legno' ? 'selected' : ''}>LEGNO</option>
+                                    <option value="alluminio" ${project.configInfissi?.finituraInt === 'alluminio' ? 'selected' : ''}>ALLUMINIO</option>
+                                    <option value="ceramica" ${project.configInfissi?.finituraInt === 'ceramica' ? 'selected' : ''}>CERAMICA</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">3. Finitura Esterna</label>
+                                <select onchange="updateConfigInfissi('${project.id}', 'finituraEst', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="pvc" ${project.configInfissi?.finituraEst === 'pvc' ? 'selected' : ''}>PVC</option>
+                                    <option value="alluminio" ${project.configInfissi?.finituraEst === 'alluminio' ? 'selected' : ''}>ALLUMINIO</option>
+                                    <option value="ceramica" ${project.configInfissi?.finituraEst === 'ceramica' ? 'selected' : ''}>CERAMICA</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">4. Colore Interno</label>
+                                <input type="text" placeholder="Es: Bianco, RAL 9010"
+                                       value="${project.configInfissi?.coloreInt || ''}"
+                                       onchange="updateConfigInfissi('${project.id}', 'coloreInt', this.value)"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">5. Colore Esterno</label>
+                                <input type="text" placeholder="Es: Marrone, RAL 8014"
+                                       value="${project.configInfissi?.coloreEst || ''}"
+                                       onchange="updateConfigInfissi('${project.id}', 'coloreEst', this.value)"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">6. Tipo Anta</label>
+                                <select onchange="updateConfigInfissi('${project.id}', 'tipoAnta', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="step-line" ${project.configInfissi?.tipoAnta === 'step-line' ? 'selected' : ''}>STEP-LINE</option>
+                                    <option value="nova-line" ${project.configInfissi?.tipoAnta === 'nova-line' ? 'selected' : ''}>NOVA-LINE</option>
+                                    <option value="slim-line" ${project.configInfissi?.tipoAnta === 'slim-line' ? 'selected' : ''}>SLIM-LINE</option>
+                                    <option value="classic-line" ${project.configInfissi?.tipoAnta === 'classic-line' ? 'selected' : ''}>CLASSIC-LINE</option>
+                                    <option value="step-line-door" ${project.configInfissi?.tipoAnta === 'step-line-door' ? 'selected' : ''}>STEP-LINE DOOR</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">7. Telaio</label>
+                                <select onchange="updateConfigInfissi('${project.id}', 'telaio', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="961" ${project.configInfissi?.telaio === '961' ? 'selected' : ''}>961</option>
+                                    <option value="962" ${project.configInfissi?.telaio === '962' ? 'selected' : ''}>962</option>
+                                    <option value="966" ${project.configInfissi?.telaio === '966' ? 'selected' : ''}>966</option>
+                                    <option value="965" ${project.configInfissi?.telaio === '965' ? 'selected' : ''}>965</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">8. Allarme</label>
+                                <select onchange="updateConfigInfissi('${project.id}', 'allarme', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si" ${project.configInfissi?.allarme === 'si' ? 'selected' : ''}>Sì</option>
+                                    <option value="no" ${project.configInfissi?.allarme === 'no' ? 'selected' : ''}>No</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">9. Vetro</label>
+                                <select onchange="updateConfigInfissi('${project.id}', 'vetro', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="doppio" ${project.configInfissi?.vetro === 'doppio' ? 'selected' : ''}>doppio</option>
+                                    <option value="doppio-sat" ${project.configInfissi?.vetro === 'doppio-sat' ? 'selected' : ''}>doppio sat</option>
+                                    <option value="triplo" ${project.configInfissi?.vetro === 'triplo' ? 'selected' : ''}>triplo</option>
+                                    <option value="triplo-sat" ${project.configInfissi?.vetro === 'triplo-sat' ? 'selected' : ''}>triplo sat</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">10. Tagli Telaio</label>
+                                <select onchange="updateConfigInfissi('${project.id}', 'tagliTelaio', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="sopra" ${project.configInfissi?.tagliTelaio === 'sopra' ? 'selected' : ''}>sopra</option>
+                                    <option value="sotto" ${project.configInfissi?.tagliTelaio === 'sotto' ? 'selected' : ''}>sotto</option>
+                                    <option value="sopra-sotto" ${project.configInfissi?.tagliTelaio === 'sopra-sotto' ? 'selected' : ''}>sopra/sotto</option>
+                                    <option value="dx" ${project.configInfissi?.tagliTelaio === 'dx' ? 'selected' : ''}>dx</option>
+                                    <option value="sx" ${project.configInfissi?.tagliTelaio === 'sx' ? 'selected' : ''}>sx</option>
+                                    <option value="dx-sx" ${project.configInfissi?.tagliTelaio === 'dx-sx' ? 'selected' : ''}>dx/sx</option>
+                                    <option value="4-lati" ${project.configInfissi?.tagliTelaio === '4-lati' ? 'selected' : ''}>4 lati</option>
+                                    <option value="sopra-laterali" ${project.configInfissi?.tagliTelaio === 'sopra-laterali' ? 'selected' : ''}>sopra/laterali</option>
+                                    <option value="sotto-laterali" ${project.configInfissi?.tagliTelaio === 'sotto-laterali' ? 'selected' : ''}>sotto/laterali</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">11. Tipo Tagli</label>
+                                <input type="text" placeholder="Es: standard, 45°"
+                                       value="${project.configInfissi?.tipoTagli || ''}"
+                                       onchange="updateConfigInfissi('${project.id}', 'tipoTagli', this.value)"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
         }
 
-        function renderStep5Positions(project) {
+        function renderStep4ConfigPersiane(project) {
+            if (!project.prodotti?.persiane) {
+                return `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Le persiane non sono state selezionate. Salta questo step.</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🚪</span> Configurazione Persiane Default
+                    </h2>
+                    <p class="text-gray-600 mb-4">Imposta i valori di default per tutte le persiane:</p>
+                    
+                    <div class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">1. Azienda</label>
+                                <select onchange="updateConfigPersiane('${project.id}', 'azienda', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="p-persiane" ${project.configPersiane?.azienda === 'p-persiane' ? 'selected' : ''}>P.Persiane</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">2. Modello</label>
+                                <select id="modello-persiane-${project.id}" onchange="updateConfigPersianeConditional('${project.id}', 'modello', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Aurora" ${project.configPersiane?.modello === 'Aurora' ? 'selected' : ''}>Aurora</option>
+                                    <option value="Vanitosa" ${project.configPersiane?.modello === 'Vanitosa' ? 'selected' : ''}>Vanitosa</option>
+                                    <option value="Oscura" ${project.configPersiane?.modello === 'Oscura' ? 'selected' : ''}>Oscura</option>
+                                    <option value="Alto Adige" ${project.configPersiane?.modello === 'Alto Adige' ? 'selected' : ''}>Alto Adige</option>
+                                    <option value="altro" ${project.configPersiane?.modello === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="modello-altro-${project.id}" style="display: ${project.configPersiane?.modello === 'altro' ? 'block' : 'none'}">
+                            <label class="block text-sm font-medium mb-1">Specifica Modello</label>
+                            <input type="text" value="${project.configPersiane?.modelloAltro || ''}"
+                                   onchange="updateConfigPersiane('${project.id}', 'modelloAltro', this.value)"
+                                   placeholder="Inserisci modello..."
+                                   class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">3. Fissaggio</label>
+                            <select id="fissaggio-persiane-${project.id}" onchange="updateFissaggioPersiane('${project.id}', this.value)"
+                                    class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
+                                <option value="">Seleziona...</option>
+                                <option value="A MURO" ${project.configPersiane?.fissaggio === 'A MURO' ? 'selected' : ''}>A MURO</option>
+                                <option value="TELAIO" ${project.configPersiane?.fissaggio === 'TELAIO' ? 'selected' : ''}>TELAIO</option>
+                            </select>
+                        </div>
+                        
+                        <div id="tipo-telaio-persiane-container-${project.id}" style="display: ${project.configPersiane?.fissaggio === 'TELAIO' ? 'block' : 'none'}">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">4. Tipo Telaio</label>
+                                <select id="tipo-telaio-persiane-select-${project.id}" onchange="updateConfigPersianeConditional('${project.id}', 'tipoTelaio', this.value)"
+                                        class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="TH 62" ${project.configPersiane?.tipoTelaio === 'TH 62' ? 'selected' : ''}>TH 62</option>
+                                    <option value="TH 40" ${project.configPersiane?.tipoTelaio === 'TH 40' ? 'selected' : ''}>TH 40</option>
+                                    <option value="TH 82" ${project.configPersiane?.tipoTelaio === 'TH 82' ? 'selected' : ''}>TH 82</option>
+                                    <option value="altro" ${project.configPersiane?.tipoTelaio === 'altro' ? 'selected' : ''}>Altro e scrivo</option>
+                                </select>
+                            </div>
+                            
+                            <div id="tipo-telaio-altro-${project.id}" style="display: ${project.configPersiane?.tipoTelaio === 'altro' ? 'block' : 'none'}; margin-top: 12px;">
+                                <label class="block text-sm font-medium mb-1">Specifica Tipo Telaio</label>
+                                <input type="text" value="${project.configPersiane?.tipoTelaioAltro || ''}"
+                                       onchange="updateConfigPersiane('${project.id}', 'tipoTelaioAltro', this.value)"
+                                       placeholder="Inserisci tipo telaio..."
+                                       class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">5. Colore Persiana</label>
+                                <input type="text" placeholder="Es: Bianco, Verde"
+                                       value="${project.configPersiane?.colorePersiana || ''}"
+                                       onchange="updateConfigPersiane('${project.id}', 'colorePersiana', this.value)"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                            
+                            <div id="colore-telaio-persiane-container-${project.id}" style="display: ${project.configPersiane?.fissaggio === 'TELAIO' ? 'block' : 'none'}">
+                                <label class="block text-sm font-medium mb-1">6. Colore Telaio</label>
+                                <input type="text" placeholder="Es: Bianco, Marrone"
+                                       value="${project.configPersiane?.coloreTelaio || ''}"
+                                       onchange="updateConfigPersiane('${project.id}', 'coloreTelaio', this.value)"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">7. Battuta</label>
+                            <select onchange="updateConfigPersiane('${project.id}', 'battuta', this.value)"
+                                    class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
+                                <option value="">Seleziona...</option>
+                                <option value="3 LATI" ${project.configPersiane?.battuta === '3 LATI' ? 'selected' : ''}>3 LATI</option>
+                                <option value="4 LATI" ${project.configPersiane?.battuta === '4 LATI' ? 'selected' : ''}>4 LATI</option>
+                                <option value="2 LATI LATERALI" ${project.configPersiane?.battuta === '2 LATI LATERALI' ? 'selected' : ''}>2 LATI LATERALI</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStep5ConfigCassonetti(project) {
+            if (!project.prodotti?.cassonetti) {
+                return `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">I cassonetti non sono stati selezionati. Salta questo step.</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📦</span> Configurazione Cassonetti Default
+                    </h2>
+                    <p class="text-gray-600 mb-4">Imposta i valori di default per tutti i cassonetti:</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">1. Tipo Cassonetto</label>
+                            <select onchange="updateConfigCassonetti('${project.id}', 'tipo', this.value)"
+                                    class="w-full px-3 py-2 border rounded-lg">
+                                <option value="">Seleziona...</option>
+                                <option value="monoblocco" ${project.configCassonetti?.tipo === 'monoblocco' ? 'selected' : ''}>MONOBLOCCO</option>
+                                <option value="isole" ${project.configCassonetti?.tipo === 'isole' ? 'selected' : ''}>SOLO ISOLE CASSONETTO</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">2. Azienda</label>
+                            <input type="text" placeholder="Es: Azienda produttrice"
+                                   value="${project.configCassonetti?.azienda || ''}"
+                                   onchange="updateConfigCassonetti('${project.id}', 'azienda', this.value)"
+                                   class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">3. Colore</label>
+                            <input type="text" placeholder="Es: Bianco, RAL 9010"
+                                   value="${project.configCassonetti?.colore || ''}"
+                                   onchange="updateConfigCassonetti('${project.id}', 'colore', this.value)"
+                                   class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStep6WallFeatures(project) {
+            return `
+                <div>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🗿</span> Caratteristiche Muro (Misure in mm)
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="text-xs font-medium">Prof. Muro Int</label>
+                                <input type="number" placeholder="0"
+                                       value="${project.caratteristicheMuro?.profMuroInt || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'profMuroInt', this.value)"
+                                       class="w-full compact-input border rounded">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium">Prof. Piana Sopra</label>
+                                <input type="number" placeholder="0"
+                                       value="${project.caratteristicheMuro?.profPianaSopra || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSopra', this.value)"
+                                       class="w-full compact-input border rounded">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium">Prof. Piana Sotto</label>
+                                <input type="number" placeholder="0"
+                                       value="${project.caratteristicheMuro?.profPianaSotto || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'profPianaSotto', this.value)"
+                                       class="w-full compact-input border rounded">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium">Telaio Prof</label>
+                                <input type="number" placeholder="0"
+                                       value="${project.caratteristicheMuro?.telaioProfondita || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'telaioProfondita', this.value)"
+                                       class="w-full compact-input border rounded">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium">Telaio Largh</label>
+                                <input type="number" placeholder="0"
+                                       value="${project.caratteristicheMuro?.telaioLarghezza || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'telaioLarghezza', this.value)"
+                                       class="w-full compact-input border rounded">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium">Delta Int</label>
+                                <input type="number" placeholder="0"
+                                       value="${project.caratteristicheMuro?.deltaInt || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'deltaInt', this.value)"
+                                       class="w-full compact-input border rounded">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium">Delta Est</label>
+                                <input type="number" placeholder="0"
+                                       value="${project.caratteristicheMuro?.deltaEst || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'deltaEst', this.value)"
+                                       class="w-full compact-input border rounded">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Guida Esistente?</label>
+                            <select id="guida-select-${project.id}" 
+                                    onchange="updateGuidaEsistente('${project.id}', this.value)"
+                                    class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
+                                <option value="">Seleziona...</option>
+                                <option value="si" ${project.caratteristicheMuro?.guidaEsistente === 'si' ? 'selected' : ''}>Sì</option>
+                                <option value="no" ${project.caratteristicheMuro?.guidaEsistente === 'no' ? 'selected' : ''}>No</option>
+                            </select>
+                        </div>
+                        
+                        <div id="guida-fields-${project.id}" style="display: ${project.caratteristicheMuro?.guidaEsistente === 'si' ? 'block' : 'none'}">
+                            <div class="grid grid-cols-3 gap-3 bg-green-50 p-3 rounded">
+                                <div>
+                                    <label class="block text-xs font-medium text-green-700 mb-1">Prof. Distanziale</label>
+                                    <input type="number" placeholder="0"
+                                           value="${project.caratteristicheMuro?.profDistanziale || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'profDistanziale', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-green-700 mb-1">Prof. Guida</label>
+                                    <input type="number" placeholder="0"
+                                           value="${project.caratteristicheMuro?.profGuida || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'profGuida', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-green-700 mb-1">Largh. Guida</label>
+                                    <input type="number" placeholder="0"
+                                           value="${project.caratteristicheMuro?.larghezzaGuida || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'larghezzaGuida', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Prof. Muro Est.</label>
+                            <input type="number" placeholder="0"
+                                   value="${project.caratteristicheMuro?.profMuroEst || ''}"
+                                   onchange="updateCaratteristicheMuro('${project.id}', 'profMuroEst', this.value)"
+                                   class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Falso Esistente?</label>
+                            <select id="falso-select-${project.id}"
+                                    onchange="updateFalsoEsistente('${project.id}', this.value)"
+                                    class="w-full md:w-1/2 px-3 py-2 border rounded-lg">
+                                <option value="">Seleziona...</option>
+                                <option value="si" ${project.caratteristicheMuro?.falsoEsistente === 'si' ? 'selected' : ''}>Sì</option>
+                                <option value="no" ${project.caratteristicheMuro?.falsoEsistente === 'no' ? 'selected' : ''}>No</option>
+                            </select>
+                        </div>
+                        
+                        <div id="falso-si-fields-${project.id}" style="display: ${project.caratteristicheMuro?.falsoEsistente === 'si' ? 'block' : 'none'}">
+                            <div class="bg-orange-50 p-3 rounded space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-orange-700 mb-1">Spessore Falso</label>
+                                    <input type="number" placeholder="0"
+                                           value="${project.caratteristicheMuro?.spessoreFalso || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'spessoreFalso', this.value)"
+                                           class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-orange-700 mb-1">+ Distanza Falso/Infisso</label>
+                                    <input type="number" placeholder="0"
+                                           value="${project.caratteristicheMuro?.distanzaFalsoInfisso || ''}"
+                                           onchange="updateCaratteristicheMuro('${project.id}', 'distanzaFalsoInfisso', this.value)"
+                                           class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="falso-no-fields-${project.id}" style="display: ${project.caratteristicheMuro?.falsoEsistente === 'no' ? 'block' : 'none'}">
+                            <div class="bg-purple-50 p-3 rounded">
+                                <label class="block text-xs font-medium text-purple-700 mb-1">Distanza Muro/Infisso</label>
+                                <input type="number" placeholder="0"
+                                       value="${project.caratteristicheMuro?.distanzaMuroInfisso || ''}"
+                                       onchange="updateCaratteristicheMuro('${project.id}', 'distanzaMuroInfisso', this.value)"
+                                       class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStep7Positions(project) {
             return `
                 <div>
                     <div class="flex justify-between items-center mb-4">
@@ -770,7 +984,7 @@
                                 <div class="section-card cursor-pointer hover:shadow-lg" onclick="openPosition('${pos.id}')">
                                     <div class="flex justify-between items-center">
                                         <div class="flex items-center gap-3">
-                                            <span class="text-2xl">📐</span>
+                                            <span class="text-2xl">📍</span>
                                             <div>
                                                 <h3 class="font-semibold">${pos.name}</h3>
                                                 <p class="text-sm text-gray-600">
@@ -801,7 +1015,7 @@
                     <!-- Position Header -->
                     <div class="bg-white rounded-lg shadow p-4 mb-4">
                         <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-3 flex-1">
                                 <input type="text" value="${pos.name}"
                                        onchange="updatePosition('${project.id}', '${pos.id}', 'name', this.value)"
                                        class="text-xl font-bold border-b-2 border-transparent focus:border-purple-500 outline-none">
@@ -812,10 +1026,18 @@
                                     `).join('')}
                                 </select>
                             </div>
-                            <button onclick="addPosition('${project.id}')"
-                                    class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium">
-                                + Nuova Posizione
-                            </button>
+                            <div class="flex gap-2">
+                                ${project.positions.length > 1 ? `
+                                <button onclick="deletePosition('${project.id}', '${pos.id}')"
+                                        class="px-3 py-1.5 bg-red-600 text-white rounded-lg font-medium text-sm">
+                                    🗑️ Elimina
+                                </button>
+                                ` : ''}
+                                <button onclick="addPosition('${project.id}')"
+                                        class="px-4 py-1.5 bg-green-600 text-white rounded-lg font-medium text-sm">
+                                    + Nuova Posizione
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -854,9 +1076,9 @@
 
                     <!-- Products Tabs -->
                     <div class="bg-white rounded-lg shadow">
-                        <div class="flex border-b">
+                        <div class="flex border-b overflow-x-auto">
                             <button onclick="setPositionTab('${pos.id}', 'misure')"
-                                    class="tab-btn ${pos.activeTab === 'misure' ? 'active' : ''}">
+                                    class="tab-btn ${(pos.activeTab || 'misure') === 'misure' ? 'active' : ''}">
                                 📏 Misure
                             </button>
                             ${project.prodotti?.infissi ? `
@@ -877,6 +1099,10 @@
                                     📦 Cassonetti (${pos.cassonetti?.length || 0})
                                 </button>
                             ` : ''}
+                            <button onclick="setPositionTab('${pos.id}', 'foto')"
+                                    class="tab-btn ${pos.activeTab === 'foto' ? 'active' : ''}">
+                                📸 Foto (${pos.foto?.length || 0})
+                            </button>
                         </div>
 
                         <div class="p-4">
@@ -891,98 +1117,631 @@
             const tab = pos.activeTab || 'misure';
 
             if (tab === 'misure') {
-                return `
-                    <div class="grid-compact">
-                        ${['LF', 'HF', 'LVT', 'HVT', 'TMV', 'HMT', 'LVAR', 'HVAR'].map(field => `
-                            <div>
-                                <label class="text-xs font-medium">${field} (mm)</label>
-                                <input type="number" placeholder="0"
-                                       value="${pos.misure?.[field] || ''}"
-                                       onchange="updateMisura('${project.id}', '${pos.id}', '${field}', this.value)"
-                                       class="w-full compact-input border rounded mt-1">
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
+                return renderMisureTab(project, pos);
+            }
+            if (tab === 'infissi') {
+                return renderInfissiTab(project, pos);
+            }
+            if (tab === 'persiane') {
+                return renderPersianeTab(project, pos);
+            }
+            if (tab === 'cassonetti') {
+                return renderCassonettiTab(project, pos);
+            }
+            if (tab === 'foto') {
+                return renderFotoTab(project, pos);
             }
 
-            // Product tabs
-            const products = pos[tab] || [];
-            const canAdd = products.length === 0;
+            return '';
+        }
 
+        function renderMisureTab(project, pos) {
             return `
-                ${canAdd ? `
-                    <button onclick="addProduct('${project.id}', '${pos.id}', '${tab}')"
-                            class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium">
-                        + Aggiungi ${tab.charAt(0).toUpperCase() + tab.slice(1, -1)}
-                    </button>
-                ` : `
-                    <div class="bg-yellow-50 border border-yellow-300 rounded p-3 text-sm mb-4">
-                        ⚠️ Solo un prodotto per posizione
+                <div class="space-y-4">
+                    <!-- MISURE PRINCIPALI -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <p class="text-sm font-bold text-gray-700 mb-3">Misure Principali (mm)</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            ${['LF', 'HF', 'LVT', 'HVT', 'TMV', 'HMT', 'LVAR', 'HVAR'].map(field => `
+                                <div>
+                                    <label class="text-xs font-semibold">${field}</label>
+                                    <input type="number" placeholder="0"
+                                           value="${pos.misure?.[field] || ''}"
+                                           onchange="updateMisura('${project.id}', '${pos.id}', '${field}', this.value)"
+                                           class="w-full compact-input border rounded mt-1 font-semibold">
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
-                `}
 
-                ${products.map((prod, idx) => renderProductCompact(project, pos, tab, prod, idx)).join('')}
+                    <!-- ALTEZZE FINALI -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <p class="text-sm font-bold text-gray-700 mb-3">Altezze (mm)</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">H Soffitto</label>
+                                <input type="number" placeholder="0" value="${pos.misure?.HSoffitto || ''}"
+                                       onchange="updateMisura('${project.id}', '${pos.id}', 'HSoffitto', this.value)"
+                                       class="w-full px-3 py-2 border rounded font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">H Parapetto/Soffitto</label>
+                                <input type="number" placeholder="0" value="${pos.misure?.HParapettoSoffitto || ''}"
+                                       onchange="updateMisura('${project.id}', '${pos.id}', 'HParapettoSoffitto', this.value)"
+                                       class="w-full px-3 py-2 border rounded font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">H Pavimento/Parapetto</label>
+                                <input type="number" placeholder="0" value="${pos.misure?.HPavimentoParapetto || ''}"
+                                       onchange="updateMisura('${project.id}', '${pos.id}', 'HPavimentoParapetto', this.value)"
+                                       class="w-full px-3 py-2 border rounded font-semibold">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${pos.overrideCaratteristiche ? renderCaratteristicheMuroOverride(project, pos) : `
+                        <button onclick="enableOverride('${project.id}', '${pos.id}')"
+                                class="text-sm bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+                            ✏️ Personalizza caratteristiche muro per questa posizione
+                        </button>
+                    `}
+                </div>
             `;
         }
 
-        function renderProductCompact(project, pos, type, prod, idx) {
-            const config = type === 'infissi' ? project.configInfissi :
-                          type === 'persiane' ? project.configPersiane :
-                          project.configCassonetti;
-
+        function renderCaratteristicheMuroOverride(project, pos) {
+            const cm = pos.caratteristicheMuroOverride || {};
+            const globalCm = project.caratteristicheMuro || {};
+            
             return `
-                <div class="border rounded-lg p-4">
+                <div class="bg-yellow-100 p-4 rounded border-2 border-yellow-500">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-semibold">${type.charAt(0).toUpperCase() + type.slice(1, -1)}</h4>
-                        <button onclick="removeProduct('${project.id}', '${pos.id}', '${type}', ${idx})"
-                                class="text-red-600 hover:bg-red-50 p-1 rounded">🗑️</button>
+                        <p class="text-sm font-bold text-yellow-800">⚠️ Override Caratteristiche Muro - Personalizzato</p>
+                        <button onclick="disableOverride('${project.id}', '${pos.id}')"
+                                class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700">
+                            ↩️ Ripristina globali
+                        </button>
                     </div>
-
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Prof. Muro Int. (mm)</label>
+                                <input type="number" placeholder="0"
+                                       value="${cm.profMuroInt !== undefined ? cm.profMuroInt : globalCm.profMuroInt || ''}"
+                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profMuroInt', this.value)"
+                                       class="w-full px-2 py-1 border rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Prof. Piana Sopra (mm)</label>
+                                <input type="number" placeholder="0"
+                                       value="${cm.profPianaSopra !== undefined ? cm.profPianaSopra : globalCm.profPianaSopra || ''}"
+                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profPianaSopra', this.value)"
+                                       class="w-full px-2 py-1 border rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Prof. Piana Sotto (mm)</label>
+                                <input type="number" placeholder="0"
+                                       value="${cm.profPianaSotto !== undefined ? cm.profPianaSotto : globalCm.profPianaSotto || ''}"
+                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profPianaSotto', this.value)"
+                                       class="w-full px-2 py-1 border rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Telaio Prof. (mm)</label>
+                                <input type="number" placeholder="0"
+                                       value="${cm.telaioProfondita !== undefined ? cm.telaioProfondita : globalCm.telaioProfondita || ''}"
+                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'telaioProfondita', this.value)"
+                                       class="w-full px-2 py-1 border rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Telaio Largh. (mm)</label>
+                                <input type="number" placeholder="0"
+                                       value="${cm.telaioLarghezza !== undefined ? cm.telaioLarghezza : globalCm.telaioLarghezza || ''}"
+                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'telaioLarghezza', this.value)"
+                                       class="w-full px-2 py-1 border rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Delta Int. (mm)</label>
+                                <input type="number" placeholder="0"
+                                       value="${cm.deltaInt !== undefined ? cm.deltaInt : globalCm.deltaInt || ''}"
+                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'deltaInt', this.value)"
+                                       class="w-full px-2 py-1 border rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Delta Est. (mm)</label>
+                                <input type="number" placeholder="0"
+                                       value="${cm.deltaEst !== undefined ? cm.deltaEst : globalCm.deltaEst || ''}"
+                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'deltaEst', this.value)"
+                                       class="w-full px-2 py-1 border rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Prof. Muro Est. (mm)</label>
+                                <input type="number" placeholder="0"
+                                       value="${cm.profMuroEst !== undefined ? cm.profMuroEst : globalCm.profMuroEst || ''}"
+                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profMuroEst', this.value)"
+                                       class="w-full px-2 py-1 border rounded text-sm">
+                            </div>
+                        </div>
+                        
                         <div>
-                            <label class="text-xs">Quantità</label>
-                            <select onchange="updateProduct('${project.id}', '${pos.id}', '${type}', ${idx}, 'qta', this.value)"
-                                    class="w-full compact-input border rounded">
-                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${prod.qta == n ? 'selected' : ''}>${n}</option>`).join('')}
+                            <label class="block text-xs font-medium mb-1">Guida Esistente?</label>
+                            <select onchange="updateCaratteristicheMuroOverrideWithRender('${project.id}', '${pos.id}', 'guidaEsistente', this.value);"
+                                    class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                                <option value="">Seleziona...</option>
+                                <option value="si" ${(cm.guidaEsistente !== undefined ? cm.guidaEsistente : globalCm.guidaEsistente) === 'si' ? 'selected' : ''}>Sì</option>
+                                <option value="no" ${(cm.guidaEsistente !== undefined ? cm.guidaEsistente : globalCm.guidaEsistente) === 'no' ? 'selected' : ''}>No</option>
                             </select>
                         </div>
-
-                        ${type === 'infissi' ? `
-                            <div>
-                                <label class="text-xs">Tipo</label>
-                                <select onchange="updateProduct('${project.id}', '${pos.id}', '${type}', ${idx}, 'tipo', this.value)"
-                                        class="w-full compact-input border rounded">
-                                    <option value="">--</option>
-                                    ${['F1','PF1','F2','PF2','F3','PF3'].map(t => 
-                                        `<option value="${t}" ${prod.tipo === t ? 'selected' : ''}>${t}</option>`
-                                    ).join('')}
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-xs">Apertura</label>
-                                <select onchange="updateProduct('${project.id}', '${pos.id}', '${type}', ${idx}, 'apertura', this.value)"
-                                        class="w-full compact-input border rounded">
-                                    <option value="">--</option>
-                                    ${['SX','DX','Fisso','Ribalta'].map(a => 
-                                        `<option value="${a}" ${prod.apertura === a ? 'selected' : ''}>${a}</option>`
-                                    ).join('')}
-                                </select>
+                        
+                        ${(cm.guidaEsistente !== undefined ? cm.guidaEsistente : globalCm.guidaEsistente) === 'si' ? `
+                            <div class="grid grid-cols-3 gap-2 bg-green-50 p-2 rounded">
+                                <div>
+                                    <label class="block text-xs font-medium text-green-700 mb-1">Prof. Distanziale (mm)</label>
+                                    <input type="number" placeholder="0"
+                                           value="${cm.profDistanziale !== undefined ? cm.profDistanziale : globalCm.profDistanziale || ''}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profDistanziale', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-green-700 mb-1">Prof. Guida (mm)</label>
+                                    <input type="number" placeholder="0"
+                                           value="${cm.profGuida !== undefined ? cm.profGuida : globalCm.profGuida || ''}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'profGuida', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-green-700 mb-1">Larghezza Guida (mm)</label>
+                                    <input type="number" placeholder="0"
+                                           value="${cm.larghezzaGuida !== undefined ? cm.larghezzaGuida : globalCm.larghezzaGuida || ''}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'larghezzaGuida', this.value)"
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
                             </div>
                         ` : ''}
-
-                        <!-- Inherit from config with visual indication -->
-                        ${Object.entries(config || {}).slice(0, 4).map(([key, defaultVal]) => `
-                            <div>
-                                <label class="text-xs">${key}</label>
-                                <input type="text" 
-                                       value="${prod[key] || ''}"
-                                       placeholder="${defaultVal || '--'}"
-                                       onchange="updateProduct('${project.id}', '${pos.id}', '${type}', ${idx}, '${key}', this.value)"
-                                       class="w-full compact-input border rounded ${prod[key] ? '' : 'bg-gray-50'}">
+                        
+                        <div>
+                            <label class="block text-xs font-medium mb-1">Falso Esistente?</label>
+                            <select onchange="updateCaratteristicheMuroOverrideWithRender('${project.id}', '${pos.id}', 'falsoEsistente', this.value);"
+                                    class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                                <option value="">Seleziona...</option>
+                                <option value="si" ${(cm.falsoEsistente !== undefined ? cm.falsoEsistente : globalCm.falsoEsistente) === 'si' ? 'selected' : ''}>Sì</option>
+                                <option value="no" ${(cm.falsoEsistente !== undefined ? cm.falsoEsistente : globalCm.falsoEsistente) === 'no' ? 'selected' : ''}>No</option>
+                            </select>
+                        </div>
+                        
+                        ${(cm.falsoEsistente !== undefined ? cm.falsoEsistente : globalCm.falsoEsistente) === 'si' ? `
+                            <div class="bg-orange-50 p-2 rounded space-y-2">
+                                <div>
+                                    <label class="block text-xs font-medium text-orange-700 mb-1">Spessore Falso</label>
+                                    <input type="number" placeholder="0"
+                                           value="${cm.spessoreFalso !== undefined ? cm.spessoreFalso : globalCm.spessoreFalso || ''}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'spessoreFalso', this.value)"
+                                           class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-orange-700 mb-1">+ Distanza Falso/Infisso</label>
+                                    <input type="number" placeholder="0"
+                                           value="${cm.distanzaFalsoInfisso !== undefined ? cm.distanzaFalsoInfisso : globalCm.distanzaFalsoInfisso || ''}"
+                                           onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'distanzaFalsoInfisso', this.value)"
+                                           class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                                </div>
                             </div>
-                        `).join('')}
+                        ` : `
+                            <div class="bg-purple-50 p-2 rounded">
+                                <label class="block text-xs font-medium text-purple-700 mb-1">Distanza Muro/Infisso</label>
+                                <input type="number" placeholder="0"
+                                       value="${cm.distanzaMuroInfisso !== undefined ? cm.distanzaMuroInfisso : globalCm.distanzaMuroInfisso || ''}"
+                                       onchange="updateCaratteristicheMuroOverride('${project.id}', '${pos.id}', 'distanzaMuroInfisso', this.value)"
+                                       class="w-full md:w-1/2 px-2 py-1 border rounded text-sm">
+                            </div>
+                        `}
                     </div>
+                </div>
+            `;
+        }
+
+        function renderInfissiTab(project, pos) {
+            const products = pos.infissi || [];
+            const canAdd = products.length === 0;
+
+            return `
+                <div class="space-y-4">
+                    ${canAdd ? `
+                        <button onclick="addProduct('${project.id}', '${pos.id}', 'infissi')"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium">
+                            + Aggiungi Infisso
+                        </button>
+                    ` : `
+                        <div class="bg-yellow-50 border border-yellow-300 rounded p-3 text-sm mb-4">
+                            ⚠️ Solo un infisso per posizione
+                        </div>
+                    `}
+
+                    ${products.map((prod, idx) => renderInfissoDetail(project, pos, prod, idx)).join('')}
+                </div>
+            `;
+        }
+
+        function renderInfissoDetail(project, pos, inf, idx) {
+            return `
+                <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-blue-300">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-bold text-blue-700">🪟 Infisso</h4>
+                        <button onclick="removeProduct('${project.id}', '${pos.id}', 'infissi', ${idx})"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">
+                            🗑️ Elimina
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- DATI SPECIFICI -->
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h5 class="font-semibold text-sm mb-3 text-blue-700">📋 Dati Specifici</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div>
+                                    <label class="text-xs">Quantità</label>
+                                    <select onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', ${idx}, 'qta', this.value)"
+                                            class="w-full compact-input border rounded">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${(inf.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="text-xs">Tipo</label>
+                                    <select onchange="updateProductWithRender('${project.id}', '${pos.id}', 'infissi', ${idx}, 'tipo', this.value)"
+                                            class="w-full compact-input border rounded">
+                                        <option value="">--</option>
+                                        ${['F1','PF1','F2','PF2','F3','PF3','HST','SCORR.PARALL','FISSO','altro'].map(t => 
+                                            `<option value="${t}" ${inf.tipo === t ? 'selected' : ''}>${t}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                                
+                                ${inf.tipo === 'altro' ? `
+                                <div>
+                                    <label class="text-xs">Specifica Tipo</label>
+                                    <input type="text" value="${inf.tipoAltro || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', ${idx}, 'tipoAltro', this.value)"
+                                           class="w-full compact-input border rounded">
+                                </div>
+                                ` : ''}
+                                
+                                <div>
+                                    <label class="text-xs">Apertura</label>
+                                    <select onchange="updateProductWithRender('${project.id}', '${pos.id}', 'infissi', ${idx}, 'apertura', this.value)"
+                                            class="w-full compact-input border rounded">
+                                        <option value="">--</option>
+                                        ${['SX','DX','Fisso','Ribalta','Sp. SX','Sp. DX','altro'].map(a => 
+                                            `<option value="${a}" ${inf.apertura === a ? 'selected' : ''}>${a}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                                
+                                ${inf.apertura === 'altro' ? `
+                                <div>
+                                    <label class="text-xs">Specifica Apertura</label>
+                                    <input type="text" value="${inf.aperturaAltro || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', ${idx}, 'aperturaAltro', this.value)"
+                                           class="w-full compact-input border rounded">
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- CONFIGURAZIONE -->
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h5 class="font-semibold text-sm mb-3 text-green-700">⚙️ Configurazione</h5>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                ${Object.entries({
+                                    finituraInt: 'Finitura Int',
+                                    finituraEst: 'Finitura Est',
+                                    coloreInt: 'Colore Int',
+                                    coloreEst: 'Colore Est',
+                                    tipoAnta: 'Tipo Anta',
+                                    telaio: 'Telaio',
+                                    allarme: 'Allarme',
+                                    vetro: 'Vetro',
+                                    tagliTelaio: 'Tagli Telaio',
+                                    tipoTagli: 'Tipo Tagli'
+                                }).map(([key, label]) => {
+                                    const defaultVal = project.configInfissi?.[key] || '';
+                                    return `
+                                        <div>
+                                            <label class="text-xs">${label}</label>
+                                            <input type="text" 
+                                                   value="${inf[key] || ''}"
+                                                   placeholder="${defaultVal || '--'}"
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', ${idx}, '${key}', this.value)"
+                                                   class="w-full compact-input border rounded ${inf[key] ? '' : 'bg-gray-50'}">
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPersianeTab(project, pos) {
+            const products = pos.persiane || [];
+            const canAdd = products.length === 0;
+
+            return `
+                <div class="space-y-4">
+                    ${canAdd ? `
+                        <button onclick="addProduct('${project.id}', '${pos.id}', 'persiane')"
+                                class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium">
+                            + Aggiungi Persiana
+                        </button>
+                    ` : `
+                        <div class="bg-yellow-50 border border-yellow-300 rounded p-3 text-sm mb-4">
+                            ⚠️ Solo una persiana per posizione
+                        </div>
+                    `}
+
+                    ${products.map((prod, idx) => renderPersianaDetail(project, pos, prod, idx)).join('')}
+                </div>
+            `;
+        }
+
+        function renderPersianaDetail(project, pos, pers, idx) {
+            return `
+                <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-purple-300">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-bold text-purple-700">🚪 Persiana</h4>
+                        <button onclick="removeProduct('${project.id}', '${pos.id}', 'persiane', ${idx})"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">
+                            🗑️ Elimina
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- DATI SPECIFICI -->
+                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                            <h5 class="font-semibold text-sm mb-3 text-purple-700">📋 Dati Specifici</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div>
+                                    <label class="text-xs">Quantità</label>
+                                    <select onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', ${idx}, 'qta', this.value)"
+                                            class="w-full compact-input border rounded">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${(pers.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="text-xs">Tipo</label>
+                                    <select onchange="updateProductWithRender('${project.id}', '${pos.id}', 'persiane', ${idx}, 'tipo', this.value)"
+                                            class="w-full compact-input border rounded">
+                                        <option value="">--</option>
+                                        ${['F1','PF1','F2','PF2','F3','PF3','SCORREVOLE','altro'].map(t => 
+                                            `<option value="${t}" ${pers.tipo === t ? 'selected' : ''}>${t}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                                
+                                ${pers.tipo === 'altro' ? `
+                                <div>
+                                    <label class="text-xs">Specifica Tipo</label>
+                                    <input type="text" value="${pers.tipoAltro || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', ${idx}, 'tipoAltro', this.value)"
+                                           class="w-full compact-input border rounded">
+                                </div>
+                                ` : ''}
+                                
+                                <div>
+                                    <label class="text-xs">Apertura</label>
+                                    <select onchange="updateProductWithRender('${project.id}', '${pos.id}', 'persiane', ${idx}, 'apertura', this.value)"
+                                            class="w-full compact-input border rounded">
+                                        <option value="">--</option>
+                                        ${['SP SX','SP DX','LIB-SX','LIB-DX','SCORR-SX','SCORR-DX','altro'].map(a => 
+                                            `<option value="${a}" ${pers.apertura === a ? 'selected' : ''}>${a}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                                
+                                ${pers.apertura === 'altro' ? `
+                                <div>
+                                    <label class="text-xs">Specifica Apertura</label>
+                                    <input type="text" value="${pers.aperturaAltro || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', ${idx}, 'aperturaAltro', this.value)"
+                                           class="w-full compact-input border rounded">
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- CONFIGURAZIONE -->
+                        <div class="bg-purple-100 p-4 rounded-lg border border-purple-200">
+                            <h5 class="font-semibold text-sm mb-3 text-purple-700">⚙️ Configurazione</h5>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                ${Object.entries({
+                                    modello: 'Modello',
+                                    fissaggio: 'Fissaggio',
+                                    tipoTelaio: 'Tipo Telaio',
+                                    colorePersiana: 'Colore Persiana',
+                                    coloreTelaio: 'Colore Telaio',
+                                    battuta: 'Battuta'
+                                }).map(([key, label]) => {
+                                    const defaultVal = project.configPersiane?.[key] || '';
+                                    return `
+                                        <div>
+                                            <label class="text-xs">${label}</label>
+                                            <input type="text" 
+                                                   value="${pers[key] || ''}"
+                                                   placeholder="${defaultVal || '--'}"
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', ${idx}, '${key}', this.value)"
+                                                   class="w-full compact-input border rounded ${pers[key] ? '' : 'bg-gray-50'}">
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- FOTO PERSIANA -->
+                        <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
+                            <h5 class="font-semibold text-sm mb-2 text-blue-700">📸 Foto Persiana</h5>
+                            
+                            <div class="mb-2">
+                                <input type="file" 
+                                       id="foto-persiana-input-${pos.id}-${idx}" 
+                                       accept="image/*" 
+                                       onchange="addFotoPersiana('${project.id}', '${pos.id}', ${idx}, this)"
+                                       class="hidden">
+                                <button onclick="document.getElementById('foto-persiana-input-${pos.id}-${idx}').click()" 
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold">
+                                    📷 Carica Foto
+                                </button>
+                                <p class="text-xs text-gray-600 mt-1">1 foto per persiana</p>
+                            </div>
+                            
+                            ${pers.foto ? `
+                                <div class="relative group inline-block">
+                                    <img src="${pers.foto.data}" 
+                                         onclick="showFotoModal('${pers.foto.data}')"
+                                         class="w-32 h-32 object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-all">
+                                    <button onclick="removeFotoPersiana('${project.id}', '${pos.id}', ${idx})"
+                                            class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        ✕
+                                    </button>
+                                </div>
+                            ` : '<p class="text-xs text-gray-500 italic">Nessuna foto caricata</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCassonettiTab(project, pos) {
+            const products = pos.cassonetti || [];
+            const canAdd = products.length === 0;
+
+            return `
+                <div class="space-y-4">
+                    ${canAdd ? `
+                        <button onclick="addProduct('${project.id}', '${pos.id}', 'cassonetti')"
+                                class="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium">
+                            + Aggiungi Cassonetto
+                        </button>
+                    ` : `
+                        <div class="bg-yellow-50 border border-yellow-300 rounded p-3 text-sm mb-4">
+                            ⚠️ Solo un cassonetto per posizione
+                        </div>
+                    `}
+
+                    ${products.map((prod, idx) => renderCassonettoDetail(project, pos, prod, idx)).join('')}
+                </div>
+            `;
+        }
+
+        function renderCassonettoDetail(project, pos, cass, idx) {
+            return `
+                <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-orange-300">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-bold text-orange-700">📦 Cassonetto</h4>
+                        <button onclick="removeProduct('${project.id}', '${pos.id}', 'cassonetti', ${idx})"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">
+                            🗑️ Elimina
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- DATI GENERALI -->
+                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <h5 class="font-semibold text-sm mb-3 text-orange-700">📋 Dati Generali</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="text-xs">Quantità</label>
+                                    <select onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetti', ${idx}, 'qta', this.value)"
+                                            class="w-full compact-input border rounded">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${(cass.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
+                                    </select>
+                                </div>
+                                
+                                ${Object.entries({
+                                    tipo: 'Tipo',
+                                    azienda: 'Azienda',
+                                    colore: 'Colore',
+                                    sovrappSostit: 'Sovrapp/Sostit',
+                                    aSoffitto: 'A Soffitto'
+                                }).map(([key, label]) => {
+                                    const defaultVal = project.configCassonetti?.[key] || '';
+                                    return `
+                                        <div>
+                                            <label class="text-xs">${label}</label>
+                                            <input type="text" 
+                                                   value="${cass[key] || ''}"
+                                                   placeholder="${defaultVal || '--'}"
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetti', ${idx}, '${key}', this.value)"
+                                                   class="w-full compact-input border rounded ${cass[key] ? '' : 'bg-gray-50'}">
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- MISURE CASSONETTO -->
+                        <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                            <h5 class="font-semibold text-sm mb-3 text-amber-700">📏 Misure Cassonetto (mm)</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                ${['LS', 'SRSX', 'ZSX', 'SRDX', 'ZDX', 'HCASS', 'B', 'C', 'BSuperiore'].map(field => `
+                                    <div>
+                                        <label class="text-xs font-semibold">${field}</label>
+                                        <input type="number" placeholder="0" value="${cass[field] || ''}"
+                                               onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetti', ${idx}, '${field}', this.value)"
+                                               class="w-full compact-input border rounded font-semibold">
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="mt-3 p-2 bg-yellow-100 rounded border border-yellow-400">
+                                <p class="text-xs font-semibold text-yellow-800">ℹ️ Note:</p>
+                                <p class="text-xs text-yellow-700">
+                                    Se SRSX = ZSX → Muro a SX | Se SRDX = ZDX → Muro a DX
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFotoTab(project, pos) {
+            return `
+                <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+                    <h4 class="font-semibold text-blue-700 mb-3">📸 Foto Posizione</h4>
+                    
+                    <div class="mb-3">
+                        <input type="file" 
+                               id="foto-input-${pos.id}" 
+                               accept="image/*" 
+                               onchange="addFoto('${project.id}', '${pos.id}', this)"
+                               class="hidden">
+                        <button onclick="document.getElementById('foto-input-${pos.id}').click()" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">
+                            📷 Carica Foto
+                        </button>
+                        <p class="text-xs text-gray-600 mt-2">Click per selezionare un'immagine dal dispositivo</p>
+                    </div>
+                    
+                    ${pos.foto && pos.foto.length > 0 ? `
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            ${pos.foto.map((foto, idx) => `
+                                <div class="relative group">
+                                    <img src="${foto.data}" 
+                                         onclick="showFotoModal('${foto.data}')"
+                                         class="w-full h-32 object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-all">
+                                    <button onclick="removeFoto('${project.id}', '${pos.id}', ${idx})"
+                                            class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        ✕
+                                    </button>
+                                    <p class="text-xs text-center mt-1 text-gray-600">Foto ${idx + 1}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<p class="text-sm text-gray-500 italic">Nessuna foto caricata</p>'}
                 </div>
             `;
         }
@@ -1007,6 +1766,19 @@
                                 Crea
                             </button>
                         </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function FotoModal() {
+            return `
+                <div id="foto-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-50" onclick="hideFotoModal()">
+                    <div class="relative max-w-4xl max-h-screen p-4">
+                        <button onclick="hideFotoModal()" class="absolute top-2 right-2 bg-white text-black rounded-full w-10 h-10 flex items-center justify-center font-bold hover:bg-gray-200">
+                            ✕
+                        </button>
+                        <img id="foto-modal-img" src="" class="max-w-full max-h-screen object-contain rounded-lg">
                     </div>
                 </div>
             `;
@@ -1079,7 +1851,6 @@
                 if (!project.clientData) project.clientData = {};
                 project.clientData[field] = value;
                 
-                // Propagate piano to positions
                 if (field === 'piano') {
                     project.positions.forEach(pos => {
                         if (!pos.piano) pos.piano = value;
@@ -1095,7 +1866,7 @@
                 if (!project.prodotti) project.prodotti = {};
                 project.prodotti[product] = checked;
                 saveState();
-                // Don't re-render to avoid closing the modal
+                render();
             }
         };
 
@@ -1104,17 +1875,6 @@
             if (project) {
                 if (!project.configInfissi) project.configInfissi = {};
                 project.configInfissi[field] = value;
-                
-                // Apply to all existing infissi without override
-                project.positions.forEach(pos => {
-                    if (pos.infissi) {
-                        pos.infissi.forEach(inf => {
-                            if (!inf[field]) {
-                                inf[field] = value;
-                            }
-                        });
-                    }
-                });
                 saveState();
             }
         };
@@ -1125,6 +1885,46 @@
                 if (!project.configPersiane) project.configPersiane = {};
                 project.configPersiane[field] = value;
                 saveState();
+            }
+        };
+
+        window.updateConfigPersianeConditional = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configPersiane) project.configPersiane = {};
+                project.configPersiane[field] = value;
+                saveState();
+                
+                if (field === 'modello') {
+                    const modelloAltro = document.getElementById(`modello-altro-${projectId}`);
+                    if (modelloAltro) {
+                        modelloAltro.style.display = value === 'altro' ? 'block' : 'none';
+                    }
+                } else if (field === 'tipoTelaio') {
+                    const tipoTelaioAltro = document.getElementById(`tipo-telaio-altro-${projectId}`);
+                    if (tipoTelaioAltro) {
+                        tipoTelaioAltro.style.display = value === 'altro' ? 'block' : 'none';
+                    }
+                }
+            }
+        };
+
+        window.updateFissaggioPersiane = (projectId, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configPersiane) project.configPersiane = {};
+                project.configPersiane.fissaggio = value;
+                saveState();
+                
+                const tipoTelaioContainer = document.getElementById(`tipo-telaio-persiane-container-${projectId}`);
+                const coloreTelaioContainer = document.getElementById(`colore-telaio-persiane-container-${projectId}`);
+                
+                if (tipoTelaioContainer) {
+                    tipoTelaioContainer.style.display = value === 'TELAIO' ? 'block' : 'none';
+                }
+                if (coloreTelaioContainer) {
+                    coloreTelaioContainer.style.display = value === 'TELAIO' ? 'block' : 'none';
+                }
             }
         };
 
@@ -1143,6 +1943,36 @@
                 if (!project.caratteristicheMuro) project.caratteristicheMuro = {};
                 project.caratteristicheMuro[field] = value;
                 saveState();
+            }
+        };
+
+        window.updateGuidaEsistente = (projectId, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.caratteristicheMuro) project.caratteristicheMuro = {};
+                project.caratteristicheMuro.guidaEsistente = value;
+                saveState();
+                
+                const guidaFields = document.getElementById(`guida-fields-${projectId}`);
+                if (guidaFields) {
+                    guidaFields.style.display = value === 'si' ? 'block' : 'none';
+                }
+            }
+        };
+
+        window.updateFalsoEsistente = (projectId, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.caratteristicheMuro) project.caratteristicheMuro = {};
+                project.caratteristicheMuro.falsoEsistente = value;
+                saveState();
+                
+                const falsoSiFields = document.getElementById(`falso-si-fields-${projectId}`);
+                const falsoNoFields = document.getElementById(`falso-no-fields-${projectId}`);
+                if (falsoSiFields && falsoNoFields) {
+                    falsoSiFields.style.display = value === 'si' ? 'block' : 'none';
+                    falsoNoFields.style.display = value === 'no' ? 'block' : 'none';
+                }
             }
         };
 
@@ -1169,6 +1999,48 @@
             }
         };
 
+        window.enableOverride = (projectId, posId) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos) {
+                    pos.overrideCaratteristiche = true;
+                    pos.caratteristicheMuroOverride = {...project.caratteristicheMuro};
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        window.disableOverride = (projectId, posId) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos) {
+                    pos.overrideCaratteristiche = false;
+                    pos.caratteristicheMuroOverride = null;
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        window.updateCaratteristicheMuroOverride = (projectId, posId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos.caratteristicheMuroOverride) {
+                    pos.caratteristicheMuroOverride[field] = value;
+                    saveState();
+                }
+            }
+        };
+
+        window.updateCaratteristicheMuroOverrideWithRender = (projectId, posId, field, value) => {
+            updateCaratteristicheMuroOverride(projectId, posId, field, value);
+            render();
+        };
+
         // Product Functions
         window.addProduct = (projectId, posId, type) => {
             const project = state.projects.find(p => p.id === projectId);
@@ -1181,10 +2053,9 @@
                                   type === 'persiane' ? project.configPersiane :
                                   project.configCassonetti;
                     
-                    // Create product with default config
                     const product = {
                         qta: 1,
-                        ...config // Copy all default configurations
+                        ...config
                     };
                     
                     pos[type].push(product);
@@ -1206,6 +2077,11 @@
             }
         };
 
+        window.updateProductWithRender = (projectId, posId, type, idx, field, value) => {
+            updateProduct(projectId, posId, type, idx, field, value);
+            render();
+        };
+
         window.removeProduct = (projectId, posId, type, idx) => {
             if (confirm('Eliminare questo prodotto?')) {
                 const project = state.projects.find(p => p.id === projectId);
@@ -1217,6 +2093,24 @@
                         showNotification('Prodotto eliminato', 'info');
                         render();
                     }
+                }
+            }
+        };
+
+        window.deletePosition = (projectId, posId) => {
+            if (confirm('Sei sicuro di voler eliminare questa posizione? Tutti i dati verranno persi.')) {
+                const project = state.projects.find(p => p.id === projectId);
+                if (project) {
+                    project.positions = project.positions.filter(p => p.id !== posId);
+                    saveState();
+                    
+                    if (project.positions.length > 0) {
+                        state.currentPosition = project.positions[0].id;
+                        state.screen = 'position';
+                    } else {
+                        state.screen = 'project';
+                    }
+                    render();
                 }
             }
         };
@@ -1246,6 +2140,73 @@
             }
         };
 
+        window.removeFoto = (projectId, posId, fotoIdx) => {
+            if (confirm('Sei sicuro di voler eliminare questa foto?')) {
+                const project = state.projects.find(p => p.id === projectId);
+                if (project) {
+                    const pos = project.positions.find(p => p.id === posId);
+                    if (pos && pos.foto) {
+                        pos.foto.splice(fotoIdx, 1);
+                        saveState();
+                        render();
+                    }
+                }
+            }
+        };
+
+        window.addFotoPersiana = (projectId, posId, persianaIdx, input) => {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const project = state.projects.find(p => p.id === projectId);
+                    if (project) {
+                        const pos = project.positions.find(p => p.id === posId);
+                        if (pos && pos.persiane && pos.persiane[persianaIdx]) {
+                            pos.persiane[persianaIdx].foto = {
+                                data: e.target.result,
+                                timestamp: new Date().toISOString()
+                            };
+                            saveState();
+                            render();
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+            input.value = '';
+        };
+
+        window.removeFotoPersiana = (projectId, posId, persianaIdx) => {
+            if (confirm('Sei sicuro di voler eliminare questa foto?')) {
+                const project = state.projects.find(p => p.id === projectId);
+                if (project) {
+                    const pos = project.positions.find(p => p.id === posId);
+                    if (pos && pos.persiane && pos.persiane[persianaIdx]) {
+                        pos.persiane[persianaIdx].foto = null;
+                        saveState();
+                        render();
+                    }
+                }
+            }
+        };
+
+        window.showFotoModal = (fotoData) => {
+            const modal = document.getElementById('foto-modal');
+            const img = document.getElementById('foto-modal-img');
+            if (modal && img) {
+                img.src = fotoData;
+                modal.classList.remove('hidden');
+            }
+        };
+
+        window.hideFotoModal = () => {
+            const modal = document.getElementById('foto-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        };
+
         // Export Function
         window.exportData = () => {
             const dataStr = JSON.stringify(state, null, 2);
@@ -1268,6 +2229,7 @@
                       ProjectSetup()}
                 </main>
                 ${NewProjectModal()}
+                ${FotoModal()}
             `;
         }
 

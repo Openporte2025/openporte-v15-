@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Porte v3.0 - Complete</title>
+    <title>Open Porte v3.0 - Fase 12 Tapparelle</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -209,6 +209,7 @@
                 configInfissi: {},
                 configPersiane: {},
                 configCassonetti: {},
+                configTapparelle: {},
                 positions: [],
                 createdAt: new Date().toISOString()
             };
@@ -231,6 +232,7 @@
                     infissi: [],
                     persiane: [],
                     cassonetti: [],
+                    tapparelle: [],
                     foto: [],
                     note: ''
                 };
@@ -257,7 +259,7 @@
                                     </button>
                                 ` : ''}
                                 <h1 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                                    Open Porte v3.0 Complete
+                                    Open Porte v3.0 - Fase 12 🎯
                                 </h1>
                             </div>
                             <div class="flex items-center gap-2">
@@ -323,23 +325,24 @@
             return `
                 <div class="max-w-7xl mx-auto p-4">
                     <!-- Progress Steps -->
-                    <div class="flex justify-between items-center mb-6 bg-white rounded-lg p-4 shadow">
+                    <div class="flex justify-between items-center mb-6 bg-white rounded-lg p-4 shadow overflow-x-auto">
                         ${[
                             {num: 1, label: 'Dati Cliente'},
                             {num: 2, label: 'Prodotti'},
                             {num: 3, label: 'Config. Infissi'},
                             {num: 4, label: 'Config. Persiane'},
-                            {num: 5, label: 'Config. Cassonetti'},
-                            {num: 6, label: 'Muro'},
-                            {num: 7, label: 'Posizioni'}
+                            {num: 5, label: 'Config. Tapparelle'},
+                            {num: 6, label: 'Config. Cassonetti'},
+                            {num: 7, label: 'Muro'},
+                            {num: 8, label: 'Posizioni'}
                         ].map(step => `
-                            <div class="flex flex-col items-center cursor-pointer" onclick="state.setupStep=${step.num}; render()">
+                            <div class="flex flex-col items-center cursor-pointer flex-shrink-0" onclick="state.setupStep=${step.num}; render()">
                                 <div class="step-indicator ${state.setupStep === step.num ? 'active' : state.setupStep > step.num ? 'completed' : 'bg-gray-200'}">
                                     ${state.setupStep > step.num ? '✓' : step.num}
                                 </div>
-                                <span class="text-xs mt-1 ${state.setupStep === step.num ? 'font-bold' : ''}">${step.label}</span>
+                                <span class="text-xs mt-1 ${state.setupStep === step.num ? 'font-bold' : ''} whitespace-nowrap">${step.label}</span>
                             </div>
-                        `).join('<div class="flex-1 border-t-2 border-gray-200 -mt-4"></div>')}
+                        `).join('<div class="flex-1 border-t-2 border-gray-200 -mt-4 mx-2"></div>')}
                     </div>
 
                     <!-- Content Area -->
@@ -348,9 +351,10 @@
                           state.setupStep === 2 ? renderStep2Products(project) :
                           state.setupStep === 3 ? renderStep3ConfigInfissi(project) :
                           state.setupStep === 4 ? renderStep4ConfigPersiane(project) :
-                          state.setupStep === 5 ? renderStep5ConfigCassonetti(project) :
-                          state.setupStep === 6 ? renderStep6WallFeatures(project) :
-                          renderStep7Positions(project)}
+                          state.setupStep === 5 ? renderStep5ConfigTapparelle(project) :
+                          state.setupStep === 6 ? renderStep6ConfigCassonetti(project) :
+                          state.setupStep === 7 ? renderStep7WallFeatures(project) :
+                          renderStep8Positions(project)}
                         
                         <!-- Navigation -->
                         <div class="flex justify-between mt-6 pt-4 border-t">
@@ -358,8 +362,8 @@
                                     class="px-4 py-2 border rounded-lg hover:bg-gray-50 ${state.setupStep === 1 ? 'invisible' : ''}">
                                 ← Indietro
                             </button>
-                            ${state.setupStep < 7 ? `
-                                <button onclick="state.setupStep = Math.min(7, state.setupStep + 1); saveState(); render()" 
+                            ${state.setupStep < 8 ? `
+                                <button onclick="state.setupStep = Math.min(8, state.setupStep + 1); saveState(); render()" 
                                         class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg">
                                     Avanti →
                                 </button>
@@ -468,6 +472,19 @@
                             <div>
                                 <div class="font-semibold">Persiane</div>
                                 <div class="text-xs opacity-75">Persiane e scuri</div>
+                            </div>
+                        </label>
+
+                        <label class="product-pill ${project.prodotti?.tapparelle ? 'selected bg-amber-50 border-amber-500 text-amber-700' : 'border-gray-300'}">
+                            <input type="checkbox" 
+                                   ${project.prodotti?.tapparelle ? 'checked' : ''}
+                                   onchange="updateProdotti('${project.id}', 'tapparelle', this.checked)"
+                                   onclick="event.stopPropagation()"
+                                   class="sr-only">
+                            <span class="text-xl">🎚️</span>
+                            <div>
+                                <div class="font-semibold">Tapparelle</div>
+                                <div class="text-xs opacity-75">Avvolgibili motorizzati</div>
                             </div>
                         </label>
 
@@ -761,7 +778,97 @@
             `;
         }
 
-        function renderStep5ConfigCassonetti(project) {
+        function renderStep5ConfigTapparelle(project) {
+            if (!project.prodotti?.tapparelle) {
+                return `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Le tapparelle non sono state selezionate. Salta questo step.</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🎚️</span> Configurazione Tapparelle Default
+                    </h2>
+                    <p class="text-gray-600 mb-4">Imposta i valori di default per tutte le tapparelle:</p>
+                    
+                    <div class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">1. Azienda</label>
+                                <select onchange="updateConfigTapparelle('${project.id}', 'azienda', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Plasticino" ${project.configTapparelle?.azienda === 'Plasticino' ? 'selected' : ''}>Plasticino</option>
+                                    <option value="New solar" ${project.configTapparelle?.azienda === 'New solar' ? 'selected' : ''}>New solar</option>
+                                    <option value="Estella" ${project.configTapparelle?.azienda === 'Estella' ? 'selected' : ''}>Estella</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">2. Modello</label>
+                                <select onchange="updateConfigTapparelle('${project.id}', 'modello', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Mini" ${project.configTapparelle?.modello === 'Mini' ? 'selected' : ''}>Mini</option>
+                                    <option value="Alluminio" ${project.configTapparelle?.modello === 'Alluminio' ? 'selected' : ''}>Alluminio</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">3. Colore</label>
+                                <input type="text" placeholder="Es: Bianco, Grigio"
+                                       value="${project.configTapparelle?.colore || ''}"
+                                       onchange="updateConfigTapparelle('${project.id}', 'colore', this.value)"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">4. Manuale/Motorizzato</label>
+                                <select onchange="updateConfigTapparelle('${project.id}', 'tipologia', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Manuale" ${project.configTapparelle?.tipologia === 'Manuale' ? 'selected' : ''}>Manuale</option>
+                                    <option value="Motorizzata" ${project.configTapparelle?.tipologia === 'Motorizzata' ? 'selected' : ''}>Motorizzata</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">5. Sost. Esistente</label>
+                                <select onchange="updateConfigTapparelle('${project.id}', 'sostEsistente', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Sost. Rullo Sì" ${project.configTapparelle?.sostEsistente === 'Sost. Rullo Sì' ? 'selected' : ''}>Sost. Rullo Sì</option>
+                                    <option value="Sost. Rullo No" ${project.configTapparelle?.sostEsistente === 'Sost. Rullo No' ? 'selected' : ''}>Sost. Rullo No</option>
+                                    <option value="Sost. tutto" ${project.configTapparelle?.sostEsistente === 'Sost. tutto' ? 'selected' : ''}>Sost. tutto</option>
+                                    <option value="Non Sost. Niente" ${project.configTapparelle?.sostEsistente === 'Non Sost. Niente' ? 'selected' : ''}>Non Sost. Niente</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">6. Guida</label>
+                                <input type="text" placeholder="Es: Standard, Rinforzata"
+                                       value="${project.configTapparelle?.guida || ''}"
+                                       onchange="updateConfigTapparelle('${project.id}', 'guida', this.value)"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">7. Colore Guida</label>
+                                <input type="text" placeholder="Es: Bianco, Marrone"
+                                       value="${project.configTapparelle?.coloreGuida || ''}"
+                                       onchange="updateConfigTapparelle('${project.id}', 'coloreGuida', this.value)"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStep6ConfigCassonetti(project) {
             if (!project.prodotti?.cassonetti) {
                 return `
                     <div class="text-center py-8">
@@ -808,7 +915,7 @@
             `;
         }
 
-        function renderStep6WallFeatures(project) {
+        function renderStep7WallFeatures(project) {
             return `
                 <div>
                     <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
@@ -957,7 +1064,7 @@
             `;
         }
 
-        function renderStep7Positions(project) {
+        function renderStep8Positions(project) {
             return `
                 <div>
                     <div class="flex justify-between items-center mb-4">
@@ -991,6 +1098,7 @@
                                                     ${pos.piano || 'Piano'} • ${pos.ambiente || 'Ambiente'}
                                                     ${pos.infissi?.length ? ` • 🪟 ${pos.infissi.length}` : ''}
                                                     ${pos.persiane?.length ? ` • 🚪 ${pos.persiane.length}` : ''}
+                                                    ${pos.tapparelle?.length ? ` • 🎚️ ${pos.tapparelle.length}` : ''}
                                                     ${pos.cassonetti?.length ? ` • 📦 ${pos.cassonetti.length}` : ''}
                                                 </p>
                                             </div>
@@ -1093,6 +1201,12 @@
                                     🚪 Persiane (${pos.persiane?.length || 0})
                                 </button>
                             ` : ''}
+                            ${project.prodotti?.tapparelle ? `
+                                <button onclick="setPositionTab('${pos.id}', 'tapparelle')"
+                                        class="tab-btn ${pos.activeTab === 'tapparelle' ? 'active' : ''}">
+                                    🎚️ Tapparelle (${pos.tapparelle?.length || 0})
+                                </button>
+                            ` : ''}
                             ${project.prodotti?.cassonetti ? `
                                 <button onclick="setPositionTab('${pos.id}', 'cassonetti')"
                                         class="tab-btn ${pos.activeTab === 'cassonetti' ? 'active' : ''}">
@@ -1124,6 +1238,9 @@
             }
             if (tab === 'persiane') {
                 return renderPersianeTab(project, pos);
+            }
+            if (tab === 'tapparelle') {
+                return renderTapparelleTab(project, pos);
             }
             if (tab === 'cassonetti') {
                 return renderCassonettiTab(project, pos);
@@ -1614,6 +1731,116 @@
             `;
         }
 
+        function renderTapparelleTab(project, pos) {
+            const products = pos.tapparelle || [];
+
+            return `
+                <div class="space-y-4">
+                    <button onclick="addProduct('${project.id}', '${pos.id}', 'tapparelle')"
+                            class="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium">
+                        + Aggiungi Tapparella
+                    </button>
+
+                    ${products.map((prod, idx) => renderTapparellaDetail(project, pos, prod, idx)).join('')}
+                </div>
+            `;
+        }
+
+        function renderTapparellaDetail(project, pos, tapp, idx) {
+            const isMotorizzata = tapp.tipologia === 'Motorizzata' || project.configTapparelle?.tipologia === 'Motorizzata';
+            
+            return `
+                <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-amber-300">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-bold text-amber-700">🎚️ Tapparella ${idx + 1}</h4>
+                        <button onclick="removeProduct('${project.id}', '${pos.id}', 'tapparelle', ${idx})"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">
+                            🗑️ Elimina
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- DATI SPECIFICI -->
+                        <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                            <h5 class="font-semibold text-sm mb-3 text-amber-700">📋 Dati Specifici</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="text-xs">Quantità</label>
+                                    <select onchange="updateProduct('${project.id}', '${pos.id}', 'tapparelle', ${idx}, 'qta', this.value)"
+                                            class="w-full compact-input border rounded">
+                                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${(tapp.qta || 1) === n ? 'selected' : ''}>${n}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- CONFIGURAZIONE -->
+                        <div class="bg-amber-100 p-4 rounded-lg border border-amber-200">
+                            <h5 class="font-semibold text-sm mb-3 text-amber-700">⚙️ Configurazione</h5>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                ${Object.entries({
+                                    azienda: 'Azienda',
+                                    modello: 'Modello',
+                                    colore: 'Colore',
+                                    tipologia: 'Manuale/Motorizzato',
+                                    sostEsistente: 'Sost. Esistente',
+                                    guida: 'Guida',
+                                    coloreGuida: 'Colore Guida'
+                                }).map(([key, label]) => {
+                                    const defaultVal = project.configTapparelle?.[key] || '';
+                                    return `
+                                        <div>
+                                            <label class="text-xs">${label}</label>
+                                            <input type="text" 
+                                                   value="${tapp[key] || ''}"
+                                                   placeholder="${defaultVal || '--'}"
+                                                   onchange="updateProductWithRender('${project.id}', '${pos.id}', 'tapparelle', ${idx}, '${key}', this.value)"
+                                                   class="w-full compact-input border rounded ${tapp[key] ? '' : 'bg-gray-50'}">
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- MOTORI SECTION - SOLO SE MOTORIZZATA -->
+                        ${isMotorizzata ? `
+                            <div class="bg-indigo-50 border-2 border-indigo-300 rounded-lg p-4">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="font-semibold text-sm text-indigo-700">🔌 Motori</h5>
+                                    <button onclick="addMotoreTapparella('${project.id}', '${pos.id}', ${idx})"
+                                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm font-semibold">
+                                        + Aggiungi Motore
+                                    </button>
+                                </div>
+                                
+                                ${tapp.motori && tapp.motori.length > 0 ? `
+                                    <div class="space-y-2">
+                                        ${tapp.motori.map((motore, mIdx) => `
+                                            <div class="bg-white p-3 rounded border border-indigo-200 flex justify-between items-center">
+                                                <div class="flex-1">
+                                                    <label class="text-xs font-medium">Modello Motore ${mIdx + 1}</label>
+                                                    <input type="text" 
+                                                           value="${motore.modello || ''}"
+                                                           onchange="updateMotoreTapparella('${project.id}', '${pos.id}', ${idx}, ${mIdx}, this.value)"
+                                                           placeholder="Es: Somfy RTS, Nice Era..."
+                                                           class="w-full px-2 py-1 border rounded text-sm mt-1">
+                                                </div>
+                                                <button onclick="removeMotoreTapparella('${project.id}', '${pos.id}', ${idx}, ${mIdx})"
+                                                        class="ml-2 bg-red-600 text-white rounded px-2 py-1 text-xs hover:bg-red-700">
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : '<p class="text-xs text-gray-600 italic">Nessun motore aggiunto</p>'}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
         function renderCassonettiTab(project, pos) {
             const products = pos.cassonetti || [];
             const canAdd = products.length === 0;
@@ -1928,6 +2155,15 @@
             }
         };
 
+        window.updateConfigTapparelle = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configTapparelle) project.configTapparelle = {};
+                project.configTapparelle[field] = value;
+                saveState();
+            }
+        };
+
         window.updateConfigCassonetti = (projectId, field, value) => {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
@@ -2051,12 +2287,18 @@
                     
                     const config = type === 'infissi' ? project.configInfissi :
                                   type === 'persiane' ? project.configPersiane :
+                                  type === 'tapparelle' ? project.configTapparelle :
                                   project.configCassonetti;
                     
                     const product = {
                         qta: 1,
                         ...config
                     };
+                    
+                    // Add motori array if tapparella
+                    if (type === 'tapparelle') {
+                        product.motori = [];
+                    }
                     
                     pos[type].push(product);
                     saveState();
@@ -2111,6 +2353,47 @@
                         state.screen = 'project';
                     }
                     render();
+                }
+            }
+        };
+
+        // Motor Functions for Tapparelle
+        window.addMotoreTapparella = (projectId, posId, tappIdx) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos.tapparelle && pos.tapparelle[tappIdx]) {
+                    if (!pos.tapparelle[tappIdx].motori) {
+                        pos.tapparelle[tappIdx].motori = [];
+                    }
+                    pos.tapparelle[tappIdx].motori.push({ modello: '' });
+                    saveState();
+                    render();
+                }
+            }
+        };
+
+        window.updateMotoreTapparella = (projectId, posId, tappIdx, motoreIdx, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos.tapparelle && pos.tapparelle[tappIdx] && pos.tapparelle[tappIdx].motori) {
+                    pos.tapparelle[tappIdx].motori[motoreIdx].modello = value;
+                    saveState();
+                }
+            }
+        };
+
+        window.removeMotoreTapparella = (projectId, posId, tappIdx, motoreIdx) => {
+            if (confirm('Eliminare questo motore?')) {
+                const project = state.projects.find(p => p.id === projectId);
+                if (project) {
+                    const pos = project.positions.find(p => p.id === posId);
+                    if (pos && pos.tapparelle && pos.tapparelle[tappIdx] && pos.tapparelle[tappIdx].motori) {
+                        pos.tapparelle[tappIdx].motori.splice(motoreIdx, 1);
+                        saveState();
+                        render();
+                    }
                 }
             }
         };

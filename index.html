@@ -3152,6 +3152,329 @@
             `;
         }
 
+        
+        // ═══════════════════════════════════════════════════════════
+        // FUNZIONI EXPORT MODAL
+        // ═══════════════════════════════════════════════════════════
+        
+        function openExportModal() {
+            document.getElementById('exportModal').classList.remove('hidden');
+        }
+        
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+        
+        function exportProject(format) {
+            const exportType = document.querySelector('input[name="exportType"]:checked').value;
+            const project = getProject(currentProjectId);
+            
+            if (!project) {
+                alert('⚠️ Nessun progetto selezionato');
+                return;
+            }
+            
+            console.log(`📤 Export ${format} - Tipo: ${exportType}`);
+            
+            if (format === 'pdf') {
+                exportToPDF(project, exportType);
+            } else if (format === 'excel') {
+                exportToExcel(project, exportType);
+            }
+            
+            closeExportModal();
+        }
+        
+        // ═══════════════════════════════════════════════════════════
+        // EXPORT EXCEL COMPLETO
+        // ═══════════════════════════════════════════════════════════
+        
+        function exportToExcel(project, exportType) {
+            console.log('🚀 Inizio export Excel:', exportType);
+            
+            // Verifica libreria SheetJS
+            if (typeof XLSX === 'undefined') {
+                alert('❌ Libreria Excel non caricata.\n\nRicarica la pagina e riprova.');
+                return;
+            }
+            
+            try {
+                // Crea workbook
+                const wb = XLSX.utils.book_new();
+                
+                // FOGLIO 1: Riepilogo
+                console.log('📄 Creazione foglio Riepilogo...');
+                const wsRiepilogo = creaFoglioRiepilogo(project, exportType);
+                XLSX.utils.book_append_sheet(wb, wsRiepilogo, "Riepilogo");
+                
+                // FOGLI PRODOTTI (se tipo ordine o completo)
+                if (exportType === 'ordine' || exportType === 'completo') {
+                    if (project.prodotti?.infissi) {
+                        console.log('🪟 Creazione foglio Infissi...');
+                        const ws = creaFoglioProdotto(project, 'infissi', 'Infissi');
+                        XLSX.utils.book_append_sheet(wb, ws, "Infissi");
+                    }
+                    if (project.prodotti?.persiane) {
+                        console.log('🚪 Creazione foglio Persiane...');
+                        const ws = creaFoglioProdotto(project, 'persiane', 'Persiane');
+                        XLSX.utils.book_append_sheet(wb, ws, "Persiane");
+                    }
+                    if (project.prodotti?.tapparelle) {
+                        console.log('🎚️ Creazione foglio Tapparelle...');
+                        const ws = creaFoglioProdotto(project, 'tapparelle', 'Tapparelle');
+                        XLSX.utils.book_append_sheet(wb, ws, "Tapparelle");
+                    }
+                    if (project.prodotti?.zanzariere) {
+                        console.log('🦟 Creazione foglio Zanzariere...');
+                        const ws = creaFoglioProdotto(project, 'zanzariere', 'Zanzariere');
+                        XLSX.utils.book_append_sheet(wb, ws, "Zanzariere");
+                    }
+                    if (project.prodotti?.cassonetti) {
+                        console.log('📦 Creazione foglio Cassonetti...');
+                        const ws = creaFoglioProdotto(project, 'cassonetti', 'Cassonetti');
+                        XLSX.utils.book_append_sheet(wb, ws, "Cassonetti");
+                    }
+                }
+                
+                // FOGLIO MISURE (se tipo posa o completo)
+                if (exportType === 'posa' || exportType === 'completo') {
+                    console.log('📏 Creazione foglio Misure...');
+                    const wsMisure = creaFoglioMisure(project);
+                    XLSX.utils.book_append_sheet(wb, wsMisure, "Misure");
+                }
+                
+                // FOGLIO NOTE (se presenti)
+                const wsNote = creaFoglioNote(project, exportType);
+                if (wsNote) {
+                    console.log('📝 Creazione foglio Note...');
+                    XLSX.utils.book_append_sheet(wb, wsNote, "Note");
+                }
+                
+                // Genera nome file
+                const nomeFile = project.nome.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                const data = new Date().toISOString().split('T')[0];
+                const fileName = `${nomeFile}_${exportType}_${data}.xlsx`;
+                
+                // Scarica file
+                console.log('💾 Salvataggio file:', fileName);
+                XLSX.writeFile(wb, fileName);
+                
+                console.log('✅ Export completato!');
+                alert(`✅ File Excel generato!\n\nFile: ${fileName}\nTipo: ${exportType.toUpperCase()}`);
+                
+            } catch (error) {
+                console.error('❌ Errore export:', error);
+                alert(`❌ Errore durante export:\n\n${error.message}`);
+            }
+        }
+        
+        function exportToPDF(project, exportType) {
+            alert(`📄 Export PDF\n\nFunzionalità in sviluppo.\n\nPer ora è disponibile solo Export Excel.\n\nTipo richiesto: ${exportType.toUpperCase()}`);
+        }
+        
+        // ═══════════════════════════════════════════════════════════
+        // CREAZIONE FOGLI EXCEL
+        // ═══════════════════════════════════════════════════════════
+        
+        function creaFoglioRiepilogo(project, exportType) {
+            const data = [
+                ['OPEN PORTE v3.0 - RIEPILOGO PROGETTO'],
+                [],
+                ['Tipo Export:', exportType.toUpperCase()],
+                ['Data Export:', new Date().toLocaleString('it-IT')],
+                [],
+                ['═══ DATI CLIENTE ═══'],
+                ['Nome Progetto:', project.nome || '-'],
+                ['Cliente:', project.nomeCliente || '-'],
+                ['Telefono:', project.telefono || '-'],
+                ['Email:', project.email || '-'],
+                ['Indirizzo:', project.indirizzo || '-'],
+                ['Provincia:', project.provincia || '-'],
+                ['CAP:', project.cap || '-'],
+                [],
+                ['═══ PRODOTTI SELEZIONATI ═══'],
+                ['Infissi:', project.prodotti?.infissi ? 'SÌ ✓' : 'NO'],
+                ['Persiane:', project.prodotti?.persiane ? 'SÌ ✓' : 'NO'],
+                ['Tapparelle:', project.prodotti?.tapparelle ? 'SÌ ✓' : 'NO'],
+                ['Zanzariere:', project.prodotti?.zanzariere ? 'SÌ ✓' : 'NO'],
+                ['Cassonetti:', project.prodotti?.cassonetti ? 'SÌ ✓' : 'NO'],
+                [],
+                ['═══ STATISTICHE ═══'],
+                ['Totale Posizioni:', project.positions?.length || 0]
+            ];
+            
+            // Conta prodotti
+            let totInfissi = 0, totPersiane = 0, totTapparelle = 0, totZanzariere = 0, totCassonetti = 0;
+            (project.positions || []).forEach(pos => {
+                totInfissi += pos.infissi?.length || 0;
+                totPersiane += pos.persiane?.length || 0;
+                totTapparelle += pos.tapparelle?.length || 0;
+                totZanzariere += pos.zanzariere?.length || 0;
+                totCassonetti += pos.cassonetti?.length || 0;
+            });
+            
+            data.push(['Totale Infissi:', totInfissi]);
+            data.push(['Totale Persiane:', totPersiane]);
+            data.push(['Totale Tapparelle:', totTapparelle]);
+            data.push(['Totale Zanzariere:', totZanzariere]);
+            data.push(['Totale Cassonetti:', totCassonetti]);
+            
+            return XLSX.utils.aoa_to_sheet(data);
+        }
+        
+        function creaFoglioProdotto(project, tipo, label) {
+            const configKey = `brmConfig${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
+            const config = project[configKey] || {};
+            
+            const data = [
+                [`CONFIGURAZIONE ${label.toUpperCase()}`],
+                [],
+                ['═══ BRM LARGHEZZA ═══'],
+                ['Misura Base:', config.misuraBaseL || '-'],
+                ['Operazione:', config.operazioneL || '-'],
+                ['Valore (mm):', config.valoreL || '0']
+            ];
+            
+            // Campi extra cassonetto
+            if (tipo === 'cassonetti') {
+                data.push([]);
+                data.push(['═══ PARAMETRI CASSONETTO ═══']);
+                data.push(['SRSX (mm):', config.SRSX || '0']);
+                data.push(['SRDX (mm):', config.SRDX || '0']);
+                data.push(['ZSX (mm):', config.ZSX || '0']);
+                data.push(['ZDX (mm):', config.ZDX || '0']);
+            }
+            
+            data.push([]);
+            data.push(['═══ BRM ALTEZZA ═══']);
+            data.push(['Misura Base:', config.misuraBaseH || '-']);
+            data.push(['Operazione:', config.operazioneH || '-']);
+            data.push(['Valore (mm):', config.valoreH || '0']);
+            
+            if (config.note) {
+                data.push([]);
+                data.push(['Note Formula:', config.note]);
+            }
+            
+            data.push([]);
+            data.push([]);
+            data.push(['═══ ELENCO PRODOTTI ═══']);
+            data.push(['Posizione', 'Piano', 'Ambiente', 'N°', 'Quantità']);
+            
+            let numProdotto = 0;
+            (project.positions || []).forEach(pos => {
+                const prodotti = pos[tipo] || [];
+                prodotti.forEach((prod, idx) => {
+                    numProdotto++;
+                    data.push([
+                        pos.nome || `Pos ${pos.id?.substring(0,6)}`,
+                        pos.piano || '-',
+                        pos.ambiente || '-',
+                        idx + 1,
+                        prod.qta || 1
+                    ]);
+                });
+            });
+            
+            if (numProdotto === 0) {
+                data.push(['Nessun prodotto presente', '', '', '', '']);
+            }
+            
+            return XLSX.utils.aoa_to_sheet(data);
+        }
+        
+        function creaFoglioMisure(project) {
+            const data = [
+                ['MISURE COMPLETE - TUTTE LE POSIZIONI'],
+                [],
+                ['Posizione', 'Piano', 'Ambiente', 'LF', 'LVT', 'LVAR', 'TMV', 'LS', 'HF', 'HVT', 'HVAR', 'HMT']
+            ];
+            
+            (project.positions || []).forEach(pos => {
+                const m = pos.misure || {};
+                data.push([
+                    pos.nome || `Pos ${pos.id?.substring(0,6)}`,
+                    pos.piano || '-',
+                    pos.ambiente || '-',
+                    m.LF || '',
+                    m.LVT || '',
+                    m.LVAR || '',
+                    m.TMV || '',
+                    m.LS || '',
+                    m.HF || '',
+                    m.HVT || '',
+                    m.HVAR || '',
+                    m.HMT || ''
+                ]);
+            });
+            
+            if (data.length === 3) {
+                data.push(['Nessuna misura inserita', '', '', '', '', '', '', '', '', '', '', '']);
+            }
+            
+            return XLSX.utils.aoa_to_sheet(data);
+        }
+        
+        function creaFoglioNote(project, exportType) {
+            const data = [
+                ['NOTE PROGETTO'],
+                [],
+                ['Tipo Export:', exportType.toUpperCase()],
+                [],
+                ['Posizione', 'Tipo Elemento', 'Nota', 'Visibilità']
+            ];
+            
+            let hasNotes = false;
+            
+            (project.positions || []).forEach(pos => {
+                // Note posizione
+                if (pos.note) {
+                    const vis = pos.noteVisibilita || [];
+                    const mostra = exportType === 'completo' || 
+                                   vis.includes('entrambi') ||
+                                   (exportType === 'ordine' && vis.includes('ordine')) ||
+                                   (exportType === 'posa' && vis.includes('posa'));
+                    
+                    if (mostra) {
+                        data.push([
+                            pos.nome || `Pos ${pos.id?.substring(0,6)}`,
+                            'POSIZIONE',
+                            pos.note,
+                            vis.join(', ') || 'Non specificata'
+                        ]);
+                        hasNotes = true;
+                    }
+                }
+                
+                // Note prodotti
+                ['infissi', 'persiane', 'tapparelle', 'zanzariere', 'cassonetti'].forEach(tipoP => {
+                    const prodotti = pos[tipoP] || [];
+                    prodotti.forEach((prod, idx) => {
+                        if (prod.note) {
+                            const vis = prod.noteVisibilita || [];
+                            const mostra = exportType === 'completo' || 
+                                           vis.includes('entrambi') ||
+                                           (exportType === 'ordine' && vis.includes('ordine')) ||
+                                           (exportType === 'posa' && vis.includes('posa'));
+                            
+                            if (mostra) {
+                                data.push([
+                                    pos.nome || `Pos ${pos.id?.substring(0,6)}`,
+                                    `${tipoP.toUpperCase()} #${idx+1}`,
+                                    prod.note,
+                                    vis.join(', ') || 'Non specificata'
+                                ]);
+                                hasNotes = true;
+                            }
+                        }
+                    });
+                });
+            });
+            
+            return hasNotes ? XLSX.utils.aoa_to_sheet(data) : null;
+        }
+
+
         // Initialize App
         loadState();
         render();

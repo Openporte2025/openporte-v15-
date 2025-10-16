@@ -178,6 +178,8 @@
             margin-top: 0.5rem;
         }
     </style>
+    <!-- SheetJS Library per Export Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <div id="app"></div>
@@ -269,7 +271,12 @@
                 brmConfigCassonetti: { 
                     misuraBaseL: '', operazioneL: '-', valoreL: '0',
                     misuraBaseH: '', operazioneH: '-', valoreH: '0',
-                    note: '' 
+                    note: '',
+                    // Campi specifici cassonetto per formula avanzata
+                    SRSX: '0', // Sbraccio SX
+                    SRDX: '0', // Sbraccio DX
+                    ZSX: '0',  // Zoccolino SX
+                    ZDX: '0'   // Zoccolino DX
                 },
                 positions: [],
                 createdAt: new Date().toISOString()
@@ -330,6 +337,11 @@
                                     <button onclick="exportData()" class="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50">
                                         📥 Export
                                     </button>
+                                    <button onclick="openExportModal()" 
+                                            class="px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center gap-2">
+                                        <span>📤</span>
+                                        <span>Export</span>
+                                    </button>
                                     <button onclick="showNewProjectModal()" 
                                             class="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
                                         + Nuovo Progetto
@@ -354,10 +366,12 @@
                                     class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all">
                                 + Crea Primo Progetto
                             </button>
-                        </div>
-                    </div>
-                `;
-            }
+                        
+                    
+                    ${extraFieldsCassonetto}
+                </div>
+            `;
+        }
 
             return `
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
@@ -597,6 +611,156 @@
                 </div>
             `;
         }
+        
+        // ═══════════════════════════════════════════════════════════
+        // CALCOLO BRM CASSONETTO CON LOGICA SRSX/SRDX/ZSX/ZDX
+        // ═══════════════════════════════════════════════════════════
+        function calcolaBRMCassonetto(config) {
+            if (!config.misuraBaseL || config.misuraBaseL !== 'LS') {
+                return null; // Solo per LS
+            }
+            
+            const SRSX = parseFloat(config.SRSX || 0);
+            const SRDX = parseFloat(config.SRDX || 0);
+            const ZSX = parseFloat(config.ZSX || 0);
+            const ZDX = parseFloat(config.ZDX || 0);
+            const valoreBase = parseFloat(config.valoreL || 0);
+            const operazione = config.operazioneL || '-';
+            
+            // Verifica condizioni
+            const condSX = ZSX > SRSX;
+            const condDX = ZDX > SRDX;
+            
+            // Calcola percentuale valore
+            let valoreFinale = 0;
+            if (condSX && condDX) {
+                valoreFinale = valoreBase; // 100%
+            } else if (condSX || condDX) {
+                valoreFinale = valoreBase / 2; // 50%
+            } else {
+                valoreFinale = 0; // 0%
+            }
+            
+            // Applica operazione
+            const valoreConOperazione = operazione === '+' ? valoreFinale : -valoreFinale;
+            
+            // Formula finale: LS + SRSX + SRDX + valore
+            return {
+                formula: `LS + ${SRSX} + ${SRDX} ${operazione} ${valoreFinale.toFixed(1)}`,
+                componenti: {
+                    SRSX: SRSX,
+                    SRDX: SRDX,
+                    valore: valoreConOperazione,
+                    condSX: condSX,
+                    condDX: condDX,
+                    percentuale: condSX && condDX ? 100 : (condSX || condDX ? 50 : 0)
+                }
+            };
+        }
+
+// ═══════════════════════════════════════════════════════════
+        // FUNZIONE RENDER BRM CONFIG L/H SEPARATI - FASE 16
+        // ═══════════════════════════════════════════════════════════
+        function renderBRMConfig(project, productType, productLabel, icon) {
+            const configKey = `brmConfig${productType.charAt(0).toUpperCase() + productType.slice(1)}`;
+            const config = project[configKey] || { 
+                misuraBaseL: '', operazioneL: '-', valoreL: '0',
+                misuraBaseH: '', operazioneH: '-', valoreH: '0',
+                note: '' 
+            };
+            
+            const misureLarghezza = ['LF', 'LVT', 'LVAR', 'TMV', 'LS'];
+            const misureAltezza = ['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'];
+            
+            return `
+                <div class="brm-calculator mt-6 p-4 bg-amber-50 rounded-lg border-2 border-amber-400">
+                    <h3 class="font-bold text-amber-800 mb-3 flex items-center gap-2">
+                        <span class="text-xl">${icon}</span>
+                        📏 Calcolo BRM per ${productLabel}
+                    </h3>
+                    
+                    <div class="grid md:grid-cols-2 gap-4 mb-3">
+                        <!-- BRM LARGHEZZA -->
+                        <div class="bg-white p-3 rounded-lg border-2 border-amber-300">
+                            <h4 class="font-semibold text-amber-800 mb-2">📐 BRM Larghezza</h4>
+                            <div class="grid grid-cols-3 gap-2 mb-2">
+                                <div>
+                                    <label class="text-xs font-medium text-amber-800 block mb-1">Misura</label>
+                                    <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'misuraBaseL', this.value)"
+                                            class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                        <option value="">-</option>
+                                        ${misureLarghezza.map(m => `
+                                            <option value="${m}" ${config.misuraBaseL === m ? 'selected' : ''}>${m}</option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-amber-800 block mb-1">Op.</label>
+                                    <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'operazioneL', this.value)"
+                                            class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                        <option value="+" ${config.operazioneL === '+' ? 'selected' : ''}>+</option>
+                                        <option value="-" ${config.operazioneL === '-' ? 'selected' : ''}>-</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-amber-800 block mb-1">mm</label>
+                                    <input type="number" value="${config.valoreL || '0'}"
+                                           onchange="updateBRMConfig('${project.id}', '${configKey}', 'valoreL', this.value)"
+                                           class="w-full px-2 py-1 border border-amber-500 rounded text-sm">
+                                </div>
+                            </div>
+                            <div class="brm-result text-sm font-semibold text-amber-900">
+                                ${config.misuraBaseL ? `📐 BRM L = ${config.misuraBaseL} ${config.operazioneL} ${config.valoreL}mm` : 'Seleziona misura'}
+                            </div>
+                        </div>
+                        
+                        <!-- BRM ALTEZZA -->
+                        <div class="bg-white p-3 rounded-lg border-2 border-amber-300">
+                            <h4 class="font-semibold text-amber-800 mb-2">📏 BRM Altezza</h4>
+                            <div class="grid grid-cols-3 gap-2 mb-2">
+                                <div>
+                                    <label class="text-xs font-medium text-amber-800 block mb-1">Misura</label>
+                                    <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'misuraBaseH', this.value)"
+                                            class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                        <option value="">-</option>
+                                        ${misureAltezza.map(m => `
+                                            <option value="${m}" ${config.misuraBaseH === m ? 'selected' : ''}>${m}</option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-amber-800 block mb-1">Op.</label>
+                                    <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'operazioneH', this.value)"
+                                            class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                        <option value="+" ${config.operazioneH === '+' ? 'selected' : ''}>+</option>
+                                        <option value="-" ${config.operazioneH === '-' ? 'selected' : ''}>-</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-amber-800 block mb-1">mm</label>
+                                    <input type="number" value="${config.valoreH || '0'}"
+                                           onchange="updateBRMConfig('${project.id}', '${configKey}', 'valoreH', this.value)"
+                                           class="w-full px-2 py-1 border border-amber-500 rounded text-sm">
+                                </div>
+                            </div>
+                            <div class="brm-result text-sm font-semibold text-amber-900">
+                                ${config.misuraBaseH ? `📏 BRM H = ${config.misuraBaseH} ${config.operazioneH} ${config.valoreH}mm` : 'Seleziona misura'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-amber-800 mb-1">📝 Note Formula</label>
+                        <textarea onchange="updateBRMConfig('${project.id}', '${configKey}', 'note', this.value)"
+                                  placeholder="Es: Tolleranza standard, considerazioni particolari..."
+                                  class="w-full px-2 py-1 border border-amber-500 rounded text-sm"
+                                  rows="2">${config.note || ''}</textarea>
+                    </div>
+                </div>
+            `;
+        }
+
+
 
         function renderStep3ConfigInfissi(project) {
             if (!project.prodotti?.infissi) {
@@ -722,6 +886,8 @@
                             </div>
                         </div>
                     </div>
+                    
+                    ${renderBRMConfig(project, 'infissi', 'Infissi', '🪟')}
                 </div>
             `;
         }
@@ -881,6 +1047,8 @@
                             ])}
                         </div>
                     </div>
+                    
+                    ${renderBRMConfig(project, 'persiane', 'Persiane', '🚪')}
                 </div>
             `;
         }
@@ -963,6 +1131,8 @@
                             </div>
                         </div>
                     </div>
+                    
+                    ${renderBRMConfig(project, 'tapparelle', 'Tapparelle', '🎚️')}
                 </div>
             `;
         }
@@ -1023,6 +1193,8 @@
                             </div>
                         </div>
                     </div>
+                    
+                    ${renderBRMConfig(project, 'zanzariere', 'Zanzariere', '🦟')}
                 </div>
             `;
         }
@@ -1070,6 +1242,8 @@
                                    class="w-full px-3 py-2 border rounded-lg">
                         </div>
                     </div>
+                    
+                    ${renderBRMConfig(project, 'cassonetti', 'Cassonetti', '📦')}
                 </div>
             `;
         }
@@ -2982,5 +3156,73 @@
         loadState();
         render();
     </script>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- MODAL EXPORT PDF/EXCEL - FASE 16 -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="exportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-amber-800">📤 Esporta Progetto</h2>
+                    <button onclick="closeExportModal()" class="text-gray-500 hover:text-gray-700">
+                        <span class="text-3xl font-bold">×</span>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Tipo Export -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">📋 Tipo di Export</label>
+                        <div class="space-y-2">
+                            <label class="flex items-start p-3 border-2 border-amber-300 rounded-lg cursor-pointer hover:bg-amber-50 transition">
+                                <input type="radio" name="exportType" value="ordine" checked class="mt-1 mr-3">
+                                <div>
+                                    <div class="font-semibold text-amber-800">📦 Export per Ordine</div>
+                                    <div class="text-sm text-gray-600">Solo BRM e configurazioni prodotti per l'ordine</div>
+                                </div>
+                            </label>
+                            <label class="flex items-start p-3 border-2 border-amber-300 rounded-lg cursor-pointer hover:bg-amber-50 transition">
+                                <input type="radio" name="exportType" value="posa" class="mt-1 mr-3">
+                                <div>
+                                    <div class="font-semibold text-amber-800">🔧 Export per Posa</div>
+                                    <div class="text-sm text-gray-600">Misure complete, foto e note per la posa</div>
+                                </div>
+                            </label>
+                            <label class="flex items-start p-3 border-2 border-amber-300 rounded-lg cursor-pointer hover:bg-amber-50 transition">
+                                <input type="radio" name="exportType" value="completo" class="mt-1 mr-3">
+                                <div>
+                                    <div class="font-semibold text-amber-800">📋 Export Completo</div>
+                                    <div class="text-sm text-gray-600">Tutti i dati, foto e note complete</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Formato Export -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">💾 Formato File</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="exportProject('pdf')" 
+                                    class="flex items-center justify-center gap-2 p-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition shadow-lg hover:shadow-xl">
+                                <span class="text-2xl">📄</span>
+                                <span>Export PDF</span>
+                            </button>
+                            <button onclick="exportProject('excel')" 
+                                    class="flex items-center justify-center gap-2 p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition shadow-lg hover:shadow-xl">
+                                <span class="text-2xl">📊</span>
+                                <span>Export Excel</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-gray-500 text-center pt-4 border-t">
+                        💡 Le note verranno incluse secondo la visibilità selezionata (Ordine/Posa/Entrambi)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

@@ -334,11 +334,6 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 ${state.screen === 'list' ? `
-                                    <button onclick="openExportModal()" 
-                                            class="px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center gap-2">
-                                        <span>📤</span>
-                                        <span>Export Excel</span>
-                                    </button>
                                     <button onclick="showNewProjectModal()" 
                                             class="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
                                         + Nuovo Progetto
@@ -398,6 +393,20 @@
 
             return `
                 <div class="max-w-7xl mx-auto p-4">
+                    <!-- Header Progetto con Export -->
+                    <div class="flex justify-between items-center mb-4">
+                        <button onclick="state.currentProject = null; state.screen = 'list'; render()" 
+                                class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-all flex items-center gap-2">
+                            <span>←</span>
+                            <span>Torna ai Progetti</span>
+                        </button>
+                        <button onclick="openExportModal()" 
+                                class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center gap-2">
+                            <span>📤</span>
+                            <span>Export Excel</span>
+                        </button>
+                    </div>
+                    
                     <!-- Progress Steps -->
                     <div class="flex justify-between items-center mb-6 bg-white rounded-lg p-4 shadow overflow-x-auto">
                         ${[
@@ -3164,7 +3173,9 @@
         
         function exportProject(format) {
             const exportType = document.querySelector('input[name="exportType"]:checked').value;
-            const project = getProject(currentProjectId);
+            
+            // Prendo il progetto corrente
+            const project = state.projects.find(p => p.id === state.currentProject);
             
             if (!project) {
                 alert('⚠️ Nessun progetto selezionato');
@@ -3248,7 +3259,8 @@
                 }
                 
                 // Genera nome file
-                const nomeFile = project.nome.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                const nomeProgetto = project.nome || project.nomeCliente || 'progetto';
+                const nomeFile = nomeProgetto.replace(/[^a-z0-9]/gi, '_').toLowerCase();
                 const data = new Date().toISOString().split('T')[0];
                 const fileName = `${nomeFile}_${exportType}_${data}.xlsx`;
                 
@@ -3324,12 +3336,12 @@
             const config = project[configKey] || {};
             
             const data = [
-                [`CONFIGURAZIONE ${label.toUpperCase()}`],
+                [`PRODOTTI DA ORDINARE - ${label.toUpperCase()}`],
                 [],
-                ['═══ BRM LARGHEZZA ═══'],
-                ['Misura Base:', config.misuraBaseL || '-'],
-                ['Operazione:', config.operazioneL || '-'],
-                ['Valore (mm):', config.valoreL || '0']
+                ['═══ CONFIGURAZIONE BRM ═══'],
+                ['Misura Base L:', config.misuraBaseL || '-'],
+                ['Operazione L:', config.operazioneL || '-'],
+                ['Valore L (mm):', config.valoreL || '0']
             ];
             
             // Campi extra cassonetto
@@ -3343,10 +3355,9 @@
             }
             
             data.push([]);
-            data.push(['═══ BRM ALTEZZA ═══']);
-            data.push(['Misura Base:', config.misuraBaseH || '-']);
-            data.push(['Operazione:', config.operazioneH || '-']);
-            data.push(['Valore (mm):', config.valoreH || '0']);
+            data.push(['Misura Base H:', config.misuraBaseH || '-']);
+            data.push(['Operazione H:', config.operazioneH || '-']);
+            data.push(['Valore H (mm):', config.valoreH || '0']);
             
             if (config.note) {
                 data.push([]);
@@ -3355,26 +3366,82 @@
             
             data.push([]);
             data.push([]);
-            data.push(['═══ ELENCO PRODOTTI ═══']);
-            data.push(['Posizione', 'Piano', 'Ambiente', 'N°', 'Quantità']);
+            data.push(['═══ PRODOTTI DA ORDINARE ═══']);
+            data.push([]);
+            
+            // Header tabella con TUTTE le colonne
+            data.push([
+                'Posizione',
+                'Piano', 
+                'Ambiente',
+                'N°',
+                'Qta',
+                'L Ordine (mm)',
+                'H Ordine (mm)',
+                'Formula L',
+                'Formula H',
+                'Tipo',
+                'Apertura',
+                'Colore',
+                'Note'
+            ]);
             
             let numProdotto = 0;
             (project.positions || []).forEach(pos => {
                 const prodotti = pos[tipo] || [];
+                const misure = pos.misure || {};
+                
                 prodotti.forEach((prod, idx) => {
                     numProdotto++;
+                    
+                    // Calcola misure ordine applicando BRM
+                    const lf = parseFloat(misure.LF) || 0;
+                    const hf = parseFloat(misure.HF) || 0;
+                    const valoreL = parseFloat(config.valoreL) || 0;
+                    const valoreH = parseFloat(config.valoreH) || 0;
+                    const opL = config.operazioneL || '-';
+                    const opH = config.operazioneH || '-';
+                    
+                    let lOrdine = lf;
+                    let hOrdine = hf;
+                    
+                    // Applica formula L
+                    if (config.misuraBaseL === 'LF' && lf > 0) {
+                        lOrdine = opL === '+' ? lf + valoreL : lf - valoreL;
+                    }
+                    // Applica formula H
+                    if (config.misuraBaseH === 'HF' && hf > 0) {
+                        hOrdine = opH === '+' ? hf + valoreH : hf - valoreH;
+                    }
+                    
+                    // Formula leggibile
+                    const formulaL = config.misuraBaseL && lf > 0 
+                        ? `${config.misuraBaseL}(${lf}) ${opL} ${valoreL} = ${Math.round(lOrdine)}`
+                        : '-';
+                    const formulaH = config.misuraBaseH && hf > 0
+                        ? `${config.misuraBaseH}(${hf}) ${opH} ${valoreH} = ${Math.round(hOrdine)}`
+                        : '-';
+                    
                     data.push([
                         pos.nome || `Pos ${pos.id?.substring(0,6)}`,
                         pos.piano || '-',
                         pos.ambiente || '-',
                         idx + 1,
-                        prod.qta || 1
+                        prod.qta || 1,
+                        lOrdine > 0 ? Math.round(lOrdine) : '-',
+                        hOrdine > 0 ? Math.round(hOrdine) : '-',
+                        formulaL,
+                        formulaH,
+                        prod.tipo || '-',
+                        prod.apertura || '-',
+                        prod.colore || '-',
+                        prod.note || '-'
                     ]);
                 });
             });
             
             if (numProdotto === 0) {
-                data.push(['Nessun prodotto presente', '', '', '', '']);
+                data.push(['Nessun prodotto da ordinare', '', '', '', '', '', '', '', '', '', '', '', '']);
             }
             
             return XLSX.utils.aoa_to_sheet(data);

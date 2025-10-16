@@ -1,9 +1,76 @@
 <!DOCTYPE html>
+<!--
+    Open Porte v3.0 - FASE 21: UI COMPLETA + DROPDOWN + QUANTITÀ 🎯✨📋
+    
+    MODIFICHE IN QUESTA FASE:
+    ✅ CAMPO PIANO: Dropdown selezionabile con opzioni predefinite
+       - Piano Seminterrato, Piano Terra, Piano Rialzato
+       - Primo-Quinto Piano, Attico, Mansarda
+    
+    ✅ CONFIG INFISSI: Rimossa sezione Motori (i motori vanno su tapparelle)
+       - Mantiene tutti gli altri 10 campi
+       - Formula BRM personalizzabile
+    
+    ✅ CONFIG PERSIANE: Campi completi con dropdown
+       - Tipo (Battente, Scorrevole, A libro, Orientabile)
+       - Materiale (Alluminio, Legno, PVC, Alluminio-Legno)
+       - Colore/Finitura (input libero)
+       - Apertura (Interna, Esterna)
+       - Formula BRM personalizzabile
+    
+    ✅ CONFIG TAPPARELLE: Campi completi con MOTORI
+       - Tipo (Standard, Blindata, Coibentata, Orientabile)
+       - Materiale (PVC, Alluminio, Alluminio Coibentato, Acciaio)
+       - Colore (input libero)
+       - Comando (Manuale, Motorizzata)
+       - Motori: Azienda (Somfy, Nice, Cherubini, Faac) + Modello
+       - Formula BRM personalizzabile
+    
+    ✅ CONFIG ZANZARIERE: Campi completi
+       - Tipo (Avvolgibile, Plissé, Battente, Scorrevole, Fissa)
+       - Colore Telaio (input libero)
+       - Tipo Rete (Standard, Anti-polline, Pet-resistant, Micro-forata)
+       - Colore Rete (Nero, Grigio, Bianco)
+       - Formula BRM personalizzabile
+    
+    ✅ CONFIG CASSONETTI: Campi completi
+       - Tipo (Esterno, Incasso, Sopra-finestra, Semi-incasso)
+       - Materiale (PVC, Alluminio, Alluminio Coibentato, Legno)
+       - Finitura/Colore (input libero)
+       - Coibentazione (Standard, Rinforzata, Acustica)
+       - Formula BRM personalizzabile
+    
+    ✅ QUANTITÀ NELLE POSIZIONI: Campo numerico
+       - Default: 1
+       - Modificabile per ogni posizione
+       - Visibile nella griglia dettagli posizione
+    
+    ✅ INIZIALIZZAZIONE AUTOMATICA: I prodotti ereditano i valori dalle config default
+       - Quando aggiungi un prodotto, i campi sono pre-compilati
+       - Puoi personalizzare ogni singolo prodotto
+    
+    ✅ FUNZIONI UPDATE: Aggiunte per tutti i config
+       - updateConfigPersiane
+       - updateConfigTapparelle
+       - updateConfigZanzariere
+       - updateConfigCassonetti
+    
+    MODIFICHE FASE 20:
+    ✅ DROPDOWN PER FORMULA PERSONALIZZATA quando usaGlobale è false
+    ✅ CALCOLO AUTOMATICO BRM con formula personalizzata
+    ✅ FIX ERRORI VARIABILI nei render delle tab prodotti
+    
+    MODIFICHE FASE 18B:
+    ✅ UN SOLO prodotto per tipo per posizione (no più array)
+    ✅ Pulsante "Usa Globale" per BRM
+    ✅ Migrazione automatica dati
+    ✅ UI migliorata
+-->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Porte v3.0 - Fase 18A Validazione 🎯</title>
+    <title>Open Porte v3.0 - Fase 21: UI Completa + Dropdown + Quantità 🎯✨📋</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -192,10 +259,59 @@
             if (saved) {
                 try {
                     state = JSON.parse(saved);
+                    migrateOldData(); // Migra dati vecchi formato array -> singolo oggetto
                 } catch (e) {
                     console.error('Error loading state:', e);
                 }
             }
+        }
+
+        // Migrazione dati da vecchio formato (array) a nuovo formato (oggetto singolo)
+        function migrateOldData() {
+            if (!state.projects) return;
+            
+            state.projects.forEach(project => {
+                if (!project.positions) return;
+                
+                project.positions.forEach(pos => {
+                    // Migra infissi
+                    if (pos.infissi && Array.isArray(pos.infissi) && pos.infissi.length > 0) {
+                        pos.infisso = pos.infissi[0]; // Prendi il primo
+                        if (!pos.infisso.usaGlobale) pos.infisso.usaGlobale = true;
+                        delete pos.infissi;
+                    }
+                    
+                    // Migra persiane
+                    if (pos.persiane && Array.isArray(pos.persiane) && pos.persiane.length > 0) {
+                        pos.persiana = pos.persiane[0];
+                        if (!pos.persiana.usaGlobale) pos.persiana.usaGlobale = true;
+                        delete pos.persiane;
+                    }
+                    
+                    // Migra tapparelle
+                    if (pos.tapparelle && Array.isArray(pos.tapparelle) && pos.tapparelle.length > 0) {
+                        pos.tapparella = pos.tapparelle[0];
+                        if (!pos.tapparella.usaGlobale) pos.tapparella.usaGlobale = true;
+                        delete pos.tapparelle;
+                    }
+                    
+                    // Migra zanzariere
+                    if (pos.zanzariere && Array.isArray(pos.zanzariere) && pos.zanzariere.length > 0) {
+                        pos.zanzariera = pos.zanzariere[0];
+                        if (!pos.zanzariera.usaGlobale) pos.zanzariera.usaGlobale = true;
+                        delete pos.zanzariere;
+                    }
+                    
+                    // Migra cassonetti
+                    if (pos.cassonetti && Array.isArray(pos.cassonetti) && pos.cassonetti.length > 0) {
+                        pos.cassonetto = pos.cassonetti[0];
+                        if (!pos.cassonetto.usaGlobale) pos.cassonetto.usaGlobale = true;
+                        delete pos.cassonetti;
+                    }
+                });
+            });
+            
+            saveState(); // Salva i dati migrati
         }
 
         function saveState() {
@@ -480,6 +596,7 @@
                     name: `Pos. ${project.positions.length + 1}`,
                     piano: project.clientData?.piano || '',
                     ambiente: '',
+                    quantita: '1',
                     misure: {},
                     infissi: [],
                     persiane: [],
@@ -504,9 +621,9 @@
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
-                    if (!pos.infissi) pos.infissi = [];
                     const brm = calculateBRM(project, pos, pos.misure, project.brmConfigInfissi);
-                    pos.infissi.push({
+                    // UN SOLO INFISSO per posizione
+                    pos.infisso = {
                         id: generateId(),
                         azienda: project.configInfissi?.azienda || '',
                         finituraInt: project.configInfissi?.finituraInt || '',
@@ -522,9 +639,10 @@
                         motoreModello: project.configInfissi?.motoreModello || '',
                         BRM_L: brm.L,
                         BRM_H: brm.H,
+                        usaGlobale: true, // di default usa la config globale
                         note: '',
                         foto: []
-                    });
+                    };
                     saveState();
                     render();
                 }
@@ -536,18 +654,20 @@
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
-                    if (!pos.persiane) pos.persiane = [];
                     const brm = calculateBRM(project, pos, pos.misure, project.brmConfigPersiane);
-                    pos.persiane.push({
+                    // UNA SOLA PERSIANA per posizione
+                    pos.persiana = {
                         id: generateId(),
-                        tipo: '',
-                        materiale: '',
-                        colore: '',
+                        tipo: project.configPersiane?.tipo || '',
+                        materiale: project.configPersiane?.materiale || '',
+                        colore: project.configPersiane?.colore || '',
+                        apertura: project.configPersiane?.apertura || '',
                         BRM_L: brm.L,
                         BRM_H: brm.H,
+                        usaGlobale: true,
                         note: '',
                         foto: []
-                    });
+                    };
                     saveState();
                     render();
                 }
@@ -559,18 +679,22 @@
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
-                    if (!pos.tapparelle) pos.tapparelle = [];
                     const brm = calculateBRM(project, pos, pos.misure, project.brmConfigTapparelle);
-                    pos.tapparelle.push({
+                    // UNA SOLA TAPPARELLA per posizione
+                    pos.tapparella = {
                         id: generateId(),
-                        tipo: '',
-                        motore: '',
-                        colore: '',
+                        tipo: project.configTapparelle?.tipo || '',
+                        materiale: project.configTapparelle?.materiale || '',
+                        colore: project.configTapparelle?.colore || '',
+                        comando: project.configTapparelle?.comando || '',
+                        motoreAzienda: project.configTapparelle?.motoreAzienda || '',
+                        motoreModello: project.configTapparelle?.motoreModello || '',
                         BRM_L: brm.L,
                         BRM_H: brm.H,
+                        usaGlobale: true,
                         note: '',
                         foto: []
-                    });
+                    };
                     saveState();
                     render();
                 }
@@ -582,17 +706,20 @@
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
-                    if (!pos.zanzariere) pos.zanzariere = [];
                     const brm = calculateBRM(project, pos, pos.misure, project.brmConfigZanzariere);
-                    pos.zanzariere.push({
+                    // UNA SOLA ZANZARIERA per posizione
+                    pos.zanzariera = {
                         id: generateId(),
-                        tipo: '',
-                        colore: '',
+                        tipo: project.configZanzariere?.tipo || '',
+                        coloreTelaio: project.configZanzariere?.coloreTelaio || '',
+                        tipoRete: project.configZanzariere?.tipoRete || '',
+                        coloreRete: project.configZanzariere?.coloreRete || '',
                         BRM_L: brm.L,
                         BRM_H: brm.H,
+                        usaGlobale: true,
                         note: '',
                         foto: []
-                    });
+                    };
                     saveState();
                     render();
                 }
@@ -604,30 +731,34 @@
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
-                    if (!pos.cassonetti) pos.cassonetti = [];
                     const brm = calculateBRM(project, pos, pos.misure, project.brmConfigCassonetti);
-                    pos.cassonetti.push({
+                    // UN SOLO CASSONETTO per posizione
+                    pos.cassonetto = {
                         id: generateId(),
-                        tipo: '',
-                        materiale: '',
+                        tipo: project.configCassonetti?.tipo || '',
+                        materiale: project.configCassonetti?.materiale || '',
+                        finitura: project.configCassonetti?.finitura || '',
+                        coibentazione: project.configCassonetti?.coibentazione || '',
                         BRM_L: brm.L,
                         BRM_H: brm.H,
+                        usaGlobale: true,
                         note: '',
                         foto: []
-                    });
+                    };
                     saveState();
                     render();
                 }
             }
         }
 
-        function deleteProduct(projectId, posId, productType, productId) {
+        function deleteProduct(projectId, posId, productType) {
             if (confirm('Sei sicuro di voler eliminare questo elemento?')) {
                 const project = state.projects.find(p => p.id === projectId);
                 if (project) {
                     const pos = project.positions.find(p => p.id === posId);
                     if (pos && pos[productType]) {
-                        pos[productType] = pos[productType].filter(p => p.id !== productId);
+                        // Elimina il singolo prodotto
+                        delete pos[productType];
                         saveState();
                         render();
                     }
@@ -635,16 +766,88 @@
             }
         }
 
-        function updateProduct(projectId, posId, productType, productId, field, value) {
+        function updateProduct(projectId, posId, productType, field, value) {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos && pos[productType]) {
-                    const product = pos[productType].find(p => p.id === productId);
-                    if (product) {
-                        product[field] = value;
-                        saveState();
+                    pos[productType][field] = value;
+                    saveState();
+                }
+            }
+        }
+
+        // Toggle usaGlobale e ricalcola BRM
+        function toggleUsaGlobale(projectId, posId, productType) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos[productType]) {
+                    const product = pos[productType];
+                    product.usaGlobale = !product.usaGlobale;
+                    
+                    const configMap = {
+                        'infisso': 'brmConfigInfissi',
+                        'persiana': 'brmConfigPersiane',
+                        'tapparella': 'brmConfigTapparelle',
+                        'zanzariera': 'brmConfigZanzariere',
+                        'cassonetto': 'brmConfigCassonetti'
+                    };
+                    const configKey = configMap[productType];
+                    
+                    if (product.usaGlobale) {
+                        // Attivo usaGlobale: ricalcola il BRM con la config globale
+                        if (configKey) {
+                            const brm = calculateBRM(project, pos, pos.misure, project[configKey]);
+                            product.BRM_L = brm.L;
+                            product.BRM_H = brm.H;
+                        }
+                    } else {
+                        // Disattivo usaGlobale: inizializza formula personalizzata
+                        // Copia la formula dalla config globale come punto di partenza
+                        if (configKey && project[configKey]) {
+                            product.brmPersonalizzato = {
+                                misuraBaseL: project[configKey].misuraBaseL || '',
+                                operazioneL: project[configKey].operazioneL || '+',
+                                valoreL: project[configKey].valoreL || '0',
+                                misuraBaseH: project[configKey].misuraBaseH || '',
+                                operazioneH: project[configKey].operazioneH || '+',
+                                valoreH: project[configKey].valoreH || '0'
+                            };
+                            // Ricalcola BRM con la formula personalizzata
+                            const brm = calculateBRM(project, pos, pos.misure, product.brmPersonalizzato);
+                            product.BRM_L = brm.L;
+                            product.BRM_H = brm.H;
+                        }
                     }
+                    saveState();
+                    render();
+                }
+            }
+        }
+
+        // Aggiorna formula BRM personalizzata per un prodotto
+        function updateBRMPersonalizzato(projectId, posId, productType, field, value) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos[productType]) {
+                    const product = pos[productType];
+                    if (!product.brmPersonalizzato) {
+                        product.brmPersonalizzato = {
+                            misuraBaseL: '', operazioneL: '+', valoreL: '0',
+                            misuraBaseH: '', operazioneH: '+', valoreH: '0'
+                        };
+                    }
+                    product.brmPersonalizzato[field] = value;
+                    
+                    // Ricalcola BRM con la nuova formula
+                    const brm = calculateBRM(project, pos, pos.misure, product.brmPersonalizzato);
+                    product.BRM_L = brm.L;
+                    product.BRM_H = brm.H;
+                    
+                    saveState();
+                    render();
                 }
             }
         }
@@ -664,7 +867,7 @@
                                     </button>
                                 ` : ''}
                                 <h1 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                                    Open Porte v3.0 - Fase 18A 🎯✨
+                                    Open Porte v3.0 - Fase 21: UI Completa 🎯✨📋
                                 </h1>
                             </div>
                             <div class="flex items-center gap-2">
@@ -814,10 +1017,20 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1">Piano</label>
-                            <input type="text" placeholder="Es: Piano Terra" 
-                                   value="${project.clientData?.piano || ''}"
-                                   onchange="updateClientData('${project.id}', 'piano', this.value)"
-                                   class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                            <select onchange="updateClientData('${project.id}', 'piano', this.value)"
+                                    class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="">Seleziona piano...</option>
+                                <option value="Piano Seminterrato" ${project.clientData?.piano === 'Piano Seminterrato' ? 'selected' : ''}>Piano Seminterrato</option>
+                                <option value="Piano Terra" ${project.clientData?.piano === 'Piano Terra' ? 'selected' : ''}>Piano Terra</option>
+                                <option value="Piano Rialzato" ${project.clientData?.piano === 'Piano Rialzato' ? 'selected' : ''}>Piano Rialzato</option>
+                                <option value="Primo Piano" ${project.clientData?.piano === 'Primo Piano' ? 'selected' : ''}>Primo Piano</option>
+                                <option value="Secondo Piano" ${project.clientData?.piano === 'Secondo Piano' ? 'selected' : ''}>Secondo Piano</option>
+                                <option value="Terzo Piano" ${project.clientData?.piano === 'Terzo Piano' ? 'selected' : ''}>Terzo Piano</option>
+                                <option value="Quarto Piano" ${project.clientData?.piano === 'Quarto Piano' ? 'selected' : ''}>Quarto Piano</option>
+                                <option value="Quinto Piano" ${project.clientData?.piano === 'Quinto Piano' ? 'selected' : ''}>Quinto Piano</option>
+                                <option value="Attico" ${project.clientData?.piano === 'Attico' ? 'selected' : ''}>Attico</option>
+                                <option value="Mansarda" ${project.clientData?.piano === 'Mansarda' ? 'selected' : ''}>Mansarda</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1">Città</label>
@@ -1157,26 +1370,6 @@
                                     <option value="sotto-laterali" ${project.configInfissi?.tagliTelaio === 'sotto-laterali' ? 'selected' : ''}>sotto/laterali</option>
                                 </select>
                             </div>
-                            
-                            <div class="col-span-full">
-                                <label class="block text-sm font-bold mb-2 text-purple-700">🔌 11. Motori</label>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Azienda</label>
-                                        <input type="text" placeholder="Es: Somfy, Nice, Cherubini"
-                                               value="${project.configInfissi?.motoreAzienda || ''}"
-                                               onchange="updateConfigInfissi('${project.id}', 'motoreAzienda', this.value)"
-                                               class="w-full px-3 py-2 border rounded-lg">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1">Modello</label>
-                                        <input type="text" placeholder="Es: RTS, io-homecontrol"
-                                               value="${project.configInfissi?.motoreModello || ''}"
-                                               onchange="updateConfigInfissi('${project.id}', 'motoreModello', this.value)"
-                                               class="w-full px-3 py-2 border rounded-lg">
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                     
@@ -1189,28 +1382,275 @@
             if (!project.prodotti?.persiane) {
                 return `<div class="text-center py-8"><p class="text-gray-500">Le persiane non sono state selezionate. Salta questo step.</p></div>`;
             }
-            return `<div><h2 class="text-xl font-bold mb-4 flex items-center gap-2"><span class="text-2xl">🚪</span> Configurazione Persiane Default</h2><p class="text-gray-600 mb-4">Configurazione base persiane</p>${renderBRMConfig(project, 'persiane', 'Persiane', '🚪')}</div>`;
+            return `
+                <div>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🚪</span> Configurazione Persiane Default
+                    </h2>
+                    <p class="text-gray-600 mb-4">Imposta i valori di default per tutte le persiane:</p>
+                    
+                    <div class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">1. Tipo Persiana</label>
+                                <select onchange="updateConfigPersiane('${project.id}', 'tipo', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona tipo...</option>
+                                    <option value="Battente" ${project.configPersiane?.tipo === 'Battente' ? 'selected' : ''}>Battente</option>
+                                    <option value="Scorrevole" ${project.configPersiane?.tipo === 'Scorrevole' ? 'selected' : ''}>Scorrevole</option>
+                                    <option value="A libro" ${project.configPersiane?.tipo === 'A libro' ? 'selected' : ''}>A libro</option>
+                                    <option value="Orientabile" ${project.configPersiane?.tipo === 'Orientabile' ? 'selected' : ''}>Orientabile</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">2. Materiale</label>
+                                <select onchange="updateConfigPersiane('${project.id}', 'materiale', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona materiale...</option>
+                                    <option value="Alluminio" ${project.configPersiane?.materiale === 'Alluminio' ? 'selected' : ''}>Alluminio</option>
+                                    <option value="Legno" ${project.configPersiane?.materiale === 'Legno' ? 'selected' : ''}>Legno</option>
+                                    <option value="PVC" ${project.configPersiane?.materiale === 'PVC' ? 'selected' : ''}>PVC</option>
+                                    <option value="Alluminio-Legno" ${project.configPersiane?.materiale === 'Alluminio-Legno' ? 'selected' : ''}>Alluminio-Legno</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">3. Colore/Finitura</label>
+                                <input type="text" value="${project.configPersiane?.colore || ''}"
+                                       onchange="updateConfigPersiane('${project.id}', 'colore', this.value)"
+                                       placeholder="Es: Verde, RAL 6005, Legno Naturale"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">4. Apertura</label>
+                                <select onchange="updateConfigPersiane('${project.id}', 'apertura', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Interna" ${project.configPersiane?.apertura === 'Interna' ? 'selected' : ''}>Interna</option>
+                                    <option value="Esterna" ${project.configPersiane?.apertura === 'Esterna' ? 'selected' : ''}>Esterna</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${renderBRMConfig(project, 'persiane', 'Persiane', '🚪')}
+                </div>
+            `;
         }
 
         function renderStep5ConfigTapparelle(project) {
             if (!project.prodotti?.tapparelle) {
                 return `<div class="text-center py-8"><p class="text-gray-500">Le tapparelle non sono state selezionate. Salta questo step.</p></div>`;
             }
-            return `<div><h2 class="text-xl font-bold mb-4 flex items-center gap-2"><span class="text-2xl">🎚️</span> Configurazione Tapparelle Default</h2><p class="text-gray-600 mb-4">Configurazione base tapparelle</p>${renderBRMConfig(project, 'tapparelle', 'Tapparelle', '🎚️')}</div>`;
+            return `
+                <div>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🎚️</span> Configurazione Tapparelle Default
+                    </h2>
+                    <p class="text-gray-600 mb-4">Imposta i valori di default per tutte le tapparelle:</p>
+                    
+                    <div class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">1. Tipo Tapparella</label>
+                                <select onchange="updateConfigTapparelle('${project.id}', 'tipo', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona tipo...</option>
+                                    <option value="Standard" ${project.configTapparelle?.tipo === 'Standard' ? 'selected' : ''}>Standard</option>
+                                    <option value="Blindata" ${project.configTapparelle?.tipo === 'Blindata' ? 'selected' : ''}>Blindata</option>
+                                    <option value="Coibentata" ${project.configTapparelle?.tipo === 'Coibentata' ? 'selected' : ''}>Coibentata</option>
+                                    <option value="Orientabile" ${project.configTapparelle?.tipo === 'Orientabile' ? 'selected' : ''}>Orientabile</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">2. Materiale</label>
+                                <select onchange="updateConfigTapparelle('${project.id}', 'materiale', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona materiale...</option>
+                                    <option value="PVC" ${project.configTapparelle?.materiale === 'PVC' ? 'selected' : ''}>PVC</option>
+                                    <option value="Alluminio" ${project.configTapparelle?.materiale === 'Alluminio' ? 'selected' : ''}>Alluminio</option>
+                                    <option value="Alluminio Coibentato" ${project.configTapparelle?.materiale === 'Alluminio Coibentato' ? 'selected' : ''}>Alluminio Coibentato</option>
+                                    <option value="Acciaio" ${project.configTapparelle?.materiale === 'Acciaio' ? 'selected' : ''}>Acciaio</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">3. Colore</label>
+                                <input type="text" value="${project.configTapparelle?.colore || ''}"
+                                       onchange="updateConfigTapparelle('${project.id}', 'colore', this.value)"
+                                       placeholder="Es: Bianco, Avorio, RAL 9010"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">4. Comando</label>
+                                <select onchange="updateConfigTapparelle('${project.id}', 'comando', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Manuale" ${project.configTapparelle?.comando === 'Manuale' ? 'selected' : ''}>Manuale</option>
+                                    <option value="Motorizzata" ${project.configTapparelle?.comando === 'Motorizzata' ? 'selected' : ''}>Motorizzata</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-span-full">
+                                <label class="block text-sm font-bold mb-2 text-amber-700">🔌 5. Motori (se motorizzata)</label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">Azienda</label>
+                                        <select onchange="updateConfigTapparelle('${project.id}', 'motoreAzienda', this.value)"
+                                                class="w-full px-3 py-2 border rounded-lg">
+                                            <option value="">Seleziona...</option>
+                                            <option value="Somfy" ${project.configTapparelle?.motoreAzienda === 'Somfy' ? 'selected' : ''}>Somfy</option>
+                                            <option value="Nice" ${project.configTapparelle?.motoreAzienda === 'Nice' ? 'selected' : ''}>Nice</option>
+                                            <option value="Cherubini" ${project.configTapparelle?.motoreAzienda === 'Cherubini' ? 'selected' : ''}>Cherubini</option>
+                                            <option value="Faac" ${project.configTapparelle?.motoreAzienda === 'Faac' ? 'selected' : ''}>Faac</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1">Modello</label>
+                                        <input type="text" placeholder="Es: RTS, io-homecontrol"
+                                               value="${project.configTapparelle?.motoreModello || ''}"
+                                               onchange="updateConfigTapparelle('${project.id}', 'motoreModello', this.value)"
+                                               class="w-full px-3 py-2 border rounded-lg">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${renderBRMConfig(project, 'tapparelle', 'Tapparelle', '🎚️')}
+                </div>
+            `;
         }
 
         function renderStep6ConfigZanzariere(project) {
             if (!project.prodotti?.zanzariere) {
                 return `<div class="text-center py-8"><p class="text-gray-500">Le zanzariere non sono state selezionate. Salta questo step.</p></div>`;
             }
-            return `<div><h2 class="text-xl font-bold mb-4 flex items-center gap-2"><span class="text-2xl">🦟</span> Configurazione Zanzariere Default</h2><p class="text-gray-600 mb-4">Configurazione base zanzariere</p>${renderBRMConfig(project, 'zanzariere', 'Zanzariere', '🦟')}</div>`;
+            return `
+                <div>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🦟</span> Configurazione Zanzariere Default
+                    </h2>
+                    <p class="text-gray-600 mb-4">Imposta i valori di default per tutte le zanzariere:</p>
+                    
+                    <div class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">1. Tipo Zanzariera</label>
+                                <select onchange="updateConfigZanzariere('${project.id}', 'tipo', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona tipo...</option>
+                                    <option value="Avvolgibile" ${project.configZanzariere?.tipo === 'Avvolgibile' ? 'selected' : ''}>Avvolgibile</option>
+                                    <option value="Plissé" ${project.configZanzariere?.tipo === 'Plissé' ? 'selected' : ''}>Plissé</option>
+                                    <option value="Battente" ${project.configZanzariere?.tipo === 'Battente' ? 'selected' : ''}>Battente</option>
+                                    <option value="Scorrevole" ${project.configZanzariere?.tipo === 'Scorrevole' ? 'selected' : ''}>Scorrevole</option>
+                                    <option value="Fissa" ${project.configZanzariere?.tipo === 'Fissa' ? 'selected' : ''}>Fissa</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">2. Colore Telaio</label>
+                                <input type="text" value="${project.configZanzariere?.coloreTelaio || ''}"
+                                       onchange="updateConfigZanzariere('${project.id}', 'coloreTelaio', this.value)"
+                                       placeholder="Es: Bianco, Marrone, RAL 9010"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">3. Tipo Rete</label>
+                                <select onchange="updateConfigZanzariere('${project.id}', 'tipoRete', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Standard" ${project.configZanzariere?.tipoRete === 'Standard' ? 'selected' : ''}>Standard</option>
+                                    <option value="Anti-polline" ${project.configZanzariere?.tipoRete === 'Anti-polline' ? 'selected' : ''}>Anti-polline</option>
+                                    <option value="Pet-resistant" ${project.configZanzariere?.tipoRete === 'Pet-resistant' ? 'selected' : ''}>Pet-resistant</option>
+                                    <option value="Micro-forata" ${project.configZanzariere?.tipoRete === 'Micro-forata' ? 'selected' : ''}>Micro-forata</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">4. Colore Rete</label>
+                                <select onchange="updateConfigZanzariere('${project.id}', 'coloreRete', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Nero" ${project.configZanzariere?.coloreRete === 'Nero' ? 'selected' : ''}>Nero</option>
+                                    <option value="Grigio" ${project.configZanzariere?.coloreRete === 'Grigio' ? 'selected' : ''}>Grigio</option>
+                                    <option value="Bianco" ${project.configZanzariere?.coloreRete === 'Bianco' ? 'selected' : ''}>Bianco</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${renderBRMConfig(project, 'zanzariere', 'Zanzariere', '🦟')}
+                </div>
+            `;
         }
 
         function renderStep7ConfigCassonetti(project) {
             if (!project.prodotti?.cassonetti) {
                 return `<div class="text-center py-8"><p class="text-gray-500">I cassonetti non sono stati selezionati. Salta questo step.</p></div>`;
             }
-            return `<div><h2 class="text-xl font-bold mb-4 flex items-center gap-2"><span class="text-2xl">📦</span> Configurazione Cassonetti Default</h2><p class="text-gray-600 mb-4">Configurazione base cassonetti</p>${renderBRMConfig(project, 'cassonetti', 'Cassonetti', '📦')}</div>`;
+            return `
+                <div>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📦</span> Configurazione Cassonetti Default
+                    </h2>
+                    <p class="text-gray-600 mb-4">Imposta i valori di default per tutti i cassonetti:</p>
+                    
+                    <div class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">1. Tipo Cassonetto</label>
+                                <select onchange="updateConfigCassonetti('${project.id}', 'tipo', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona tipo...</option>
+                                    <option value="Esterno" ${project.configCassonetti?.tipo === 'Esterno' ? 'selected' : ''}>Esterno</option>
+                                    <option value="Incasso" ${project.configCassonetti?.tipo === 'Incasso' ? 'selected' : ''}>Incasso</option>
+                                    <option value="Sopra-finestra" ${project.configCassonetti?.tipo === 'Sopra-finestra' ? 'selected' : ''}>Sopra-finestra</option>
+                                    <option value="Semi-incasso" ${project.configCassonetti?.tipo === 'Semi-incasso' ? 'selected' : ''}>Semi-incasso</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">2. Materiale</label>
+                                <select onchange="updateConfigCassonetti('${project.id}', 'materiale', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona materiale...</option>
+                                    <option value="PVC" ${project.configCassonetti?.materiale === 'PVC' ? 'selected' : ''}>PVC</option>
+                                    <option value="Alluminio" ${project.configCassonetti?.materiale === 'Alluminio' ? 'selected' : ''}>Alluminio</option>
+                                    <option value="Alluminio Coibentato" ${project.configCassonetti?.materiale === 'Alluminio Coibentato' ? 'selected' : ''}>Alluminio Coibentato</option>
+                                    <option value="Legno" ${project.configCassonetti?.materiale === 'Legno' ? 'selected' : ''}>Legno</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">3. Finitura/Colore</label>
+                                <input type="text" value="${project.configCassonetti?.finitura || ''}"
+                                       onchange="updateConfigCassonetti('${project.id}', 'finitura', this.value)"
+                                       placeholder="Es: Bianco, RAL 9010, Legno"
+                                       class="w-full px-3 py-2 border rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">4. Coibentazione</label>
+                                <select onchange="updateConfigCassonetti('${project.id}', 'coibentazione', this.value)"
+                                        class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Standard" ${project.configCassonetti?.coibentazione === 'Standard' ? 'selected' : ''}>Standard</option>
+                                    <option value="Rinforzata" ${project.configCassonetti?.coibentazione === 'Rinforzata' ? 'selected' : ''}>Rinforzata</option>
+                                    <option value="Acustica" ${project.configCassonetti?.coibentazione === 'Acustica' ? 'selected' : ''}>Acustica</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${renderBRMConfig(project, 'cassonetti', 'Cassonetti', '📦')}
+                </div>
+            `;
         }
 
         function renderStep8WallFeatures(project) {
@@ -1385,11 +1825,11 @@
                                                 <h3 class="font-semibold">${pos.name}</h3>
                                                 <p class="text-sm text-gray-600">
                                                     ${pos.piano || 'Piano'} • ${pos.ambiente || 'Ambiente'}
-                                                    ${pos.infissi?.length ? ` • 🪟 ${pos.infissi.length}` : ''}
-                                                    ${pos.persiane?.length ? ` • 🚪 ${pos.persiane.length}` : ''}
-                                                    ${pos.tapparelle?.length ? ` • 🎚️ ${pos.tapparelle.length}` : ''}
-                                                    ${pos.zanzariere?.length ? ` • 🦟 ${pos.zanzariere.length}` : ''}
-                                                    ${pos.cassonetti?.length ? ` • 📦 ${pos.cassonetti.length}` : ''}
+                                                    ${pos.infisso ? ` • 🪟` : ''}
+                                                    ${pos.persiana ? ` • 🚪` : ''}
+                                                    ${pos.tapparella ? ` • 🎚️` : ''}
+                                                    ${pos.zanzariera ? ` • 🦟` : ''}
+                                                    ${pos.cassonetto ? ` • 📦` : ''}
                                                 </p>
                                                 <p class="text-xs mt-1 font-semibold ${validation.errors.length > 0 ? 'text-red-600' : validation.warnings.length > 0 ? 'text-amber-600' : 'text-green-600'}">
                                                     ${statusIcon} Misure: ${statusText}
@@ -1460,6 +1900,13 @@
                             </select>
                         </div>
                         <div class="section-card">
+                            <label class="text-xs font-medium">Quantità</label>
+                            <input type="number" min="1" value="${pos.quantita || '1'}"
+                                   onchange="updatePosition('${project.id}', '${pos.id}', 'quantita', this.value)"
+                                   placeholder="1"
+                                   class="w-full compact-input border rounded mt-1 font-semibold text-purple-700">
+                        </div>
+                        <div class="section-card">
                             <label class="text-xs font-medium">Foto</label>
                             <div class="flex items-center gap-2 mt-1">
                                 <input type="file" id="foto-${pos.id}" accept="image/*" class="hidden"
@@ -1482,31 +1929,31 @@
                             ${project.prodotti?.infissi ? `
                                 <button onclick="setPositionTab('${pos.id}', 'infissi')"
                                         class="tab-btn ${pos.activeTab === 'infissi' ? 'active' : ''}">
-                                    🪟 Infissi (${pos.infissi?.length || 0})
+                                    🪟 Infissi
                                 </button>
                             ` : ''}
                             ${project.prodotti?.persiane ? `
                                 <button onclick="setPositionTab('${pos.id}', 'persiane')"
                                         class="tab-btn ${pos.activeTab === 'persiane' ? 'active' : ''}">
-                                    🚪 Persiane (${pos.persiane?.length || 0})
+                                    🚪 Persiane
                                 </button>
                             ` : ''}
                             ${project.prodotti?.tapparelle ? `
                                 <button onclick="setPositionTab('${pos.id}', 'tapparelle')"
                                         class="tab-btn ${pos.activeTab === 'tapparelle' ? 'active' : ''}">
-                                    🎚️ Tapparelle (${pos.tapparelle?.length || 0})
+                                    🎚️ Tapparelle
                                 </button>
                             ` : ''}
                             ${project.prodotti?.zanzariere ? `
                                 <button onclick="setPositionTab('${pos.id}', 'zanzariere')"
                                         class="tab-btn ${pos.activeTab === 'zanzariere' ? 'active' : ''}">
-                                    🦟 Zanzariere (${pos.zanzariere?.length || 0})
+                                    🦟 Zanzariere
                                 </button>
                             ` : ''}
                             ${project.prodotti?.cassonetti ? `
                                 <button onclick="setPositionTab('${pos.id}', 'cassonetti')"
                                         class="tab-btn ${pos.activeTab === 'cassonetti' ? 'active' : ''}">
-                                    📦 Cassonetti (${pos.cassonetti?.length || 0})
+                                    📦 Cassonetti
                                 </button>
                             ` : ''}
                             <button onclick="setPositionTab('${pos.id}', 'foto')"
@@ -1655,101 +2102,206 @@
         }
 
         function renderInfissiTab(project, pos) {
-            if (!pos.infissi) pos.infissi = [];
+            const inf = pos.infisso;
             
             return `
                 <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-bold">🪟 Infissi (${pos.infissi.length})</h3>
-                        <button onclick="addInfisso('${project.id}', '${pos.id}')"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
-                            + Aggiungi Infisso
-                        </button>
-                    </div>
-
-                    ${pos.infissi.length === 0 ? `
+                    ${!inf ? `
                         <div class="text-center py-8 bg-gray-50 rounded-lg">
-                            <p class="text-gray-600 mb-4">Nessun infisso aggiunto</p>
+                            <p class="text-gray-600 mb-4">Nessun infisso configurato</p>
                             <button onclick="addInfisso('${project.id}', '${pos.id}')"
-                                    class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium">
-                                + Aggiungi Primo Infisso
+                                    class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                                + Aggiungi Infisso
                             </button>
                         </div>
                     ` : `
-                        <div class="space-y-3">
-                            ${pos.infissi.map((inf, idx) => `
-                                <div class="product-card">
-                                    <div class="flex justify-between items-start mb-3">
-                                        <h4 class="font-semibold text-blue-700">🪟 Infisso #${idx + 1}</h4>
-                                        <button onclick="deleteProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}')"
-                                                class="text-red-600 hover:text-red-800">
-                                            🗑️
-                                        </button>
+                        <div class="product-card">
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="font-semibold text-blue-700 text-lg">🪟 Infisso</h4>
+                                <button onclick="deleteProduct('${project.id}', '${pos.id}', 'infisso')"
+                                        class="px-3 py-1.5 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700">
+                                    🗑️ Elimina
+                                </button>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-3 gap-3 mb-3">
+                                <div>
+                                    <label class="text-xs font-medium">Azienda</label>
+                                    <input type="text" value="${inf.azienda || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'azienda', this.value)"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Finitura Int</label>
+                                    <input type="text" value="${inf.finituraInt || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'finituraInt', this.value)"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Finitura Est</label>
+                                    <input type="text" value="${inf.finituraEst || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'finituraEst', this.value)"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Colore Int</label>
+                                    <input type="text" value="${inf.coloreInt || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'coloreInt', this.value)"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Colore Est</label>
+                                    <input type="text" value="${inf.coloreEst || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'coloreEst', this.value)"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Tipo Anta</label>
+                                    <input type="text" value="${inf.tipoAnta || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'tipoAnta', this.value)"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-3">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="font-bold text-amber-800 flex items-center gap-2">
+                                        📏 BRM - Misura per Ordine
+                                    </h5>
+                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'infisso')"
+                                            class="px-3 py-1.5 ${inf.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
+                                        ${inf.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
+                                    </button>
+                                </div>
+                                
+                                ${inf.usaGlobale ? `
+                                    <div class="bg-white p-3 rounded border-2 border-amber-400">
+                                        <p class="text-sm text-amber-800 mb-2">
+                                            <strong>Formula Globale Attiva:</strong>
+                                        </p>
+                                        <div class="grid grid-cols-2 gap-3 text-sm">
+                                            <div>
+                                                <span class="font-semibold">BRM L =</span>
+                                                ${project.brmConfigInfissi?.misuraBaseL || '?'} 
+                                                ${project.brmConfigInfissi?.operazioneL || '-'} 
+                                                ${project.brmConfigInfissi?.valoreL || '0'}mm
+                                            </div>
+                                            <div>
+                                                <span class="font-semibold">BRM H =</span>
+                                                ${project.brmConfigInfissi?.misuraBaseH || '?'} 
+                                                ${project.brmConfigInfissi?.operazioneH || '-'} 
+                                                ${project.brmConfigInfissi?.valoreH || '0'}mm
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="grid md:grid-cols-2 gap-3 mt-3">
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Larghezza</label>
+                                            <input type="number" value="${inf.BRM_L || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Altezza</label>
+                                            <input type="number" value="${inf.BRM_H || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="bg-white p-3 rounded border-2 border-purple-400 mb-3">
+                                        <p class="text-sm font-semibold text-purple-800 mb-2">⚙️ Formula Personalizzata:</p>
+                                        
+                                        <!-- BRM Larghezza -->
+                                        <div class="mb-3">
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Larghezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'misuraBaseL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
+                                                            <option value="${m}" ${inf.brmPersonalizzato?.misuraBaseL === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'operazioneL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${inf.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${inf.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${inf.brmPersonalizzato?.valoreL || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'valoreL', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${inf.brmPersonalizzato?.misuraBaseL || '?'} ${inf.brmPersonalizzato?.operazioneL || '+'} ${inf.brmPersonalizzato?.valoreL || '0'}mm
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- BRM Altezza -->
+                                        <div>
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Altezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'misuraBaseH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
+                                                            <option value="${m}" ${inf.brmPersonalizzato?.misuraBaseH === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'operazioneH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${inf.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${inf.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${inf.brmPersonalizzato?.valoreH || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'valoreH', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${inf.brmPersonalizzato?.misuraBaseH || '?'} ${inf.brmPersonalizzato?.operazioneH || '+'} ${inf.brmPersonalizzato?.valoreH || '0'}mm
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <div class="grid md:grid-cols-3 gap-3 mb-3">
-                                        <div>
-                                            <label class="text-xs font-medium">Azienda</label>
-                                            <input type="text" value="${inf.azienda || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}', 'azienda', this.value)"
-                                                   class="w-full compact-input border rounded mt-1">
+                                    <!-- Risultati BRM Calcolati -->
+                                    <div class="grid md:grid-cols-2 gap-3">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
+                                            <input type="number" value="${inf.BRM_L || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Finitura Int</label>
-                                            <input type="text" value="${inf.finituraInt || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}', 'finituraInt', this.value)"
-                                                   class="w-full compact-input border rounded mt-1">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Finitura Est</label>
-                                            <input type="text" value="${inf.finituraEst || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}', 'finituraEst', this.value)"
-                                                   class="w-full compact-input border rounded mt-1">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Colore Int</label>
-                                            <input type="text" value="${inf.coloreInt || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}', 'coloreInt', this.value)"
-                                                   class="w-full compact-input border rounded mt-1">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Colore Est</label>
-                                            <input type="text" value="${inf.coloreEst || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}', 'coloreEst', this.value)"
-                                                   class="w-full compact-input border rounded mt-1">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Tipo Anta</label>
-                                            <input type="text" value="${inf.tipoAnta || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}', 'tipoAnta', this.value)"
-                                                   class="w-full compact-input border rounded mt-1">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
+                                            <input type="number" value="${inf.BRM_H || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
+                                `}
+                            </div>
 
-                                    <div class="grid md:grid-cols-2 gap-3 p-3 bg-amber-50 rounded">
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Larghezza</label>
-                                            <input type="number" value="${inf.BRM_L || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}', 'BRM_L', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Altezza</label>
-                                            <input type="number" value="${inf.BRM_H || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}', 'BRM_H', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-3">
-                                        <label class="text-xs font-medium">📝 Note</label>
-                                        <textarea value="${inf.note || ''}"
-                                                  onchange="updateProduct('${project.id}', '${pos.id}', 'infissi', '${inf.id}', 'note', this.value)"
-                                                  class="w-full compact-input border rounded mt-1"
-                                                  rows="2"></textarea>
-                                    </div>
-                                </div>
-                            `).join('')}
+                            <div class="mt-3">
+                                <label class="text-xs font-medium">📝 Note</label>
+                                <textarea value="${inf.note || ''}"
+                                          onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'note', this.value)"
+                                          class="w-full compact-input border rounded mt-1"
+                                          rows="2">${inf.note || ''}</textarea>
+                            </div>
                         </div>
                     `}
                 </div>
@@ -1757,333 +2309,756 @@
         }
 
         function renderPersianeTab(project, pos) {
-            if (!pos.persiane) pos.persiane = [];
+            const per = pos.persiana;
             
             return `
                 <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-bold">🚪 Persiane (${pos.persiane.length})</h3>
-                        <button onclick="addPersiana('${project.id}', '${pos.id}')"
-                                class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700">
-                            + Aggiungi Persiana
-                        </button>
-                    </div>
-
-                    ${pos.persiane.length === 0 ? `
+                    ${!per ? `
                         <div class="text-center py-8 bg-gray-50 rounded-lg">
-                            <p class="text-gray-600 mb-4">Nessuna persiana aggiunta</p>
+                            <p class="text-gray-600 mb-4">Nessuna persiana configurata</p>
                             <button onclick="addPersiana('${project.id}', '${pos.id}')"
-                                    class="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium">
-                                + Aggiungi Prima Persiana
+                                    class="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700">
+                                + Aggiungi Persiana
                             </button>
                         </div>
                     ` : `
-                        <div class="space-y-3">
-                            ${pos.persiane.map((per, idx) => `
-                                <div class="product-card">
-                                    <div class="flex justify-between items-start mb-3">
-                                        <h4 class="font-semibold text-purple-700">🚪 Persiana #${idx + 1}</h4>
-                                        <button onclick="deleteProduct('${project.id}', '${pos.id}', 'persiane', '${per.id}')"
-                                                class="text-red-600 hover:text-red-800">
-                                            🗑️
-                                        </button>
+                        <div class="product-card">
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="font-semibold text-purple-700 text-lg">🚪 Persiana</h4>
+                                <button onclick="deleteProduct('${project.id}', '${pos.id}', 'persiana')"
+                                        class="px-3 py-1.5 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700">
+                                    🗑️ Elimina
+                                </button>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-4 gap-3 mb-3">
+                                <div>
+                                    <label class="text-xs font-medium">Tipo</label>
+                                    <input type="text" value="${per.tipo || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'tipo', this.value)"
+                                           placeholder="Es: Battente, Scorrevole"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Materiale</label>
+                                    <input type="text" value="${per.materiale || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'materiale', this.value)"
+                                           placeholder="Es: Alluminio, Legno"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Colore</label>
+                                    <input type="text" value="${per.colore || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'colore', this.value)"
+                                           placeholder="Es: Verde, RAL 6005"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Apertura</label>
+                                    <input type="text" value="${per.apertura || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'apertura', this.value)"
+                                           placeholder="Es: Interna, Esterna"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-3">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="font-bold text-amber-800 flex items-center gap-2">
+                                        📏 BRM - Misura per Ordine
+                                    </h5>
+                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'persiana')"
+                                            class="px-3 py-1.5 ${per.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
+                                        ${per.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
+                                    </button>
+                                </div>
+                                
+                                ${per.usaGlobale ? `
+                                    <div class="bg-white p-3 rounded border-2 border-amber-400">
+                                        <p class="text-sm text-amber-800 mb-2"><strong>Formula Globale Attiva:</strong></p>
+                                        <div class="grid grid-cols-2 gap-3 text-sm">
+                                            <div><span class="font-semibold">BRM L =</span> ${project.brmConfigPersiane?.misuraBaseL || '?'} ${project.brmConfigPersiane?.operazioneL || '-'} ${project.brmConfigPersiane?.valoreL || '0'}mm</div>
+                                            <div><span class="font-semibold">BRM H =</span> ${project.brmConfigPersiane?.misuraBaseH || '?'} ${project.brmConfigPersiane?.operazioneH || '-'} ${project.brmConfigPersiane?.valoreH || '0'}mm</div>
+                                        </div>
+                                    </div>
+                                    <div class="grid md:grid-cols-2 gap-3 mt-3">
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Larghezza</label>
+                                            <input type="number" value="${per.BRM_L || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Altezza</label>
+                                            <input type="number" value="${per.BRM_H || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="bg-white p-3 rounded border-2 border-purple-400 mb-3">
+                                        <p class="text-sm font-semibold text-purple-800 mb-2">⚙️ Formula Personalizzata:</p>
+                                        
+                                        <!-- BRM Larghezza -->
+                                        <div class="mb-3">
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Larghezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'misuraBaseL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
+                                                            <option value="${m}" ${per.brmPersonalizzato?.misuraBaseL === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'operazioneL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${per.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${per.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${per.brmPersonalizzato?.valoreL || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'valoreL', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${per.brmPersonalizzato?.misuraBaseL || '?'} ${per.brmPersonalizzato?.operazioneL || '+'} ${per.brmPersonalizzato?.valoreL || '0'}mm
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- BRM Altezza -->
+                                        <div>
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Altezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'misuraBaseH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
+                                                            <option value="${m}" ${per.brmPersonalizzato?.misuraBaseH === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'operazioneH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${per.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${per.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${per.brmPersonalizzato?.valoreH || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'valoreH', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${per.brmPersonalizzato?.misuraBaseH || '?'} ${per.brmPersonalizzato?.operazioneH || '+'} ${per.brmPersonalizzato?.valoreH || '0'}mm
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <div class="grid md:grid-cols-3 gap-3 mb-3">
-                                        <div>
-                                            <label class="text-xs font-medium">Tipo</label>
-                                            <input type="text" value="${per.tipo || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', '${per.id}', 'tipo', this.value)"
-                                                   placeholder="Es: Battente, Scorrevole"
-                                                   class="w-full compact-input border rounded mt-1">
+                                    <!-- Risultati BRM Calcolati -->
+                                    <div class="grid md:grid-cols-2 gap-3">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
+                                            <input type="number" value="${per.BRM_L || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Materiale</label>
-                                            <input type="text" value="${per.materiale || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', '${per.id}', 'materiale', this.value)"
-                                                   placeholder="Es: Alluminio, Legno"
-                                                   class="w-full compact-input border rounded mt-1">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Colore</label>
-                                            <input type="text" value="${per.colore || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', '${per.id}', 'colore', this.value)"
-                                                   placeholder="Es: Verde, RAL 6005"
-                                                   class="w-full compact-input border rounded mt-1">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
+                                            <input type="number" value="${per.BRM_H || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
+                                `}
+                            </div>
 
-                                    <div class="grid md:grid-cols-2 gap-3 p-3 bg-amber-50 rounded">
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Larghezza</label>
-                                            <input type="number" value="${per.BRM_L || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', '${per.id}', 'BRM_L', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Altezza</label>
-                                            <input type="number" value="${per.BRM_H || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', '${per.id}', 'BRM_H', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-3">
-                                        <label class="text-xs font-medium">📝 Note</label>
-                                        <textarea value="${per.note || ''}"
-                                                  onchange="updateProduct('${project.id}', '${pos.id}', 'persiane', '${per.id}', 'note', this.value)"
-                                                  class="w-full compact-input border rounded mt-1"
-                                                  rows="2"></textarea>
-                                    </div>
-                                </div>
-                            `).join('')}
+                            <div class="mt-3">
+                                <label class="text-xs font-medium">📝 Note</label>
+                                <textarea value="${per.note || ''}"
+                                          onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'note', this.value)"
+                                          class="w-full compact-input border rounded mt-1"
+                                          rows="2">${per.note || ''}</textarea>
+                            </div>
                         </div>
                     `}
                 </div>
             `;
         }
 
-        function renderTapparelleTab(project, pos) {
-            if (!pos.tapparelle) pos.tapparelle = [];
+                function renderTapparelleTab(project, pos) {
+            const tap = pos.tapparella;
             
             return `
                 <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-bold">🎚️ Tapparelle (${pos.tapparelle.length})</h3>
-                        <button onclick="addTapparella('${project.id}', '${pos.id}')"
-                                class="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700">
-                            + Aggiungi Tapparella
-                        </button>
-                    </div>
-
-                    ${pos.tapparelle.length === 0 ? `
+                    ${!tap ? `
                         <div class="text-center py-8 bg-gray-50 rounded-lg">
-                            <p class="text-gray-600 mb-4">Nessuna tapparella aggiunta</p>
+                            <p class="text-gray-600 mb-4">Nessuna tapparella configurata</p>
                             <button onclick="addTapparella('${project.id}', '${pos.id}')"
-                                    class="px-6 py-2 bg-amber-600 text-white rounded-lg font-medium">
-                                + Aggiungi Prima Tapparella
+                                    class="px-6 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700">
+                                + Aggiungi Tapparella
                             </button>
                         </div>
                     ` : `
-                        <div class="space-y-3">
-                            ${pos.tapparelle.map((tap, idx) => `
-                                <div class="product-card">
-                                    <div class="flex justify-between items-start mb-3">
-                                        <h4 class="font-semibold text-amber-700">🎚️ Tapparella #${idx + 1}</h4>
-                                        <button onclick="deleteProduct('${project.id}', '${pos.id}', 'tapparelle', '${tap.id}')"
-                                                class="text-red-600 hover:text-red-800">
-                                            🗑️
-                                        </button>
+                        <div class="product-card">
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="font-semibold text-amber-700 text-lg">🎚️ Tapparella</h4>
+                                <button onclick="deleteProduct('${project.id}', '${pos.id}', 'tapparella')"
+                                        class="px-3 py-1.5 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700">
+                                    🗑️ Elimina
+                                </button>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-4 gap-3 mb-3">
+                                <div>
+                                    <label class="text-xs font-medium">Tipo</label>
+                                    <input type="text" value="${tap.tipo || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'tipo', this.value)"
+                                           placeholder="Es: Standard, Blindata"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Materiale</label>
+                                    <input type="text" value="${tap.materiale || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'materiale', this.value)"
+                                           placeholder="Es: PVC, Alluminio"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Colore</label>
+                                    <input type="text" value="${tap.colore || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'colore', this.value)"
+                                           placeholder="Es: Bianco, Avorio"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Comando</label>
+                                    <input type="text" value="${tap.comando || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'comando', this.value)"
+                                           placeholder="Es: Manuale, Motorizzata"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-2 gap-3 mb-3 bg-blue-50 p-3 rounded">
+                                <div>
+                                    <label class="text-xs font-medium text-blue-800">🔌 Motore - Azienda</label>
+                                    <input type="text" value="${tap.motoreAzienda || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'motoreAzienda', this.value)"
+                                           placeholder="Es: Somfy, Nice"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-blue-800">🔌 Motore - Modello</label>
+                                    <input type="text" value="${tap.motoreModello || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'motoreModello', this.value)"
+                                           placeholder="Es: RTS, io-homecontrol"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-3">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="font-bold text-amber-800 flex items-center gap-2">
+                                        📏 BRM - Misura per Ordine
+                                    </h5>
+                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'tapparella')"
+                                            class="px-3 py-1.5 ${tap.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
+                                        ${tap.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
+                                    </button>
+                                </div>
+                                
+                                ${tap.usaGlobale ? `
+                                    <div class="bg-white p-3 rounded border-2 border-amber-400">
+                                        <p class="text-sm text-amber-800 mb-2"><strong>Formula Globale Attiva:</strong></p>
+                                        <div class="grid grid-cols-2 gap-3 text-sm">
+                                            <div><span class="font-semibold">BRM L =</span> ${project.brmConfigTapparelle?.misuraBaseL || '?'} ${project.brmConfigTapparelle?.operazioneL || '-'} ${project.brmConfigTapparelle?.valoreL || '0'}mm</div>
+                                            <div><span class="font-semibold">BRM H =</span> ${project.brmConfigTapparelle?.misuraBaseH || '?'} ${project.brmConfigTapparelle?.operazioneH || '-'} ${project.brmConfigTapparelle?.valoreH || '0'}mm</div>
+                                        </div>
+                                    </div>
+                                    <div class="grid md:grid-cols-2 gap-3 mt-3">
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Larghezza</label>
+                                            <input type="number" value="${tap.BRM_L || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Altezza</label>
+                                            <input type="number" value="${tap.BRM_H || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="bg-white p-3 rounded border-2 border-purple-400 mb-3">
+                                        <p class="text-sm font-semibold text-purple-800 mb-2">⚙️ Formula Personalizzata:</p>
+                                        
+                                        <!-- BRM Larghezza -->
+                                        <div class="mb-3">
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Larghezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'misuraBaseL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
+                                                            <option value="${m}" ${tap.brmPersonalizzato?.misuraBaseL === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'operazioneL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${tap.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${tap.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${tap.brmPersonalizzato?.valoreL || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'valoreL', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${tap.brmPersonalizzato?.misuraBaseL || '?'} ${tap.brmPersonalizzato?.operazioneL || '+'} ${tap.brmPersonalizzato?.valoreL || '0'}mm
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- BRM Altezza -->
+                                        <div>
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Altezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'misuraBaseH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
+                                                            <option value="${m}" ${tap.brmPersonalizzato?.misuraBaseH === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'operazioneH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${tap.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${tap.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${tap.brmPersonalizzato?.valoreH || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'valoreH', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${tap.brmPersonalizzato?.misuraBaseH || '?'} ${tap.brmPersonalizzato?.operazioneH || '+'} ${tap.brmPersonalizzato?.valoreH || '0'}mm
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <div class="grid md:grid-cols-3 gap-3 mb-3">
-                                        <div>
-                                            <label class="text-xs font-medium">Tipo</label>
-                                            <input type="text" value="${tap.tipo || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'tapparelle', '${tap.id}', 'tipo', this.value)"
-                                                   placeholder="Es: Standard, Blindata"
-                                                   class="w-full compact-input border rounded mt-1">
+                                    <!-- Risultati BRM Calcolati -->
+                                    <div class="grid md:grid-cols-2 gap-3">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
+                                            <input type="number" value="${tap.BRM_L || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Motore</label>
-                                            <input type="text" value="${tap.motore || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'tapparelle', '${tap.id}', 'motore', this.value)"
-                                                   placeholder="Es: Somfy, Nice"
-                                                   class="w-full compact-input border rounded mt-1">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Colore</label>
-                                            <input type="text" value="${tap.colore || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'tapparelle', '${tap.id}', 'colore', this.value)"
-                                                   placeholder="Es: Bianco, Avorio"
-                                                   class="w-full compact-input border rounded mt-1">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
+                                            <input type="number" value="${tap.BRM_H || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
+                                `}
+                            </div>
 
-                                    <div class="grid md:grid-cols-2 gap-3 p-3 bg-amber-50 rounded">
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Larghezza</label>
-                                            <input type="number" value="${tap.BRM_L || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'tapparelle', '${tap.id}', 'BRM_L', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Altezza</label>
-                                            <input type="number" value="${tap.BRM_H || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'tapparelle', '${tap.id}', 'BRM_H', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-3">
-                                        <label class="text-xs font-medium">📝 Note</label>
-                                        <textarea value="${tap.note || ''}"
-                                                  onchange="updateProduct('${project.id}', '${pos.id}', 'tapparelle', '${tap.id}', 'note', this.value)"
-                                                  class="w-full compact-input border rounded mt-1"
-                                                  rows="2"></textarea>
-                                    </div>
-                                </div>
-                            `).join('')}
+                            <div class="mt-3">
+                                <label class="text-xs font-medium">📝 Note</label>
+                                <textarea value="${tap.note || ''}"
+                                          onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'note', this.value)"
+                                          class="w-full compact-input border rounded mt-1"
+                                          rows="2">${tap.note || ''}</textarea>
+                            </div>
                         </div>
                     `}
                 </div>
             `;
         }
 
-        function renderZanzariereTab(project, pos) {
-            if (!pos.zanzariere) pos.zanzariere = [];
+                function renderZanzariereTab(project, pos) {
+            const zan = pos.zanzariera;
             
             return `
                 <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-bold">🦟 Zanzariere (${pos.zanzariere.length})</h3>
-                        <button onclick="addZanzariera('${project.id}', '${pos.id}')"
-                                class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
-                            + Aggiungi Zanzariera
-                        </button>
-                    </div>
-
-                    ${pos.zanzariere.length === 0 ? `
+                    ${!zan ? `
                         <div class="text-center py-8 bg-gray-50 rounded-lg">
-                            <p class="text-gray-600 mb-4">Nessuna zanzariera aggiunta</p>
+                            <p class="text-gray-600 mb-4">Nessuna zanzariera configurata</p>
                             <button onclick="addZanzariera('${project.id}', '${pos.id}')"
-                                    class="px-6 py-2 bg-green-600 text-white rounded-lg font-medium">
-                                + Aggiungi Prima Zanzariera
+                                    class="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
+                                + Aggiungi Zanzariera
                             </button>
                         </div>
                     ` : `
-                        <div class="space-y-3">
-                            ${pos.zanzariere.map((zan, idx) => `
-                                <div class="product-card">
-                                    <div class="flex justify-between items-start mb-3">
-                                        <h4 class="font-semibold text-green-700">🦟 Zanzariera #${idx + 1}</h4>
-                                        <button onclick="deleteProduct('${project.id}', '${pos.id}', 'zanzariere', '${zan.id}')"
-                                                class="text-red-600 hover:text-red-800">
-                                            🗑️
-                                        </button>
+                        <div class="product-card">
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="font-semibold text-green-700 text-lg">🦟 Zanzariera</h4>
+                                <button onclick="deleteProduct('${project.id}', '${pos.id}', 'zanzariera')"
+                                        class="px-3 py-1.5 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700">
+                                    🗑️ Elimina
+                                </button>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-4 gap-3 mb-3">
+                                <div>
+                                    <label class="text-xs font-medium">Tipo</label>
+                                    <input type="text" value="${zan.tipo || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariera', 'tipo', this.value)"
+                                           placeholder="Es: Avvolgibile, Plissé"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Colore Telaio</label>
+                                    <input type="text" value="${zan.coloreTelaio || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariera', 'coloreTelaio', this.value)"
+                                           placeholder="Es: Bianco, Marrone"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Tipo Rete</label>
+                                    <input type="text" value="${zan.tipoRete || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariera', 'tipoRete', this.value)"
+                                           placeholder="Es: Standard, Anti-polline"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Colore Rete</label>
+                                    <input type="text" value="${zan.coloreRete || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariera', 'coloreRete', this.value)"
+                                           placeholder="Es: Nero, Grigio"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-3">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="font-bold text-amber-800 flex items-center gap-2">
+                                        📏 BRM - Misura per Ordine
+                                    </h5>
+                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'zanzariera')"
+                                            class="px-3 py-1.5 ${zan.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
+                                        ${zan.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
+                                    </button>
+                                </div>
+                                
+                                ${zan.usaGlobale ? `
+                                    <div class="bg-white p-3 rounded border-2 border-amber-400">
+                                        <p class="text-sm text-amber-800 mb-2"><strong>Formula Globale Attiva:</strong></p>
+                                        <div class="grid grid-cols-2 gap-3 text-sm">
+                                            <div><span class="font-semibold">BRM L =</span> ${project.brmConfigZanzariere?.misuraBaseL || '?'} ${project.brmConfigZanzariere?.operazioneL || '-'} ${project.brmConfigZanzariere?.valoreL || '0'}mm</div>
+                                            <div><span class="font-semibold">BRM H =</span> ${project.brmConfigZanzariere?.misuraBaseH || '?'} ${project.brmConfigZanzariere?.operazioneH || '-'} ${project.brmConfigZanzariere?.valoreH || '0'}mm</div>
+                                        </div>
+                                    </div>
+                                    <div class="grid md:grid-cols-2 gap-3 mt-3">
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Larghezza</label>
+                                            <input type="number" value="${zan.BRM_L || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Altezza</label>
+                                            <input type="number" value="${zan.BRM_H || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="bg-white p-3 rounded border-2 border-purple-400 mb-3">
+                                        <p class="text-sm font-semibold text-purple-800 mb-2">⚙️ Formula Personalizzata:</p>
+                                        
+                                        <!-- BRM Larghezza -->
+                                        <div class="mb-3">
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Larghezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'misuraBaseL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
+                                                            <option value="${m}" ${zan.brmPersonalizzato?.misuraBaseL === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'operazioneL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${zan.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${zan.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${zan.brmPersonalizzato?.valoreL || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'valoreL', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${zan.brmPersonalizzato?.misuraBaseL || '?'} ${zan.brmPersonalizzato?.operazioneL || '+'} ${zan.brmPersonalizzato?.valoreL || '0'}mm
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- BRM Altezza -->
+                                        <div>
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Altezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'misuraBaseH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
+                                                            <option value="${m}" ${zan.brmPersonalizzato?.misuraBaseH === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'operazioneH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${zan.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${zan.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${zan.brmPersonalizzato?.valoreH || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'valoreH', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${zan.brmPersonalizzato?.misuraBaseH || '?'} ${zan.brmPersonalizzato?.operazioneH || '+'} ${zan.brmPersonalizzato?.valoreH || '0'}mm
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <div class="grid md:grid-cols-2 gap-3 mb-3">
-                                        <div>
-                                            <label class="text-xs font-medium">Tipo</label>
-                                            <input type="text" value="${zan.tipo || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', '${zan.id}', 'tipo', this.value)"
-                                                   placeholder="Es: Avvolgibile, Plissé"
-                                                   class="w-full compact-input border rounded mt-1">
+                                    <!-- Risultati BRM Calcolati -->
+                                    <div class="grid md:grid-cols-2 gap-3">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
+                                            <input type="number" value="${zan.BRM_L || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Colore</label>
-                                            <input type="text" value="${zan.colore || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', '${zan.id}', 'colore', this.value)"
-                                                   placeholder="Es: Grigio, Nero"
-                                                   class="w-full compact-input border rounded mt-1">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
+                                            <input type="number" value="${zan.BRM_H || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
+                                `}
+                            </div>
 
-                                    <div class="grid md:grid-cols-2 gap-3 p-3 bg-amber-50 rounded">
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Larghezza</label>
-                                            <input type="number" value="${zan.BRM_L || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', '${zan.id}', 'BRM_L', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Altezza</label>
-                                            <input type="number" value="${zan.BRM_H || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', '${zan.id}', 'BRM_H', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-3">
-                                        <label class="text-xs font-medium">📝 Note</label>
-                                        <textarea value="${zan.note || ''}"
-                                                  onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariere', '${zan.id}', 'note', this.value)"
-                                                  class="w-full compact-input border rounded mt-1"
-                                                  rows="2"></textarea>
-                                    </div>
-                                </div>
-                            `).join('')}
+                            <div class="mt-3">
+                                <label class="text-xs font-medium">📝 Note</label>
+                                <textarea value="${zan.note || ''}"
+                                          onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariera', 'note', this.value)"
+                                          class="w-full compact-input border rounded mt-1"
+                                          rows="2">${zan.note || ''}</textarea>
+                            </div>
                         </div>
                     `}
                 </div>
             `;
         }
 
-        function renderCassonettiTab(project, pos) {
-            if (!pos.cassonetti) pos.cassonetti = [];
+                function renderCassonettiTab(project, pos) {
+            const cas = pos.cassonetto;
             
             return `
                 <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-bold">📦 Cassonetti (${pos.cassonetti.length})</h3>
-                        <button onclick="addCassonetto('${project.id}', '${pos.id}')"
-                                class="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700">
-                            + Aggiungi Cassonetto
-                        </button>
-                    </div>
-
-                    ${pos.cassonetti.length === 0 ? `
+                    ${!cas ? `
                         <div class="text-center py-8 bg-gray-50 rounded-lg">
-                            <p class="text-gray-600 mb-4">Nessun cassonetto aggiunto</p>
+                            <p class="text-gray-600 mb-4">Nessun cassonetto configurato</p>
                             <button onclick="addCassonetto('${project.id}', '${pos.id}')"
-                                    class="px-6 py-2 bg-orange-600 text-white rounded-lg font-medium">
-                                + Aggiungi Primo Cassonetto
+                                    class="px-6 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700">
+                                + Aggiungi Cassonetto
                             </button>
                         </div>
                     ` : `
-                        <div class="space-y-3">
-                            ${pos.cassonetti.map((cas, idx) => `
-                                <div class="product-card">
-                                    <div class="flex justify-between items-start mb-3">
-                                        <h4 class="font-semibold text-orange-700">📦 Cassonetto #${idx + 1}</h4>
-                                        <button onclick="deleteProduct('${project.id}', '${pos.id}', 'cassonetti', '${cas.id}')"
-                                                class="text-red-600 hover:text-red-800">
-                                            🗑️
-                                        </button>
+                        <div class="product-card">
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="font-semibold text-orange-700 text-lg">📦 Cassonetto</h4>
+                                <button onclick="deleteProduct('${project.id}', '${pos.id}', 'cassonetto')"
+                                        class="px-3 py-1.5 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700">
+                                    🗑️ Elimina
+                                </button>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-4 gap-3 mb-3">
+                                <div>
+                                    <label class="text-xs font-medium">Tipo</label>
+                                    <input type="text" value="${cas.tipo || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'tipo', this.value)"
+                                           placeholder="Es: Esterno, Incasso"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Materiale</label>
+                                    <input type="text" value="${cas.materiale || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'materiale', this.value)"
+                                           placeholder="Es: PVC, Alluminio"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Finitura/Colore</label>
+                                    <input type="text" value="${cas.finitura || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'finitura', this.value)"
+                                           placeholder="Es: Bianco, RAL 9010"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium">Coibentazione</label>
+                                    <input type="text" value="${cas.coibentazione || ''}"
+                                           onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'coibentazione', this.value)"
+                                           placeholder="Es: Standard, Rinforzata"
+                                           class="w-full compact-input border rounded mt-1">
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-3">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="font-bold text-amber-800 flex items-center gap-2">
+                                        📏 BRM - Misura per Ordine
+                                    </h5>
+                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'cassonetto')"
+                                            class="px-3 py-1.5 ${cas.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
+                                        ${cas.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
+                                    </button>
+                                </div>
+                                
+                                ${cas.usaGlobale ? `
+                                    <div class="bg-white p-3 rounded border-2 border-amber-400">
+                                        <p class="text-sm text-amber-800 mb-2"><strong>Formula Globale Attiva:</strong></p>
+                                        <div class="grid grid-cols-2 gap-3 text-sm">
+                                            <div><span class="font-semibold">BRM L =</span> ${project.brmConfigCassonetti?.misuraBaseL || '?'} ${project.brmConfigCassonetti?.operazioneL || '-'} ${project.brmConfigCassonetti?.valoreL || '0'}mm</div>
+                                            <div><span class="font-semibold">BRM H =</span> ${project.brmConfigCassonetti?.misuraBaseH || '?'} ${project.brmConfigCassonetti?.operazioneH || '-'} ${project.brmConfigCassonetti?.valoreH || '0'}mm</div>
+                                        </div>
+                                    </div>
+                                    <div class="grid md:grid-cols-2 gap-3 mt-3">
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Larghezza</label>
+                                            <input type="number" value="${cas.BRM_L || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM Altezza</label>
+                                            <input type="number" value="${cas.BRM_H || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="bg-white p-3 rounded border-2 border-purple-400 mb-3">
+                                        <p class="text-sm font-semibold text-purple-800 mb-2">⚙️ Formula Personalizzata:</p>
+                                        
+                                        <!-- BRM Larghezza -->
+                                        <div class="mb-3">
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Larghezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'misuraBaseL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
+                                                            <option value="${m}" ${cas.brmPersonalizzato?.misuraBaseL === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'operazioneL', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${cas.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${cas.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${cas.brmPersonalizzato?.valoreL || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'valoreL', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${cas.brmPersonalizzato?.misuraBaseL || '?'} ${cas.brmPersonalizzato?.operazioneL || '+'} ${cas.brmPersonalizzato?.valoreL || '0'}mm
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- BRM Altezza -->
+                                        <div>
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM Altezza</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'misuraBaseH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
+                                                            <option value="${m}" ${cas.brmPersonalizzato?.misuraBaseH === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'operazioneH', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${cas.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${cas.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" value="${cas.brmPersonalizzato?.valoreH || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'valoreH', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                                = ${cas.brmPersonalizzato?.misuraBaseH || '?'} ${cas.brmPersonalizzato?.operazioneH || '+'} ${cas.brmPersonalizzato?.valoreH || '0'}mm
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <div class="grid md:grid-cols-2 gap-3 mb-3">
-                                        <div>
-                                            <label class="text-xs font-medium">Tipo</label>
-                                            <input type="text" value="${cas.tipo || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetti', '${cas.id}', 'tipo', this.value)"
-                                                   placeholder="Es: Esterno, Incasso"
-                                                   class="w-full compact-input border rounded mt-1">
+                                    <!-- Risultati BRM Calcolati -->
+                                    <div class="grid md:grid-cols-2 gap-3">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
+                                            <input type="number" value="${cas.BRM_L || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
-                                        <div>
-                                            <label class="text-xs font-medium">Materiale</label>
-                                            <input type="text" value="${cas.materiale || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetti', '${cas.id}', 'materiale', this.value)"
-                                                   placeholder="Es: PVC, Alluminio"
-                                                   class="w-full compact-input border rounded mt-1">
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
+                                            <input type="number" value="${cas.BRM_H || ''}" readonly
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
+                                `}
+                            </div>
 
-                                    <div class="grid md:grid-cols-2 gap-3 p-3 bg-amber-50 rounded">
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Larghezza</label>
-                                            <input type="number" value="${cas.BRM_L || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetti', '${cas.id}', 'BRM_L', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-semibold text-amber-800">📏 BRM Altezza</label>
-                                            <input type="number" value="${cas.BRM_H || ''}"
-                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetti', '${cas.id}', 'BRM_H', this.value)"
-                                                   class="w-full compact-input border rounded mt-1 font-semibold">
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-3">
-                                        <label class="text-xs font-medium">📝 Note</label>
-                                        <textarea value="${cas.note || ''}"
-                                                  onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetti', '${cas.id}', 'note', this.value)"
-                                                  class="w-full compact-input border rounded mt-1"
-                                                  rows="2"></textarea>
-                                    </div>
-                                </div>
-                            `).join('')}
+                            <div class="mt-3">
+                                <label class="text-xs font-medium">📝 Note</label>
+                                <textarea value="${cas.note || ''}"
+                                          onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'note', this.value)"
+                                          class="w-full compact-input border rounded mt-1"
+                                          rows="2">${cas.note || ''}</textarea>
+                            </div>
                         </div>
                     `}
                 </div>
@@ -2260,6 +3235,42 @@
             }
         };
 
+        window.updateConfigPersiane = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configPersiane) project.configPersiane = {};
+                project.configPersiane[field] = value;
+                saveState();
+            }
+        };
+
+        window.updateConfigTapparelle = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configTapparelle) project.configTapparelle = {};
+                project.configTapparelle[field] = value;
+                saveState();
+            }
+        };
+
+        window.updateConfigZanzariere = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configZanzariere) project.configZanzariere = {};
+                project.configZanzariere[field] = value;
+                saveState();
+            }
+        };
+
+        window.updateConfigCassonetti = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configCassonetti) project.configCassonetti = {};
+                project.configCassonetti[field] = value;
+                saveState();
+            }
+        };
+
         window.updateBRMConfig = (projectId, configKey, field, value) => {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
@@ -2268,6 +3279,10 @@
                 saveState();
                 render();
             }
+        };
+
+        window.updateBRMPersonalizzato = (projectId, posId, productType, field, value) => {
+            updateBRMPersonalizzato(projectId, posId, productType, field, value);
         };
 
         window.updateCaratteristicheMuro = (projectId, field, value) => {

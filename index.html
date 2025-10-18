@@ -1,8 +1,73 @@
 <!DOCTYPE html>
 <!--
-    Open Porte v3.0 - FASE 9a-UPDATE: DROPDOWN CON ALTRO-SCRIVO 🎯✨📋🔧
+    Open Porte v3.0 - FASE 11_1A: MIGLIORAMENTI BRM CASSONETTI E TAGLI INFISSO 🎯✨🔧⚡
     
-    ✨ MODIFICHE FASE 9a-UPDATE:
+    ✨ MODIFICHE FASE 11_1A (NUOVE):
+    ✅ BRM CASSONETTI - Nuove Misure Larghezza:
+       - Opzioni specifiche per cassonetti: LARGH_CASS, LS, LVT, TMV, LF, MIS_FIN_INF_L, LS+SRDX+SRSX
+       - Le altre tipologie di prodotto mantengono le misure standard
+       - FORMULE COMPOSITE: Supporto per formule tipo "LS+SRDX+SRSX" (somma automatica di più misure)
+       - Le misure del cassonetto sono salvate nel cassonetto stesso (non in pos.misure)
+       - Ricalcolo automatico BRM quando cambiano le misure (LS, SRSX, SRDX, etc.)
+       - Bottone "Ricalcola BRM" visibile SOLO con "Usa Globale" attivo
+       - Con formula personalizzata, il BRM si aggiorna automaticamente modificando i dropdown
+    
+    ✅ TAGLI INFISSO - COD.TAGLI Automatico:
+       - ELIMINATO campo "Tipo Tagli" (campo testo libero)
+       - AGGIUNTO campo "COD.TAGLI" (sola lettura, automatico)
+       - Codice generato automaticamente in base alla selezione di "Tagli Telaio":
+         * Sopra → SOPRA
+         * Sotto → SOTTO
+         * Sopra/Sotto → SOPRA SOTTO
+         * DX → DX
+         * SX → SX
+         * DX/SX → DX SX
+         * 4 Lati → SOPRA SOTTO SX DX
+         * Sopra/Laterali → SOPRA SX DX
+         * Sotto/Laterali → SOTTO SX DX
+    
+    🔧 FIX TECNICI:
+       - calculateBRM() ora gestisce formule composite con "+" e rimuove spazi
+       - addCassonetto() inizializza tutte le misure a 0
+       - updateProduct() ricalcola BRM per tutte le misure del cassonetto
+       - toggleUsaGlobale() copia correttamente l'operazione dalla config globale
+       - updateBRMPersonalizzato() usa le misure corrette per cassonetti
+       - Bottone "Ricalcola BRM" nascosto quando si usa formula personalizzata (non serve)
+    
+    ✨ MODIFICHE FASE 11a (PRECEDENTE):
+    ✅ CASSONETTI - Nuovo Campo "Tipo Cassonetto":
+       - Datalist selezionabile: LARGH_CASS, LS, LVT, TMV, LP, MIS_FIN_INF_L, LS+SRDX+SRSX
+       - Permette sia selezione da dropdown che scrittura libera
+    
+    ✅ MOTORI TAPPARELLE - Sistema Completo:
+       - 🏭 MARCA: Somfy, Nice, Cherubini (datalist)
+       - 📡 MODELLO/Trasmettitore: Dinamico basato su marca
+       - ⚡ ALIMENTAZIONE: Radio Filare/Telecomando
+       - 📻 TRASMETTITORE: Solo se Telecomando
+    
+    ✅ SOSTITUZIONE TAPPARELLE:
+       - Radio: Solo Motore/Solo Tapparella/Entrambi
+       - Campi intelligenti in base alla selezione
+    
+    ✅ BREADCRUMB NAVIGATION:
+       - Sostituita freccia con breadcrumb
+       - Mostra: Progetti › Progetto › Posizione
+    
+    ✨ MODIFICHE FASE 10a (PRECEDENTE):
+    ✅ TUTTI I PRODOTTI - Campi Configurazione con Datalist:
+       - INPUT + DATALIST: Permette sia selezione da dropdown che scrittura libera
+       - INFISSO: Finitura Int/Est, Colore Int/Est, Tipo Anta, Telaio, Allarme, Vetro, Tagli Telaio
+       - PERSIANA: Modello, Fissaggio, Tipo Telaio, Colore Persiana, Colore Telaio, Battuta
+       - TAPPARELLA: Azienda, Modello, Colore, Manuale/Motorizzato, Sost. Esistente, Guida, Colore Guida
+       - ZANZARIERA: Colore Telaio, Tipo Rete, Colore Rete
+       - CASSONETTO: Tipo, Azienda, Colore, Sovrappi/Sostit, A Soffitto
+    
+    💡 FUNZIONAMENTO DATALIST:
+    - Click sulla freccia dropdown → Mostra opzioni predefinite dalla tabella globale
+    - Scrittura diretta → Accetta qualsiasi valore personalizzato
+    - Suggerimenti mentre si digita → Filtra le opzioni disponibili
+    
+    ✨ MODIFICHE FASE 9a-UPDATE (PRECEDENTE):
     ✅ INFISSO - Tipo e Apertura aggiornati:
        - TIPO: F1, PF1, F2, PF2, F3, PF3, HST, FISSO + ✏️ ALTRO - SCRIVO
        - APERTURA: SX, DX, Fisso, Ribalta, Sp. SX, Sp. DX, SCORR.PARALL + ✏️ ALTRO - SCRIVO
@@ -314,7 +379,8 @@
             projects: [],
             currentProject: null,
             currentPosition: null,
-            setupStep: 1
+            setupStep: 1,
+            showRiepilogoRilievi: false  // Per mostrare il riepilogo rilievi
         };
 
         // Load/Save Functions
@@ -636,30 +702,127 @@
             return '';
         }
 
+        // 📋 RILIEVO PREESISTENTE - Gestione e Validazione
+        function updateRilievo(projectId, posId, field, value) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos) {
+                    if (!pos.rilievo) {
+                        pos.rilievo = {
+                            preesistente: '',
+                            togliere: false,
+                            smaltimento: false,
+                            materiale: '',
+                            coprifiliInt: false,
+                            coprifiliEst: false,
+                            note: ''
+                        };
+                    }
+                    
+                    // Gestione checkbox (boolean)
+                    if (field === 'togliere' || field === 'smaltimento' || field === 'coprifiliInt' || field === 'coprifiliEst') {
+                        pos.rilievo[field] = value === true || value === 'true';
+                    } else {
+                        pos.rilievo[field] = value;
+                    }
+                    
+                    saveState();
+                    render();
+                }
+            }
+        }
+
+        function calculateRilievoCompleteness(pos) {
+            if (!pos.rilievo) return { percentage: 0, completed: 0, total: 6 };
+            
+            const rilievo = pos.rilievo;
+            let completed = 0;
+            const total = 6; // Numero totale di campi da compilare
+            
+            // Conta i campi compilati
+            if (rilievo.preesistente && rilievo.preesistente.trim() !== '') completed++;
+            if (rilievo.togliere !== undefined && rilievo.togliere !== null) completed++;
+            if (rilievo.smaltimento !== undefined && rilievo.smaltimento !== null) completed++;
+            if (rilievo.materiale && rilievo.materiale.trim() !== '') completed++;
+            if (rilievo.coprifiliInt !== undefined && rilievo.coprifiliInt !== null) completed++;
+            if (rilievo.coprifiliEst !== undefined && rilievo.coprifiliEst !== null) completed++;
+            
+            const percentage = Math.round((completed / total) * 100);
+            
+            return { percentage, completed, total };
+        }
+
+        function getRilievoStatus(pos) {
+            const completeness = calculateRilievoCompleteness(pos);
+            
+            if (completeness.percentage === 0) {
+                return { icon: '⚪', color: 'gray', text: 'NON INIZIATO', badge: 'bg-gray-500' };
+            } else if (completeness.percentage < 50) {
+                return { icon: '🔴', color: 'red', text: 'INCOMPLETO', badge: 'bg-red-500' };
+            } else if (completeness.percentage < 100) {
+                return { icon: '🟡', color: 'amber', text: 'PARZIALE', badge: 'bg-amber-500' };
+            } else {
+                return { icon: '🟢', color: 'green', text: 'COMPLETO', badge: 'bg-green-500' };
+            }
+        }
+
         // BRM Calculator
         function calculateBRM(project, pos, misure, brmConfig) {
-            if (!brmConfig || !brmConfig.misuraBaseL || !brmConfig.misuraBaseH) {
+            if (!brmConfig) {
                 return { L: null, H: null };
             }
             
-            const baseL = parseFloat(misure[brmConfig.misuraBaseL]) || 0;
-            const baseH = parseFloat(misure[brmConfig.misuraBaseH]) || 0;
-            const valoreL = parseFloat(brmConfig.valoreL) || 0;
-            const valoreH = parseFloat(brmConfig.valoreH) || 0;
+            // Funzione helper per calcolare formule composite
+            const calcolaMisura = (formula, misure) => {
+                if (!formula) return null;
+                
+                // Rimuovi tutti gli spazi dalla formula
+                formula = formula.replace(/\s+/g, '');
+                
+                // Se la formula contiene "+" significa che è una somma di più misure
+                if (formula.includes('+')) {
+                    const parti = formula.split('+').map(p => p.trim());
+                    let totale = 0;
+                    for (const parte of parti) {
+                        const valore = parseFloat(misure[parte]);
+                        if (!isNaN(valore)) {
+                            totale += valore;
+                        }
+                    }
+                    return totale;
+                }
+                // Altrimenti è una singola misura
+                const valore = parseFloat(misure[formula]);
+                return isNaN(valore) ? null : valore;
+            };
             
-            let L = baseL;
-            let H = baseH;
-            
-            if (brmConfig.operazioneL === '+') {
-                L = baseL + valoreL;
-            } else {
-                L = baseL - valoreL;
+            // Calcola L separatamente
+            let L = null;
+            if (brmConfig.misuraBaseL) {
+                const baseL = calcolaMisura(brmConfig.misuraBaseL, misure);
+                if (baseL !== null) {
+                    const valoreL = parseFloat(brmConfig.valoreL) || 0;
+                    if (brmConfig.operazioneL === '+') {
+                        L = baseL + valoreL;
+                    } else {
+                        L = baseL - valoreL;
+                    }
+                }
             }
             
-            if (brmConfig.operazioneH === '+') {
-                H = baseH + valoreH;
-            } else {
-                H = baseH - valoreH;
+            // Calcola H separatamente
+            let H = null;
+            if (brmConfig.misuraBaseH) {
+                const baseH = calcolaMisura(brmConfig.misuraBaseH, misure);
+                if (baseH !== null) {
+                    const valoreH = parseFloat(brmConfig.valoreH) || 0;
+                    if (brmConfig.operazioneH === '+') {
+                        H = baseH + valoreH;
+                    } else {
+                        H = baseH - valoreH;
+                    }
+                }
             }
             
             return { L, H };
@@ -737,6 +900,16 @@
                     ambiente: '',
                     quantita: '1',
                     misure: {},
+                    // 📋 NUOVO: Dati rilievo preesistente
+                    rilievo: {
+                        preesistente: '',           // Cosa c'è (infisso, persiana, etc)
+                        togliere: false,            // Da togliere? SI/NO
+                        smaltimento: false,         // Da smaltire? SI/NO
+                        materiale: '',              // Tipo materiale (legno, pvc, alluminio)
+                        coprifiliInt: false,        // Coprifili interni necessari?
+                        coprifiliEst: false,        // Coprifili esterni necessari?
+                        note: ''                    // Note aggiuntive
+                    },
                     infissi: [],
                     persiane: [],
                     cassonetti: [],
@@ -872,7 +1045,6 @@
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
-                    const brm = calculateBRM(project, pos, pos.misure, project.brmConfigCassonetti);
                     // UN SOLO CASSONETTO per posizione
                     pos.cassonetto = {
                         id: generateId(),
@@ -880,12 +1052,28 @@
                         materiale: project.configCassonetti?.materiale || '',
                         finitura: project.configCassonetti?.finitura || '',
                         coibentazione: project.configCassonetti?.coibentazione || '',
-                        BRM_L: brm.L,
-                        BRM_H: brm.H,
+                        // Inizializza le misure a 0
+                        LS: '0',
+                        SRSX: '0',
+                        ZSX: '0',
+                        SRDX: '0',
+                        ZDX: '0',
+                        HCASS: '0',
+                        B: '0',
+                        C: '0',
+                        BSuperiore: '0',
+                        BRM_L: null,
+                        BRM_H: null,
                         usaGlobale: true,
                         note: '',
                         foto: []
                     };
+                    
+                    // Calcola BRM iniziale (sarà 0 perché le misure sono 0)
+                    const brm = calculateBRM(project, pos, pos.cassonetto, project.brmConfigCassonetti);
+                    pos.cassonetto.BRM_L = brm.L;
+                    pos.cassonetto.BRM_H = brm.H;
+                    
                     saveState();
                     render();
                 }
@@ -913,7 +1101,34 @@
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos && pos[productType]) {
                     pos[productType][field] = value;
+                    
+                    // CASSONETTI: Se cambiano le misure, ricalcola il BRM
+                    const misureCassonetto = ['LS', 'SRSX', 'ZSX', 'SRDX', 'ZDX', 'HCASS', 'B', 'C', 'BSuperiore'];
+                    if (productType === 'cassonetto' && misureCassonetto.includes(field)) {
+                        const cas = pos.cassonetto;
+                        if (cas.usaGlobale) {
+                            // Usa formula globale
+                            const brm = calculateBRM(project, pos, cas, project.brmConfigCassonetti);
+                            cas.BRM_L = brm.L;
+                            cas.BRM_H = brm.H;
+                        } else {
+                            // Usa formula personalizzata
+                            const brm = calculateBRM(project, pos, cas, cas.brmPersonalizzato);
+                            cas.BRM_L = brm.L;
+                            cas.BRM_H = brm.H;
+                        }
+                    }
+                    
                     saveState();
+                    
+                    // FASE 11a: Re-render se cambiano campi che influenzano la UI
+                    if (productType === 'tapparella' && (field === 'tipoSostituzione' || field === 'manualeMot')) {
+                        render();
+                    }
+                    // Re-render anche se cambiano le misure del cassonetto per aggiornare BRM
+                    if (productType === 'cassonetto' && misureCassonetto.includes(field)) {
+                        render();
+                    }
                 }
             }
         }
@@ -936,10 +1151,14 @@
                     };
                     const configKey = configMap[productType];
                     
+                    // Per i cassonetti, le misure sono nel cassonetto stesso (LS, SRSX, etc)
+                    // Per gli altri prodotti, le misure sono in pos.misure
+                    const misure = (productType === 'cassonetto') ? product : pos.misure;
+                    
                     if (product.usaGlobale) {
                         // Attivo usaGlobale: ricalcola il BRM con la config globale
                         if (configKey) {
-                            const brm = calculateBRM(project, pos, pos.misure, project[configKey]);
+                            const brm = calculateBRM(project, pos, misure, project[configKey]);
                             product.BRM_L = brm.L;
                             product.BRM_H = brm.H;
                         }
@@ -947,16 +1166,18 @@
                         // Disattivo usaGlobale: inizializza formula personalizzata
                         // Copia la formula dalla config globale come punto di partenza
                         if (configKey && project[configKey]) {
+                            const globalConfig = project[configKey];
                             product.brmPersonalizzato = {
-                                misuraBaseL: project[configKey].misuraBaseL || '',
-                                operazioneL: project[configKey].operazioneL || '+',
-                                valoreL: project[configKey].valoreL || '0',
-                                misuraBaseH: project[configKey].misuraBaseH || '',
-                                operazioneH: project[configKey].operazioneH || '+',
-                                valoreH: project[configKey].valoreH || '0'
+                                misuraBaseL: globalConfig.misuraBaseL || '',
+                                operazioneL: globalConfig.operazioneL || '-',
+                                valoreL: globalConfig.valoreL || '0',
+                                misuraBaseH: globalConfig.misuraBaseH || '',
+                                operazioneH: globalConfig.operazioneH || '-',
+                                valoreH: globalConfig.valoreH || '0'
                             };
+                            
                             // Ricalcola BRM con la formula personalizzata
-                            const brm = calculateBRM(project, pos, pos.misure, product.brmPersonalizzato);
+                            const brm = calculateBRM(project, pos, misure, product.brmPersonalizzato);
                             product.BRM_L = brm.L;
                             product.BRM_H = brm.H;
                         }
@@ -966,6 +1187,39 @@
                 }
             }
         }
+
+        // Forza ricalcolo BRM per cassonetto (solo quando Usa Globale è attivo)
+        window.ricalcolaBRMCassonetto = (projectId, posId) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos.cassonetto) {
+                    const cas = pos.cassonetto;
+                    
+                    // Assicurati che tutte le misure esistano
+                    if (!cas.LS) cas.LS = '0';
+                    if (!cas.SRSX) cas.SRSX = '0';
+                    if (!cas.ZSX) cas.ZSX = '0';
+                    if (!cas.SRDX) cas.SRDX = '0';
+                    if (!cas.ZDX) cas.ZDX = '0';
+                    if (!cas.HCASS) cas.HCASS = '0';
+                    if (!cas.B) cas.B = '0';
+                    if (!cas.C) cas.C = '0';
+                    if (!cas.BSuperiore) cas.BSuperiore = '0';
+                    
+                    // Ricalcola BRM (solo con formula globale)
+                    if (cas.usaGlobale) {
+                        const brm = calculateBRM(project, pos, cas, project.brmConfigCassonetti);
+                        cas.BRM_L = brm.L;
+                        cas.BRM_H = brm.H;
+                        
+                        saveState();
+                        render();
+                        showNotification('BRM ricalcolato! L=' + (cas.BRM_L || 'null') + 'mm, H=' + (cas.BRM_H || 'null') + 'mm', 'success');
+                    }
+                }
+            }
+        };
 
         // Aggiorna formula BRM personalizzata per un prodotto
         function updateBRMPersonalizzato(projectId, posId, productType, field, value) {
@@ -980,15 +1234,41 @@
                             misuraBaseH: '', operazioneH: '+', valoreH: '0'
                         };
                     }
+                    
+                    // Salva il valore
                     product.brmPersonalizzato[field] = value;
                     
+                    // Per i cassonetti, le misure sono nel cassonetto stesso
+                    const misure = (productType === 'cassonetto') ? product : pos.misure;
+                    
                     // Ricalcola BRM con la nuova formula
-                    const brm = calculateBRM(project, pos, pos.misure, product.brmPersonalizzato);
+                    const brm = calculateBRM(project, pos, misure, product.brmPersonalizzato);
                     product.BRM_L = brm.L;
                     product.BRM_H = brm.H;
                     
+                    // Salva nello state
                     saveState();
-                    render();
+                    
+                    // Aggiorna manualmente solo i campi BRM visualizzati (senza fare render completo)
+                    // Questo mantiene il valore del dropdown selezionato
+                    const brmDisplay = document.querySelector('#app');
+                    if (brmDisplay) {
+                        // Trova e aggiorna il testo del BRM Larghezza
+                        const brmLElements = brmDisplay.querySelectorAll('input[readonly]');
+                        brmLElements.forEach(el => {
+                            if (el.previousElementSibling && el.previousElementSibling.textContent.includes('BRM Larghezza')) {
+                                el.value = brm.L || '';
+                            }
+                            if (el.previousElementSibling && el.previousElementSibling.textContent.includes('BRM Altezza')) {
+                                el.value = brm.H || '';
+                            }
+                        });
+                    }
+                    
+                    // Mostra una notifica con il nuovo valore BRM
+                    showNotification(`BRM aggiornato! L=${brm.L || '?'}mm, H=${brm.H || '?'}mm`, 'success');
+                    
+                    // NON fare render() per mantenere il valore del dropdown
                 }
             }
         }
@@ -1326,7 +1606,11 @@
                 note: '' 
             };
             
-            const misureLarghezza = ['LF', 'LVT', 'LVAR', 'TMV', 'LS'];
+            // Misure di larghezza specifiche per cassonetti o generiche
+            let misureLarghezza = ['LF', 'LVT', 'LVAR', 'TMV', 'LS'];
+            if (productType === 'cassonetti') {
+                misureLarghezza = ['LARGH_CASS', 'LS', 'LVT', 'TMV', 'LF', 'MIS_FIN_INF_L', 'LS+SRDX+SRSX'];
+            }
             const misureAltezza = ['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'];
             
             return `
@@ -1334,6 +1618,7 @@
                     <h3 class="font-bold text-amber-800 mb-3 flex items-center gap-2">
                         <span class="text-xl">${icon}</span>
                         📏 Calcolo BRM per ${productLabel}
+                        ${productType === 'cassonetti' ? '<span class="ml-2 text-xs bg-green-500 text-white px-2 py-1 rounded">✅ Misure Specifiche Cassonetti</span>' : ''}
                     </h3>
                     
                     <div class="grid md:grid-cols-2 gap-4 mb-3">
@@ -1561,14 +1846,28 @@
                                 </select>
                             </div>
 
-                            <!-- 11. TIPO TAGLI -->
+                            <!-- 11. COD.TAGLI (Automatico basato su selezione Tagli Telaio) -->
                             <div>
-                                <label class="block text-sm font-medium mb-1">11. Tipo Tagli</label>
+                                <label class="block text-sm font-medium mb-1">11. COD.TAGLI</label>
                                 <input type="text" 
-                                       placeholder="Es: standard, 45°, ecc."
-                                       value="${project.configInfissi?.tipoTagli || ''}"
-                                       onchange="updateConfigInfissi('${project.id}', 'tipoTagli', this.value)"
-                                       class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                       value="${(() => {
+                                           const tagliTelaio = project.configInfissi?.tagliTelaio || '';
+                                           const codiciTagli = {
+                                               'sopra': 'SOPRA',
+                                               'sotto': 'SOTTO',
+                                               'sopra-sotto': 'SOPRA SOTTO',
+                                               'dx': 'DX',
+                                               'sx': 'SX',
+                                               'dx-sx': 'DX SX',
+                                               '4-lati': 'SOPRA SOTTO SX DX',
+                                               'sopra-laterali': 'SOPRA SX DX',
+                                               'sotto-laterali': 'SOTTO SX DX'
+                                           };
+                                           return codiciTagli[tagliTelaio] || '';
+                                       })()}"
+                                       readonly
+                                       placeholder="Seleziona Tagli Telaio per vedere il codice"
+                                       class="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-700 font-mono">
                             </div>
                         </div>
                     </div>
@@ -2174,16 +2473,27 @@
         }
 
         function renderStep9Positions(project) {
+            // Mostra riepilogo se richiesto
+            if (state.showRiepilogoRilievi) {
+                return renderRiepilogoRilievi(project);
+            }
+            
             return `
                 <div>
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
                         <h2 class="text-xl font-bold flex items-center gap-2">
                             <span class="text-2xl">📍</span> Posizioni (${project.positions.length})
                         </h2>
-                        <button onclick="addPosition('${project.id}')"
-                                class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
-                            + Aggiungi Posizione
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="state.showRiepilogoRilievi = true; render()"
+                                    class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 flex items-center gap-2">
+                                📋 Riepilogo Rilievi
+                            </button>
+                            <button onclick="addPosition('${project.id}')"
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
+                                + Aggiungi Posizione
+                            </button>
+                        </div>
                     </div>
 
                     ${project.positions.length === 0 ? `
@@ -2201,6 +2511,10 @@
                                 const statusIcon = validation.errors.length > 0 ? '🔴' : validation.warnings.length > 0 ? '🟡' : '✅';
                                 const statusText = validation.errors.length > 0 ? 'ERRORI' : validation.warnings.length > 0 ? 'WARNING' : 'OK';
                                 
+                                // Stato rilievo
+                                const rilievoStatus = getRilievoStatus(pos);
+                                const rilievoCompleteness = calculateRilievoCompleteness(pos);
+                                
                                 return `
                                 <div class="section-card cursor-pointer hover:shadow-lg ${validation.errors.length > 0 ? 'pulse-error' : ''}" onclick="openPosition('${pos.id}')">
                                     <div class="flex justify-between items-center">
@@ -2216,9 +2530,14 @@
                                                     ${pos.zanzariera ? ` • 🦟` : ''}
                                                     ${pos.cassonetto ? ` • 📦` : ''}
                                                 </p>
-                                                <p class="text-xs mt-1 font-semibold ${validation.errors.length > 0 ? 'text-red-600' : validation.warnings.length > 0 ? 'text-amber-600' : 'text-green-600'}">
-                                                    ${statusIcon} Misure: ${statusText}
-                                                </p>
+                                                <div class="flex items-center gap-3 mt-1">
+                                                    <p class="text-xs font-semibold ${validation.errors.length > 0 ? 'text-red-600' : validation.warnings.length > 0 ? 'text-amber-600' : 'text-green-600'}">
+                                                        ${statusIcon} Misure: ${statusText}
+                                                    </p>
+                                                    <p class="text-xs font-semibold text-${rilievoStatus.color}-600 flex items-center gap-1">
+                                                        ${rilievoStatus.icon} Rilievo: ${rilievoCompleteness.percentage}%
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                         <span class="text-purple-600">→</span>
@@ -2226,6 +2545,174 @@
                                 </div>
                             `}).join('')}
                         </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function renderRiepilogoRilievi(project) {
+            // Calcola statistiche generali
+            const totalPos = project.positions.length;
+            const completedPos = project.positions.filter(p => {
+                const comp = calculateRilievoCompleteness(p);
+                return comp.percentage === 100;
+            }).length;
+            const incompletePos = totalPos - completedPos;
+            const avgCompleteness = totalPos > 0 
+                ? Math.round(project.positions.reduce((sum, p) => sum + calculateRilievoCompleteness(p).percentage, 0) / totalPos)
+                : 0;
+            
+            return `
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                            <span class="text-2xl">📋</span> Riepilogo Rilievi
+                        </h2>
+                        <div class="flex gap-2">
+                            <button onclick="printChecklistRilievi('${project.id}')"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2">
+                                📄 Stampa Checklist
+                            </button>
+                            <button onclick="state.showRiepilogoRilievi = false; render()"
+                                    class="px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700">
+                                ← Torna alle Posizioni
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistiche generali -->
+                    <div class="grid md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+                            <div class="text-3xl font-bold text-blue-700">${totalPos}</div>
+                            <div class="text-sm text-blue-600">Posizioni Totali</div>
+                        </div>
+                        <div class="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                            <div class="text-3xl font-bold text-green-700">${completedPos}</div>
+                            <div class="text-sm text-green-600">Rilievi Completi</div>
+                        </div>
+                        <div class="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                            <div class="text-3xl font-bold text-red-700">${incompletePos}</div>
+                            <div class="text-sm text-red-600">Da Completare</div>
+                        </div>
+                        <div class="bg-purple-50 border-2 border-purple-300 rounded-lg p-4">
+                            <div class="text-3xl font-bold text-purple-700">${avgCompleteness}%</div>
+                            <div class="text-sm text-purple-600">Completezza Media</div>
+                        </div>
+                    </div>
+                    
+                    ${totalPos === 0 ? `
+                        <div class="text-center py-12 bg-gray-50 rounded-lg">
+                            <p class="text-gray-600 mb-4">Nessuna posizione ancora</p>
+                            <button onclick="state.showRiepilogoRilievi = false; addPosition('${project.id}')"
+                                    class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium">
+                                Aggiungi Prima Posizione
+                            </button>
+                        </div>
+                    ` : `
+                        <!-- Tabella riepilogo -->
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">Posizione</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">Piano/Ambiente</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">Preesistente</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">Materiale</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold">Togliere</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold">Smaltire</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold">Cop.INT</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold">Cop.EST</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold">Completezza</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold">Azioni</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${project.positions.map((pos, idx) => {
+                                            const r = pos.rilievo || {};
+                                            const status = getRilievoStatus(pos);
+                                            const completeness = calculateRilievoCompleteness(pos);
+                                            const bgColor = idx % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+                                            
+                                            return `
+                                                <tr class="${bgColor} hover:bg-blue-50 transition-colors">
+                                                    <td class="px-4 py-3">
+                                                        <div class="font-semibold text-gray-800">${pos.name}</div>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-sm text-gray-600">
+                                                        ${pos.piano || '-'} • ${pos.ambiente || '-'}
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <div class="text-sm ${!r.preesistente || r.preesistente.trim() === '' ? 'text-red-600 font-semibold' : 'text-gray-700'}">
+                                                            ${r.preesistente || '❌ Mancante'}
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <div class="text-sm ${!r.materiale || r.materiale.trim() === '' ? 'text-red-600 font-semibold' : 'text-gray-700'}">
+                                                            ${r.materiale || '❌ Mancante'}
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        <span class="text-lg">${r.togliere ? '✅' : '❌'}</span>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        <span class="text-lg">${r.smaltimento ? '✅' : '❌'}</span>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        <span class="text-lg">${r.coprifiliInt ? '✅' : '❌'}</span>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        <span class="text-lg">${r.coprifiliEst ? '✅' : '❌'}</span>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        <div class="flex flex-col items-center gap-1">
+                                                            <span class="text-xl">${status.icon}</span>
+                                                            <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                                <div class="${status.badge} h-full transition-all" style="width: ${completeness.percentage}%"></div>
+                                                            </div>
+                                                            <span class="text-xs font-bold text-${status.color}-700">${completeness.percentage}%</span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        <button onclick="state.showRiepilogoRilievi = false; openPosition('${pos.id}')"
+                                                                class="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700">
+                                                            Apri
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        ${incompletePos > 0 ? `
+                            <div class="mt-4 p-4 bg-amber-50 border-2 border-amber-300 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-3xl">⚠️</span>
+                                    <div>
+                                        <h3 class="font-bold text-amber-800">Attenzione!</h3>
+                                        <p class="text-sm text-amber-700">
+                                            Hai ${incompletePos} posizion${incompletePos > 1 ? 'i' : 'e'} con informazioni di rilievo incomplete. 
+                                            Completa tutti i campi prima del sopralluogo per evitare dimenticanze!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="mt-4 p-4 bg-green-50 border-2 border-green-300 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-3xl">✅</span>
+                                    <div>
+                                        <h3 class="font-bold text-green-800">Perfetto!</h3>
+                                        <p class="text-sm text-green-700">
+                                            Tutti i rilievi sono completi. Sei pronto per il sopralluogo!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        `}
                     `}
                 </div>
             `;
@@ -2409,6 +2896,163 @@
                             </p>
                         </div>
                     `}
+                    
+                    <!-- 📋 SEZIONE RILIEVO PREESISTENTE -->
+                    ${(() => {
+                        const rilievoStatus = getRilievoStatus(pos);
+                        const completeness = calculateRilievoCompleteness(pos);
+                        const r = pos.rilievo || {};
+                        
+                        return `
+                            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-2 ${rilievoStatus.color === 'green' ? 'border-green-400' : rilievoStatus.color === 'amber' ? 'border-amber-400' : rilievoStatus.color === 'red' ? 'border-red-400' : 'border-gray-300'} rounded-lg p-4 shadow-md mb-4">
+                                <div class="flex justify-between items-center mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                            📋 RILIEVO PREESISTENTE
+                                        </h3>
+                                        <p class="text-xs text-gray-600 mt-1">Compila tutte le informazioni per evitare dimenticanze</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-2xl">${rilievoStatus.icon}</span>
+                                            <span class="text-sm font-bold text-${rilievoStatus.color}-700">${rilievoStatus.text}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div class="${rilievoStatus.badge} h-full transition-all duration-500" 
+                                                     style="width: ${completeness.percentage}%"></div>
+                                            </div>
+                                            <span class="text-sm font-bold">${completeness.percentage}%</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">${completeness.completed}/${completeness.total} campi</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid md:grid-cols-3 gap-4">
+                                    <!-- 1. PREESISTENTE -->
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
+                                            🏠 Cosa c'è?
+                                            ${!r.preesistente || r.preesistente.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
+                                        </label>
+                                        <input type="text" 
+                                               value="${r.preesistente || ''}"
+                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'preesistente', this.value)"
+                                               placeholder="Es: Infisso in legno, Persiana..."
+                                               list="preesistente-list"
+                                               class="w-full px-3 py-2 border-2 ${!r.preesistente || r.preesistente.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <datalist id="preesistente-list">
+                                            <option value="Infisso in legno">
+                                            <option value="Infisso in PVC">
+                                            <option value="Infisso in alluminio">
+                                            <option value="Persiana in legno">
+                                            <option value="Persiana in alluminio">
+                                            <option value="Tapparella">
+                                            <option value="Cassonetto">
+                                            <option value="Nessun prodotto">
+                                        </datalist>
+                                    </div>
+                                    
+                                    <!-- 2. MATERIALE -->
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
+                                            🔧 Materiale
+                                            ${!r.materiale || r.materiale.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
+                                        </label>
+                                        <input type="text" 
+                                               value="${r.materiale || ''}"
+                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'materiale', this.value)"
+                                               placeholder="Es: Legno, PVC, Alluminio..."
+                                               list="materiale-list"
+                                               class="w-full px-3 py-2 border-2 ${!r.materiale || r.materiale.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <datalist id="materiale-list">
+                                            <option value="Legno">
+                                            <option value="PVC">
+                                            <option value="Alluminio">
+                                            <option value="Ferro">
+                                            <option value="Misto">
+                                        </datalist>
+                                    </div>
+                                    
+                                    <!-- 3. NOTE AGGIUNTIVE -->
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
+                                            📝 Note
+                                        </label>
+                                        <input type="text" 
+                                               value="${r.note || ''}"
+                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'note', this.value)"
+                                               placeholder="Note aggiuntive..."
+                                               class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                </div>
+                                
+                                <div class="grid md:grid-cols-4 gap-4 mt-4 pt-4 border-t-2 border-gray-200">
+                                    <!-- CHECKBOX: TOGLIERE -->
+                                    <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.togliere ? 'border-orange-300' : 'border-gray-200'}">
+                                        <input type="checkbox" 
+                                               id="togliere-${pos.id}"
+                                               ${r.togliere ? 'checked' : ''}
+                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'togliere', this.checked)"
+                                               class="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500">
+                                        <label for="togliere-${pos.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                            🔨 Da togliere?
+                                            ${r.togliere ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- CHECKBOX: SMALTIMENTO -->
+                                    <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.smaltimento ? 'border-red-300' : 'border-gray-200'}">
+                                        <input type="checkbox" 
+                                               id="smaltimento-${pos.id}"
+                                               ${r.smaltimento ? 'checked' : ''}
+                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'smaltimento', this.checked)"
+                                               class="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                                        <label for="smaltimento-${pos.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                            🗑️ Da smaltire?
+                                            ${r.smaltimento ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- CHECKBOX: COPRIFILI INT -->
+                                    <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.coprifiliInt ? 'border-blue-300' : 'border-gray-200'}">
+                                        <input type="checkbox" 
+                                               id="coprifiliInt-${pos.id}"
+                                               ${r.coprifiliInt ? 'checked' : ''}
+                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'coprifiliInt', this.checked)"
+                                               class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                                        <label for="coprifiliInt-${pos.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                            📏 Coprifili INT?
+                                            ${r.coprifiliInt ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- CHECKBOX: COPRIFILI EST -->
+                                    <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.coprifiliEst ? 'border-purple-300' : 'border-gray-200'}">
+                                        <input type="checkbox" 
+                                               id="coprifiliEst-${pos.id}"
+                                               ${r.coprifiliEst ? 'checked' : ''}
+                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'coprifiliEst', this.checked)"
+                                               class="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                        <label for="coprifiliEst-${pos.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                            📐 Coprifili EST?
+                                            ${r.coprifiliEst ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                ${completeness.percentage < 100 ? `
+                                    <div class="mt-3 p-2 bg-amber-100 border border-amber-300 rounded text-sm text-amber-800">
+                                        ⚠️ <strong>Attenzione:</strong> Compila tutti i campi per evitare dimenticanze durante il sopralluogo!
+                                    </div>
+                                ` : `
+                                    <div class="mt-3 p-2 bg-green-100 border border-green-300 rounded text-sm text-green-800">
+                                        ✅ <strong>Perfetto!</strong> Tutte le informazioni del rilievo sono complete.
+                                    </div>
+                                `}
+                            </div>
+                        `;
+                    })()}
                     
                     <div class="bg-gray-50 rounded-lg p-4">
                         <p class="text-sm font-bold text-gray-700 mb-3">Misure Principali (mm)</p>
@@ -2595,64 +3239,130 @@
                                         <label class="text-xs font-medium">Finitura Int</label>
                                         <input type="text" value="${inf.finituraInt || ''}"
                                                placeholder="pvc"
+                                               list="finituraInt-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'finituraInt', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="finituraInt-list-${pos.id}">
+                                            <option value="pvc">
+                                            <option value="legno">
+                                            <option value="alluminio">
+                                            <option value="ceramica">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Finitura Est</label>
                                         <input type="text" value="${inf.finituraEst || ''}"
                                                placeholder="alluminio"
+                                               list="finituraEst-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'finituraEst', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="finituraEst-list-${pos.id}">
+                                            <option value="pvc">
+                                            <option value="alluminio">
+                                            <option value="ceramica">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Colore Int</label>
                                         <input type="text" value="${inf.coloreInt || ''}"
                                                placeholder="42"
+                                               list="coloreInt-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'coloreInt', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="coloreInt-list-${pos.id}">
+                                            <option value="42">
+                                            <option value="L55">
+                                            <option value="RAL 9010">
+                                            <option value="Bianco">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Colore Est</label>
                                         <input type="text" value="${inf.coloreEst || ''}"
                                                placeholder="L55"
+                                               list="coloreEst-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'coloreEst', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="coloreEst-list-${pos.id}">
+                                            <option value="L55">
+                                            <option value="42">
+                                            <option value="RAL 8014">
+                                            <option value="Marrone">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Tipo Anta</label>
                                         <input type="text" value="${inf.tipoAnta || ''}"
                                                placeholder="slim-line"
+                                               list="tipoAnta-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'tipoAnta', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="tipoAnta-list-${pos.id}">
+                                            <option value="step-line">
+                                            <option value="nova-line">
+                                            <option value="slim-line">
+                                            <option value="classic-line">
+                                            <option value="step-line-door">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Telaio</label>
                                         <input type="text" value="${inf.telaio || ''}"
                                                placeholder="965"
+                                               list="telaio-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'telaio', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="telaio-list-${pos.id}">
+                                            <option value="961">
+                                            <option value="962">
+                                            <option value="965">
+                                            <option value="966">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Allarme</label>
                                         <input type="text" value="${inf.allarme || ''}"
                                                placeholder="no"
+                                               list="allarme-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'allarme', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="allarme-list-${pos.id}">
+                                            <option value="no">
+                                            <option value="si">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Vetro</label>
                                         <input type="text" value="${inf.vetro || ''}"
                                                placeholder="DOPPIO"
+                                               list="vetro-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'vetro', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="vetro-list-${pos.id}">
+                                            <option value="DOPPIO">
+                                            <option value="DOPPIO SAT">
+                                            <option value="TRIPLO">
+                                            <option value="TRIPLO SAT">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Tagli Telaio</label>
                                         <input type="text" value="${inf.tagliTelaio || ''}"
                                                placeholder="sopra-sotto"
+                                               list="tagliTelaio-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'tagliTelaio', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="tagliTelaio-list-${pos.id}">
+                                            <option value="sopra">
+                                            <option value="sotto">
+                                            <option value="sopra-sotto">
+                                            <option value="dx">
+                                            <option value="sx">
+                                            <option value="dx-sx">
+                                            <option value="4-lati">
+                                            <option value="sopra-laterali">
+                                            <option value="sotto-laterali">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Tipo Tagli</label>
@@ -2918,43 +3628,79 @@
                                         <label class="text-xs font-medium">Modello</label>
                                         <input type="text" value="${per.modello || ''}"
                                                placeholder="--"
+                                               list="modello-per-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'modello', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="modello-per-list-${pos.id}">
+                                            <option value="Aurora">
+                                            <option value="Vanitosa">
+                                            <option value="Oscura">
+                                            <option value="Alto Adige">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Fissaggio</label>
                                         <input type="text" value="${per.fissaggio || ''}"
                                                placeholder="--"
+                                               list="fissaggio-per-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'fissaggio', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="fissaggio-per-list-${pos.id}">
+                                            <option value="A MURO">
+                                            <option value="TELAIO">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Tipo Telaio</label>
                                         <input type="text" value="${per.tipoTelaio || ''}"
                                                placeholder="--"
+                                               list="tipoTelaio-per-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'tipoTelaio', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="tipoTelaio-per-list-${pos.id}">
+                                            <option value="TH 62">
+                                            <option value="TH 40">
+                                            <option value="TH 82">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Colore Persiana</label>
                                         <input type="text" value="${per.colorePersiana || ''}"
                                                placeholder="--"
+                                               list="colorePers-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'colorePersiana', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="colorePers-list-${pos.id}">
+                                            <option value="Bianco">
+                                            <option value="Verde">
+                                            <option value="Marrone">
+                                            <option value="Grigio">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Colore Telaio</label>
                                         <input type="text" value="${per.coloreTelaio || ''}"
                                                placeholder="--"
+                                               list="coloreTel-per-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'coloreTelaio', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="coloreTel-per-list-${pos.id}">
+                                            <option value="Bianco">
+                                            <option value="Marrone">
+                                            <option value="Grigio">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Battuta</label>
                                         <input type="text" value="${per.battuta || ''}"
                                                placeholder="--"
+                                               list="battuta-per-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'persiana', 'battuta', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="battuta-per-list-${pos.id}">
+                                            <option value="3 LATI">
+                                            <option value="4 LATI">
+                                        </datalist>
                                     </div>
                                 </div>
                             </div>
@@ -3174,55 +3920,124 @@
                                         <label class="text-xs font-medium">Azienda</label>
                                         <input type="text" value="${tap.azienda || ''}"
                                                placeholder="plasticino"
+                                               list="azienda-tap-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'azienda', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="azienda-tap-list-${pos.id}">
+                                            <option value="plasticino">
+                                            <option value="cherubini">
+                                            <option value="nice">
+                                            <option value="somfy">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Modello</label>
                                         <input type="text" value="${tap.modello || ''}"
                                                placeholder="Mini"
+                                               list="modello-tap-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'modello', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="modello-tap-list-${pos.id}">
+                                            <option value="Mini">
+                                            <option value="Maxi">
+                                            <option value="Standard">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Colore</label>
                                         <input type="text" value="${tap.colore || ''}"
                                                placeholder="marrone 79"
+                                               list="colore-tap-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'colore', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="colore-tap-list-${pos.id}">
+                                            <option value="marrone 79">
+                                            <option value="bianco">
+                                            <option value="grigio">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Manuale/Motorizzato</label>
                                         <input type="text" value="${tap.manualeMot || ''}"
                                                placeholder="Motorizzata"
+                                               list="manualeMot-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'manualeMot', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="manualeMot-list-${pos.id}">
+                                            <option value="Manuale">
+                                            <option value="Motorizzata">
+                                        </datalist>
                                     </div>
-                                    <div>
-                                        <label class="text-xs font-medium">Sost. Esistente</label>
-                                        <input type="text" value="${tap.sostEsist || ''}"
-                                               placeholder="Sost. tutto"
-                                               onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'sostEsist', this.value)"
-                                               class="w-full compact-input border rounded mt-1">
+                                </div>
+
+                                <!-- FASE 11a: TIPO SOSTITUZIONE -->
+                                <div class="mt-4 bg-orange-100 border-2 border-orange-300 rounded-lg p-3">
+                                    <label class="text-sm font-semibold text-orange-800 block mb-2">🔄 Cosa si sostituisce?</label>
+                                    <div class="flex gap-4 flex-wrap">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" 
+                                                   name="tipoSost-${pos.id}" 
+                                                   value="Entrambi"
+                                                   ${!tap.tipoSostituzione || tap.tipoSostituzione === 'Entrambi' ? 'checked' : ''}
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'tipoSostituzione', this.value)"
+                                                   class="w-4 h-4">
+                                            <span class="text-sm font-medium">🔧 Entrambi (Motore + Tapparella)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" 
+                                                   name="tipoSost-${pos.id}" 
+                                                   value="Solo Motore"
+                                                   ${tap.tipoSostituzione === 'Solo Motore' ? 'checked' : ''}
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'tipoSostituzione', this.value)"
+                                                   class="w-4 h-4">
+                                            <span class="text-sm font-medium">⚡ Solo Motore</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" 
+                                                   name="tipoSost-${pos.id}" 
+                                                   value="Solo Tapparella"
+                                                   ${tap.tipoSostituzione === 'Solo Tapparella' ? 'checked' : ''}
+                                                   onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'tipoSostituzione', this.value)"
+                                                   class="w-4 h-4">
+                                            <span class="text-sm font-medium">🎚️ Solo Tapparella</span>
+                                        </label>
                                     </div>
+                                </div>
+
+                                <!-- CAMPI CONDIZIONALI -->
+                                ${tap.tipoSostituzione !== 'Solo Motore' ? `
+                                <div class="grid md:grid-cols-2 gap-3 mt-3">
                                     <div>
                                         <label class="text-xs font-medium">Guida</label>
                                         <input type="text" value="${tap.guida || ''}"
                                                placeholder="--"
+                                               list="guida-tap-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'guida', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="guida-tap-list-${pos.id}">
+                                            <option value="Standard">
+                                            <option value="Rinforzata">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Colore Guida</label>
                                         <input type="text" value="${tap.coloreGuida || ''}"
                                                placeholder="--"
+                                               list="coloreGuida-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'tapparella', 'coloreGuida', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="coloreGuida-list-${pos.id}">
+                                            <option value="bianco">
+                                            <option value="marrone">
+                                            <option value="grigio">
+                                        </datalist>
                                     </div>
                                 </div>
+                                ` : ''}
                             </div>
 
-                            <!-- 🔌 MOTORI -->
+                            <!-- 🔌 MOTORI (SISTEMA COMPLETO FASE 11a) - Solo se Motorizzata e non Solo Tapparella -->
+                            ${tap.manualeMot === 'Motorizzata' && tap.tipoSostituzione !== 'Solo Tapparella' ? `
                             <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-3">
                                 <div class="flex justify-between items-center mb-3">
                                     <h5 class="font-semibold text-blue-800 flex items-center gap-2">
@@ -3235,25 +4050,96 @@
                                 </div>
                                 ${tap.motori && tap.motori.length > 0 ? `
                                     ${tap.motori.map((motore, idx) => `
-                                        <div class="bg-white p-3 rounded border-2 border-blue-300 mb-2">
-                                            <div class="flex justify-between items-center mb-2">
-                                                <h6 class="text-sm font-semibold text-blue-700">Modello Motore ${idx + 1}</h6>
+                                        <div class="bg-white p-4 rounded border-2 border-blue-300 mb-3">
+                                            <div class="flex justify-between items-center mb-3">
+                                                <h6 class="text-sm font-semibold text-blue-700">🔌 Motore ${idx + 1}</h6>
                                                 <button onclick="removeMotoreTapparella('${project.id}', '${pos.id}', ${idx})"
-                                                        class="text-red-600 hover:text-red-800 text-xs font-semibold">
-                                                    ✕
+                                                        class="text-red-600 hover:text-red-800 text-sm font-semibold px-2 py-1 hover:bg-red-50 rounded">
+                                                    ✕ Rimuovi
                                                 </button>
                                             </div>
-                                            <input type="text" 
-                                                   value="${motore.modello || ''}"
-                                                   placeholder="Es: Somfy RTS, Nice Era..."
-                                                   onchange="updateMotoreTapparella('${project.id}', '${pos.id}', ${idx}, this.value)"
-                                                   class="w-full px-2 py-1 border rounded text-sm">
+                                            
+                                            <!-- Marca Motore -->
+                                            <div class="mb-3">
+                                                <label class="text-xs font-medium text-gray-700">🏭 Marca</label>
+                                                <input type="text" 
+                                                       value="${motore.marca || ''}"
+                                                       placeholder="Es: Somfy, Nice..."
+                                                       list="marca-motore-list-${idx}"
+                                                       onchange="updateMotoreTapparellaField('${project.id}', '${pos.id}', ${idx}, 'marca', this.value)"
+                                                       class="w-full px-3 py-2 border rounded text-sm mt-1">
+                                                <datalist id="marca-motore-list-${idx}">
+                                                    <option value="Somfy">
+                                                    <option value="Nice">
+                                                    <option value="Cherubini">
+                                                    <option value="BTicino">
+                                                    <option value="Came">
+                                                    <option value="Faac">
+                                                </datalist>
+                                            </div>
+
+                                            <!-- Modello/Trasmettitore -->
+                                            <div class="mb-3">
+                                                <label class="text-xs font-medium text-gray-700">📡 Modello / Trasmettitore</label>
+                                                <input type="text" 
+                                                       value="${motore.modello || ''}"
+                                                       placeholder="Es: LT, Oximo, Hybrid..."
+                                                       list="modello-motore-list-${idx}"
+                                                       onchange="updateMotoreTapparellaField('${project.id}', '${pos.id}', ${idx}, 'modello', this.value)"
+                                                       class="w-full px-3 py-2 border rounded text-sm mt-1">
+                                                <datalist id="modello-motore-list-${idx}">
+                                                    <option value="LT">
+                                                    <option value="Oximo">
+                                                    <option value="Hybrid">
+                                                    <option value="Era">
+                                                    <option value="Neo">
+                                                    <option value="Spider">
+                                                </datalist>
+                                            </div>
+
+                                            <!-- Tipo Alimentazione -->
+                                            <div class="mb-3">
+                                                <label class="text-xs font-medium text-gray-700 block mb-2">⚡ Tipo Alimentazione</label>
+                                                <div class="flex gap-4">
+                                                    <label class="flex items-center gap-2 cursor-pointer">
+                                                        <input type="radio" 
+                                                               name="alimentazione-${idx}" 
+                                                               value="Filare"
+                                                               ${!motore.alimentazione || motore.alimentazione === 'Filare' ? 'checked' : ''}
+                                                               onchange="updateMotoreTapparellaField('${project.id}', '${pos.id}', ${idx}, 'alimentazione', this.value)"
+                                                               class="w-4 h-4">
+                                                        <span class="text-sm">🔌 Filare</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 cursor-pointer">
+                                                        <input type="radio" 
+                                                               name="alimentazione-${idx}" 
+                                                               value="Telecomando"
+                                                               ${motore.alimentazione === 'Telecomando' ? 'checked' : ''}
+                                                               onchange="updateMotoreTapparellaField('${project.id}', '${pos.id}', ${idx}, 'alimentazione', this.value)"
+                                                               class="w-4 h-4">
+                                                        <span class="text-sm">📻 Telecomando</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <!-- Trasmettitore (solo se Telecomando) -->
+                                            ${motore.alimentazione === 'Telecomando' ? `
+                                                <div class="bg-purple-50 border-2 border-purple-200 rounded-lg p-3">
+                                                    <label class="text-xs font-medium text-purple-800 block mb-2">📻 Trasmettitore</label>
+                                                    <input type="text" 
+                                                           value="${motore.trasmettitore || ''}"
+                                                           placeholder="Es: RTS, IO, Telis..."
+                                                           onchange="updateMotoreTapparellaField('${project.id}', '${pos.id}', ${idx}, 'trasmettitore', this.value)"
+                                                           class="w-full px-3 py-2 border border-purple-300 rounded text-sm">
+                                                </div>
+                                            ` : ''}
                                         </div>
                                     `).join('')}
                                 ` : `
                                     <p class="text-sm text-gray-500 italic text-center py-3">Nessun motore aggiunto</p>
                                 `}
                             </div>
+                            ` : ''}
 
                             <div class="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-3">
                                 <div class="flex justify-between items-center mb-3">
@@ -3493,22 +4379,42 @@
                                         <label class="text-xs font-medium">Colore Telaio</label>
                                         <input type="text" value="${zan.coloreTelaio || ''}"
                                                placeholder="Es: Bianco, Marrone"
+                                               list="coloreTel-zan-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariera', 'coloreTelaio', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="coloreTel-zan-list-${pos.id}">
+                                            <option value="Bianco">
+                                            <option value="Marrone">
+                                            <option value="Grigio">
+                                            <option value="Nero">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Tipo Rete</label>
                                         <input type="text" value="${zan.tipoRete || ''}"
                                                placeholder="Es: Standard, Anti-polline"
+                                               list="tipoRete-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariera', 'tipoRete', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="tipoRete-list-${pos.id}">
+                                            <option value="Standard">
+                                            <option value="Anti-polline">
+                                            <option value="Pet-resistant">
+                                            <option value="Micro-forata">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Colore Rete</label>
                                         <input type="text" value="${zan.coloreRete || ''}"
                                                placeholder="Es: Nero, Grigio"
+                                               list="coloreRete-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'zanzariera', 'coloreRete', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="coloreRete-list-${pos.id}">
+                                            <option value="Nero">
+                                            <option value="Grigio">
+                                            <option value="Bianco">
+                                        </datalist>
                                     </div>
                                 </div>
                             </div>
@@ -3682,40 +4588,91 @@
                                             `).join('')}
                                         </select>
                                     </div>
+
+                                    <!-- FASE 11a: NUOVO CAMPO TIPO CASSONETTO -->
+                                    <div>
+                                        <label class="text-xs font-medium">📏 Tipo Cassonetto</label>
+                                        <input type="text" value="${cas.tipoCassonetto || ''}"
+                                               placeholder="LARGH_CASS"
+                                               list="tipoCass-list-${pos.id}"
+                                               onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'tipoCassonetto', this.value)"
+                                               class="w-full compact-input border-2 border-yellow-400 rounded mt-1 font-semibold bg-yellow-50">
+                                        <datalist id="tipoCass-list-${pos.id}">
+                                            <option value="LARGH_CASS">
+                                            <option value="LS">
+                                            <option value="LVT">
+                                            <option value="TMV">
+                                            <option value="LP">
+                                            <option value="MIS_FIN_INF_L">
+                                            <option value="LS+SRDX+SRSX">
+                                        </datalist>
+                                    </div>
+
                                     <div>
                                         <label class="text-xs font-medium">Tipo</label>
                                         <input type="text" value="${cas.tipo || ''}"
                                                placeholder="Cassonetto"
+                                               list="tipo-cas-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'tipo', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="tipo-cas-list-${pos.id}">
+                                            <option value="Cassonetto">
+                                            <option value="Cassonetto termico">
+                                            <option value="Cassonetto ispezionabile">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Azienda</label>
                                         <input type="text" value="${cas.azienda || ''}"
                                                placeholder="finstral"
+                                               list="azienda-cas-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'azienda', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="azienda-cas-list-${pos.id}">
+                                            <option value="finstral">
+                                            <option value="essepi">
+                                            <option value="schuco">
+                                            <option value="internorm">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Colore</label>
                                         <input type="text" value="${cas.colore || ''}"
                                                placeholder="42"
+                                               list="colore-cas-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'colore', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="colore-cas-list-${pos.id}">
+                                            <option value="42">
+                                            <option value="Bianco">
+                                            <option value="L55">
+                                            <option value="RAL 9010">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">Sovrappi/Sostit</label>
                                         <input type="text" value="${cas.sovrappiSostit || ''}"
                                                placeholder="--"
+                                               list="sovrappi-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'sovrappiSostit', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="sovrappi-list-${pos.id}">
+                                            <option value="Sovrapposizione">
+                                            <option value="Sostituzione">
+                                            <option value="Nuova installazione">
+                                        </datalist>
                                     </div>
                                     <div>
                                         <label class="text-xs font-medium">A Soffitto</label>
                                         <input type="text" value="${cas.aSoffitto || ''}"
                                                placeholder="--"
+                                               list="aSoffitto-list-${pos.id}"
                                                onchange="updateProduct('${project.id}', '${pos.id}', 'cassonetto', 'aSoffitto', this.value)"
                                                class="w-full compact-input border rounded mt-1">
+                                        <datalist id="aSoffitto-list-${pos.id}">
+                                            <option value="Sì">
+                                            <option value="No">
+                                        </datalist>
                                     </div>
                                 </div>
                             </div>
@@ -3802,10 +4759,18 @@
                                     <h5 class="font-bold text-amber-800 flex items-center gap-2">
                                         📏 BRM - Misura per Ordine
                                     </h5>
-                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'cassonetto')"
-                                            class="px-3 py-1.5 ${cas.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
-                                        ${cas.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
-                                    </button>
+                                    <div class="flex gap-2">
+                                        ${cas.usaGlobale ? `
+                                            <button onclick="ricalcolaBRMCassonetto('${project.id}', '${pos.id}')"
+                                                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-all">
+                                                🔄 Ricalcola BRM
+                                            </button>
+                                        ` : ''}
+                                        <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'cassonetto')"
+                                                class="px-3 py-1.5 ${cas.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
+                                            ${cas.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 ${cas.usaGlobale ? `
@@ -3839,7 +4804,7 @@
                                                     <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'misuraBaseL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
-                                                        ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
+                                                        ${['LARGH_CASS', 'LS', 'LVT', 'TMV', 'LF', 'MIS_FIN_INF_L', 'LS+SRDX+SRSX'].map(m => `
                                                             <option value="${m}" ${cas.brmPersonalizzato?.misuraBaseL === m ? 'selected' : ''}>${m}</option>
                                                         `).join('')}
                                                     </select>
@@ -4036,12 +5001,212 @@
         window.openPosition = (id) => {
             state.currentPosition = id;
             state.screen = 'position';
+            state.showRiepilogoRilievi = false;  // Reset flag riepilogo
             render();
         };
 
         window.switchPosition = (id) => {
             state.currentPosition = id;
             render();
+        };
+
+        window.printChecklistRilievi = (projectId) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            // Genera HTML per stampa
+            const printHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Checklist Rilievi - ${project.nome || 'Progetto'}</title>
+                    <style>
+                        @media print {
+                            @page { margin: 1cm; }
+                            body { margin: 0; }
+                        }
+                        body {
+                            font-family: Arial, sans-serif;
+                            padding: 20px;
+                            max-width: 1200px;
+                            margin: 0 auto;
+                        }
+                        h1 {
+                            color: #6B46C1;
+                            border-bottom: 3px solid #6B46C1;
+                            padding-bottom: 10px;
+                        }
+                        h2 {
+                            color: #4A5568;
+                            margin-top: 30px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 20px 0;
+                            page-break-inside: avoid;
+                        }
+                        th {
+                            background: #6B46C1;
+                            color: white;
+                            padding: 12px;
+                            text-align: left;
+                            font-size: 14px;
+                        }
+                        td {
+                            padding: 10px;
+                            border: 1px solid #E2E8F0;
+                        }
+                        tr:nth-child(even) {
+                            background: #F7FAFC;
+                        }
+                        .header-info {
+                            background: #EDF2F7;
+                            padding: 15px;
+                            border-radius: 8px;
+                            margin-bottom: 20px;
+                        }
+                        .check-box {
+                            display: inline-block;
+                            width: 18px;
+                            height: 18px;
+                            border: 2px solid #4A5568;
+                            margin: 0 5px;
+                            vertical-align: middle;
+                        }
+                        .check-filled {
+                            background: #48BB78;
+                            border-color: #48BB78;
+                        }
+                        .missing {
+                            color: #E53E3E;
+                            font-weight: bold;
+                        }
+                        .status {
+                            display: inline-block;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            font-size: 12px;
+                            font-weight: bold;
+                        }
+                        .status-complete { background: #C6F6D5; color: #22543D; }
+                        .status-partial { background: #FEEBC8; color: #744210; }
+                        .status-empty { background: #FED7D7; color: #742A2A; }
+                        .print-btn {
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            padding: 10px 20px;
+                            background: #6B46C1;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 16px;
+                        }
+                        @media print {
+                            .print-btn { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <button class="print-btn" onclick="window.print()">🖨️ Stampa</button>
+                    
+                    <h1>📋 CHECKLIST RILIEVI - SOPRALLUOGO</h1>
+                    
+                    <div class="header-info">
+                        <h3>Informazioni Progetto</h3>
+                        <p><strong>Progetto:</strong> ${project.nome || 'N/A'}</p>
+                        <p><strong>Cliente:</strong> ${project.clientData?.nome || 'N/A'}</p>
+                        <p><strong>Indirizzo:</strong> ${project.clientData?.indirizzo || 'N/A'}</p>
+                        <p><strong>Piano:</strong> ${project.clientData?.piano || 'N/A'}</p>
+                        <p><strong>Data stampa:</strong> ${new Date().toLocaleDateString('it-IT')}</p>
+                    </div>
+                    
+                    <h2>📍 Posizioni da Rilevare (${project.positions.length})</h2>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 15%">Posizione</th>
+                                <th style="width: 12%">Piano/Amb.</th>
+                                <th style="width: 15%">Preesistente</th>
+                                <th style="width: 12%">Materiale</th>
+                                <th style="width: 8%">Togliere</th>
+                                <th style="width: 8%">Smaltire</th>
+                                <th style="width: 8%">Cop.INT</th>
+                                <th style="width: 8%">Cop.EST</th>
+                                <th style="width: 14%">Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${project.positions.map(pos => {
+                                const r = pos.rilievo || {};
+                                const completeness = calculateRilievoCompleteness(pos);
+                                const statusClass = completeness.percentage === 100 ? 'status-complete' : 
+                                                   completeness.percentage > 0 ? 'status-partial' : 'status-empty';
+                                const statusText = completeness.percentage === 100 ? 'COMPLETO' : 
+                                                  completeness.percentage > 0 ? 'PARZIALE' : 'DA FARE';
+                                
+                                return `
+                                    <tr>
+                                        <td>
+                                            <strong>${pos.name}</strong><br>
+                                            <span class="status ${statusClass}">${statusText}</span>
+                                        </td>
+                                        <td>${pos.piano || '-'}<br>${pos.ambiente || '-'}</td>
+                                        <td class="${!r.preesistente || r.preesistente.trim() === '' ? 'missing' : ''}">
+                                            ${r.preesistente || '❌ DA COMPILARE'}
+                                        </td>
+                                        <td class="${!r.materiale || r.materiale.trim() === '' ? 'missing' : ''}">
+                                            ${r.materiale || '❌ DA COMPILARE'}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="check-box ${r.togliere ? 'check-filled' : ''}"></span>
+                                            ${r.togliere ? 'SI' : 'NO'}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="check-box ${r.smaltimento ? 'check-filled' : ''}"></span>
+                                            ${r.smaltimento ? 'SI' : 'NO'}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="check-box ${r.coprifiliInt ? 'check-filled' : ''}"></span>
+                                            ${r.coprifiliInt ? 'SI' : 'NO'}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="check-box ${r.coprifiliEst ? 'check-filled' : ''}"></span>
+                                            ${r.coprifiliEst ? 'SI' : 'NO'}
+                                        </td>
+                                        <td style="font-size: 12px;">${r.note || '-'}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div style="margin-top: 40px; border-top: 2px solid #E2E8F0; padding-top: 20px;">
+                        <h3>✅ Istruzioni per il Sopralluogo</h3>
+                        <ol style="line-height: 1.8;">
+                            <li>Verifica per ogni posizione cosa è presente (infisso, persiana, tapparella, etc.)</li>
+                            <li>Annota il materiale del prodotto esistente</li>
+                            <li>Indica se il prodotto va tolto e/o smaltito</li>
+                            <li>Verifica se servono coprifili interni ed esterni per il nuovo montaggio</li>
+                            <li>Aggiungi note aggiuntive se necessario</li>
+                        </ol>
+                    </div>
+                    
+                    <div style="margin-top: 30px; text-align: center; color: #A0AEC0; font-size: 12px;">
+                        <p>Generato da Open Porte - Sistema di Rilievo Misure</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            // Apri in nuova finestra e stampa
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
         };
 
         window.setPositionTab = (posId, tab) => {
@@ -4303,15 +5468,21 @@
         };
 
         // Motor Functions for Tapparelle
-        window.addMotoreTapparella = (projectId, posId, tappIdx) => {
+        window.addMotoreTapparella = (projectId, posId) => {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
-                if (pos && pos.tapparelle && pos.tapparelle[tappIdx]) {
-                    if (!pos.tapparelle[tappIdx].motori) {
-                        pos.tapparelle[tappIdx].motori = [];
+                if (pos && pos.tapparella) {
+                    if (!pos.tapparella.motori) {
+                        pos.tapparella.motori = [];
                     }
-                    pos.tapparelle[tappIdx].motori.push({ modello: '' });
+                    // FASE 11a: Inizializza motore con tutti i campi
+                    pos.tapparella.motori.push({ 
+                        marca: '',
+                        modello: '',
+                        alimentazione: 'Filare',
+                        trasmettitore: ''
+                    });
                     saveState();
                     render();
                 }
@@ -4329,13 +5500,29 @@
             }
         };
 
-        window.removeMotoreTapparella = (projectId, posId, tappIdx, motoreIdx) => {
+        // FASE 11a: Nuova funzione per aggiornare singoli campi del motore
+        window.updateMotoreTapparellaField = (projectId, posId, motoreIdx, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos.tapparella && pos.tapparella.motori && pos.tapparella.motori[motoreIdx]) {
+                    pos.tapparella.motori[motoreIdx][field] = value;
+                    saveState();
+                    // Se cambia alimentazione, ri-renderizza per mostrare/nascondere trasmettitore
+                    if (field === 'alimentazione') {
+                        render();
+                    }
+                }
+            }
+        };
+
+        window.removeMotoreTapparella = (projectId, posId, motoreIdx) => {
             if (confirm('Eliminare questo motore?')) {
                 const project = state.projects.find(p => p.id === projectId);
                 if (project) {
                     const pos = project.positions.find(p => p.id === posId);
-                    if (pos && pos.tapparelle && pos.tapparelle[tappIdx] && pos.tapparelle[tappIdx].motori) {
-                        pos.tapparelle[tappIdx].motori.splice(motoreIdx, 1);
+                    if (pos && pos.tapparella && pos.tapparella.motori) {
+                        pos.tapparella.motori.splice(motoreIdx, 1);
                         saveState();
                         render();
                     }

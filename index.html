@@ -1,14 +1,25 @@
 <!DOCTYPE html>
 <!--
-    Open Porte v3.0 - FASE 13: RILIEVO PREESISTENTE GLOBALE PER PRODOTTI 📋✨🎯
+    Open Porte v3.0 - FASE 13a: RILIEVO PREESISTENTE GLOBALE AGGIORNATO 📋✨🎯
     
-    ✨ MODIFICHE FASE 13 (NUOVE):
+    ✨ MODIFICHE FASE 13a (ULTIME):
+    ✅ CAMPO "COSA C'È" - ELIMINATO:
+       - Rimosso completamente il campo "🏠 Cosa c'è?" dal rilievo preesistente
+       - Layout adattato da 3 a 2 colonne (Materiale + Note)
+    
+    ✅ CAMPO "MATERIALE" - SELECT/INPUT INTERCAMBIABILE:
+       - Aggiunto bottone toggle "✏️ Scrivi" / "📋 Tendina"
+       - Modalità SELECT (default): Dropdown con opzioni predefinite (Legno, PVC, Alluminio, Ferro)
+       - Modalità INPUT: Campo testo libero per materiali personalizzati
+       - Sincronizzazione automatica del valore tra le due modalità
+       - Funzione toggleMaterialeMode(productType, projectId) per gestire il cambio modalità
+    
+    ✨ MODIFICHE FASE 13 (PRECEDENTI):
     ✅ RILIEVO PREESISTENTE GLOBALE:
        - Aggiunta sezione "RILIEVO PREESISTENTE" negli STEP di configurazione (3,4,5,7)
        - Ogni prodotto (Infissi, Persiane, Tapparelle, Cassonetti) ha il suo rilievo globale
        - Campi globali per ogni prodotto:
-         * 🏠 Cosa c'è? (es: Infisso in legno, Persiana...)
-         * 🔧 Materiale (es: Legno, PVC, Alluminio...)
+         * 🔧 Materiale (SELECT/INPUT intercambiabile)
          * 📝 Note
          * 🔨 Da togliere? (checkbox)
          * 🗑️ Da smaltire? (checkbox)
@@ -27,6 +38,7 @@
        - getRilievoGlobale(project, productType)
        - calculateRilievoGlobaleCompleteness(project, productType)
        - renderRilievoGlobale(project, productType, productLabel, icon)
+       - toggleMaterialeMode(productType, projectId) - FASE 13a
     
     ✨ MODIFICHE FASE 11_1A (PRECEDENTE):
     ✅ BRM CASSONETTI - Nuove Misure Larghezza:
@@ -736,7 +748,6 @@
                 if (pos) {
                     if (!pos.rilievo) {
                         pos.rilievo = {
-                            preesistente: '',
                             togliere: false,
                             smaltimento: false,
                             materiale: '',
@@ -801,7 +812,6 @@
                 
                 if (!project[rilievoKey]) {
                     project[rilievoKey] = {
-                        preesistente: '',
                         materiale: '',
                         note: '',
                         togliere: false,
@@ -827,6 +837,37 @@
             }
         }
 
+        function toggleMaterialeMode(productType, projectId) {
+            const selectEl = document.getElementById(`materiale-select-${productType}-${projectId}`);
+            const inputEl = document.getElementById(`materiale-input-${productType}-${projectId}`);
+            const toggleBtn = document.getElementById(`materiale-toggle-${productType}-${projectId}`);
+            
+            if (selectEl && inputEl && toggleBtn) {
+                if (selectEl.style.display === 'none') {
+                    // Passa a SELECT
+                    selectEl.style.display = 'block';
+                    inputEl.style.display = 'none';
+                    toggleBtn.innerHTML = '✏️ Scrivi';
+                    // Sincronizza valore
+                    const currentValue = inputEl.value;
+                    // Se il valore esiste nelle opzioni, selezionalo
+                    const optionExists = Array.from(selectEl.options).some(opt => opt.value === currentValue);
+                    if (optionExists) {
+                        selectEl.value = currentValue;
+                    } else {
+                        selectEl.value = '';
+                    }
+                } else {
+                    // Passa a INPUT
+                    selectEl.style.display = 'none';
+                    inputEl.style.display = 'block';
+                    toggleBtn.innerHTML = '📋 Tendina';
+                    // Sincronizza valore
+                    inputEl.value = selectEl.value;
+                }
+            }
+        }
+
         function getRilievoGlobale(project, productType) {
             const rilievoKey = `rilievo${productType.charAt(0).toUpperCase() + productType.slice(1)}`;
             return project[rilievoKey] || {};
@@ -835,15 +876,14 @@
         function calculateRilievoGlobaleCompleteness(project, productType) {
             const rilievo = getRilievoGlobale(project, productType);
             let completed = 0;
-            let total = 4; // preesistente, materiale, togliere, smaltimento
+            let total = 3; // materiale, togliere, smaltimento (campo "preesistente" ELIMINATO in FASE 13a)
             
             // Per infissi ci sono anche i coprifili
             if (productType === 'infissi') {
-                total = 6; // + coprifiliInt, coprifiliEst
+                total = 5; // + coprifiliInt, coprifiliEst
             }
             
-            // Conta i campi compilati
-            if (rilievo.preesistente && rilievo.preesistente.trim() !== '') completed++;
+            // Conta i campi compilati (campo "preesistente" ELIMINATO in FASE 13a)
             if (rilievo.materiale && rilievo.materiale.trim() !== '') completed++;
             if (rilievo.togliere !== undefined && rilievo.togliere !== null) completed++;
             if (rilievo.smaltimento !== undefined && rilievo.smaltimento !== null) completed++;
@@ -992,7 +1032,6 @@
                     misure: {},
                     // 📋 NUOVO: Dati rilievo preesistente
                     rilievo: {
-                        preesistente: '',           // Cosa c'è (infisso, persiana, etc)
                         togliere: false,            // Da togliere? SI/NO
                         smaltimento: false,         // Da smaltire? SI/NO
                         materiale: '',              // Tipo materiale (legno, pvc, alluminio)
@@ -1715,42 +1754,43 @@
                         </div>
                     </div>
                     
-                    <div class="grid md:grid-cols-3 gap-4">
-                        <!-- 1. PREESISTENTE -->
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <!-- 1. MATERIALE -->
                         <div>
-                            <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
-                                🏠 Cosa c'è?
-                                ${!rilievo.preesistente || rilievo.preesistente.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
-                            </label>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="block text-sm font-semibold flex items-center gap-2">
+                                    🔧 Materiale
+                                    ${!rilievo.materiale || rilievo.materiale.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
+                                </label>
+                                <button onclick="toggleMaterialeMode('${productType}', '${project.id}')" 
+                                        id="materiale-toggle-${productType}-${project.id}"
+                                        class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-full font-medium transition">
+                                    ✏️ Scrivi
+                                </button>
+                            </div>
+                            
+                            <!-- SELECT MODE (default) -->
+                            <select id="materiale-select-${productType}-${project.id}"
+                                    onchange="updateRilievoGlobale('${project.id}', '${productType}', 'materiale', this.value)"
+                                    class="w-full px-3 py-2 border-2 ${!rilievo.materiale || rilievo.materiale.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="">Seleziona...</option>
+                                <option value="Legno" ${rilievo.materiale === 'Legno' ? 'selected' : ''}>Legno</option>
+                                <option value="PVC" ${rilievo.materiale === 'PVC' ? 'selected' : ''}>PVC</option>
+                                <option value="Alluminio" ${rilievo.materiale === 'Alluminio' ? 'selected' : ''}>Alluminio</option>
+                                <option value="Ferro" ${rilievo.materiale === 'Ferro' ? 'selected' : ''}>Ferro</option>
+                            </select>
+                            
+                            <!-- INPUT MODE (hidden by default) -->
                             <input type="text" 
-                                   value="${rilievo.preesistente || ''}"
-                                   onchange="updateRilievoGlobale('${project.id}', '${productType}', 'preesistente', this.value)"
-                                   placeholder="Es: Infisso in legno, Persiana..."
-                                   class="w-full px-3 py-2 border-2 ${!rilievo.preesistente || rilievo.preesistente.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                        </div>
-                        
-                        <!-- 2. MATERIALE -->
-                        <div>
-                            <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
-                                🔧 Materiale
-                                ${!rilievo.materiale || rilievo.materiale.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
-                            </label>
-                            <input type="text" 
+                                   id="materiale-input-${productType}-${project.id}"
                                    value="${rilievo.materiale || ''}"
                                    onchange="updateRilievoGlobale('${project.id}', '${productType}', 'materiale', this.value)"
-                                   placeholder="Es: Legno, PVC, Alluminio..."
-                                   list="materiale-${productType}-list"
+                                   placeholder="Inserisci materiale..."
+                                   style="display: none;"
                                    class="w-full px-3 py-2 border-2 ${!rilievo.materiale || rilievo.materiale.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <datalist id="materiale-${productType}-list">
-                                <option value="Legno">
-                                <option value="PVC">
-                                <option value="Alluminio">
-                                <option value="Ferro">
-                                <option value="Misto">
-                            </datalist>
                         </div>
                         
-                        <!-- 3. NOTE AGGIUNTIVE -->
+                        <!-- 2. NOTE AGGIUNTIVE -->
                         <div>
                             <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
                                 📝 Note

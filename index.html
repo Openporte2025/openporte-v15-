@@ -1,8 +1,34 @@
 <!DOCTYPE html>
 <!--
-    Open Porte v3.0 - FASE 11_1A: MIGLIORAMENTI BRM CASSONETTI E TAGLI INFISSO 🎯✨🔧⚡
+    Open Porte v3.0 - FASE 13: RILIEVO PREESISTENTE GLOBALE PER PRODOTTI 📋✨🎯
     
-    ✨ MODIFICHE FASE 11_1A (NUOVE):
+    ✨ MODIFICHE FASE 13 (NUOVE):
+    ✅ RILIEVO PREESISTENTE GLOBALE:
+       - Aggiunta sezione "RILIEVO PREESISTENTE" negli STEP di configurazione (3,4,5,7)
+       - Ogni prodotto (Infissi, Persiane, Tapparelle, Cassonetti) ha il suo rilievo globale
+       - Campi globali per ogni prodotto:
+         * 🏠 Cosa c'è? (es: Infisso in legno, Persiana...)
+         * 🔧 Materiale (es: Legno, PVC, Alluminio...)
+         * 📝 Note
+         * 🔨 Da togliere? (checkbox)
+         * 🗑️ Da smaltire? (checkbox)
+       - SOLO per INFISSI anche:
+         * 📏 Coprifili INT? (checkbox)
+         * 📐 Coprifili EST? (checkbox)
+       
+    ✅ SALVATAGGIO DATI:
+       - I dati globali vengono salvati in: project.rilievoInfissi, project.rilievoPersiane, etc.
+       - Ogni posizione può modificare localmente questi dati (pos.rilievo)
+       - Indicatore progresso: 0-100% completezza campi
+       - Validazione visiva con colori (rosso = incompleto, verde = completo)
+    
+    ✅ FUNZIONI NUOVE:
+       - updateRilievoGlobale(projectId, productType, field, value)
+       - getRilievoGlobale(project, productType)
+       - calculateRilievoGlobaleCompleteness(project, productType)
+       - renderRilievoGlobale(project, productType, productLabel, icon)
+    
+    ✨ MODIFICHE FASE 11_1A (PRECEDENTE):
     ✅ BRM CASSONETTI - Nuove Misure Larghezza:
        - Opzioni specifiche per cassonetti: LARGH_CASS, LS, LVT, TMV, LF, MIS_FIN_INF_L, LS+SRDX+SRSX
        - Le altre tipologie di prodotto mantengono le misure standard
@@ -199,7 +225,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Porte v3.0 - FASE 9a: Riorganizzazione UI Completa 🎯✨📋🔧🪟</title>
+    <title>Open Porte v3.0 - FASE 13: Rilievo Preesistente Globale 📋✨🎯</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -765,6 +791,70 @@
             } else {
                 return { icon: '🟢', color: 'green', text: 'COMPLETO', badge: 'bg-green-500' };
             }
+        }
+
+        // 🆕 FASE 13 - Gestione Rilievo Globale per Prodotti
+        function updateRilievoGlobale(projectId, productType, field, value) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const rilievoKey = `rilievo${productType.charAt(0).toUpperCase() + productType.slice(1)}`;
+                
+                if (!project[rilievoKey]) {
+                    project[rilievoKey] = {
+                        preesistente: '',
+                        materiale: '',
+                        note: '',
+                        togliere: false,
+                        smaltimento: false
+                    };
+                    
+                    // Aggiungi coprifili solo per infissi
+                    if (productType === 'infissi') {
+                        project[rilievoKey].coprifiliInt = false;
+                        project[rilievoKey].coprifiliEst = false;
+                    }
+                }
+                
+                // Gestione checkbox (boolean)
+                if (field === 'togliere' || field === 'smaltimento' || field === 'coprifiliInt' || field === 'coprifiliEst') {
+                    project[rilievoKey][field] = value === true || value === 'true';
+                } else {
+                    project[rilievoKey][field] = value;
+                }
+                
+                saveState();
+                render();
+            }
+        }
+
+        function getRilievoGlobale(project, productType) {
+            const rilievoKey = `rilievo${productType.charAt(0).toUpperCase() + productType.slice(1)}`;
+            return project[rilievoKey] || {};
+        }
+
+        function calculateRilievoGlobaleCompleteness(project, productType) {
+            const rilievo = getRilievoGlobale(project, productType);
+            let completed = 0;
+            let total = 4; // preesistente, materiale, togliere, smaltimento
+            
+            // Per infissi ci sono anche i coprifili
+            if (productType === 'infissi') {
+                total = 6; // + coprifiliInt, coprifiliEst
+            }
+            
+            // Conta i campi compilati
+            if (rilievo.preesistente && rilievo.preesistente.trim() !== '') completed++;
+            if (rilievo.materiale && rilievo.materiale.trim() !== '') completed++;
+            if (rilievo.togliere !== undefined && rilievo.togliere !== null) completed++;
+            if (rilievo.smaltimento !== undefined && rilievo.smaltimento !== null) completed++;
+            
+            if (productType === 'infissi') {
+                if (rilievo.coprifiliInt !== undefined && rilievo.coprifiliInt !== null) completed++;
+                if (rilievo.coprifiliEst !== undefined && rilievo.coprifiliEst !== null) completed++;
+            }
+            
+            const percentage = Math.round((completed / total) * 100);
+            return { percentage, completed, total };
         }
 
         // BRM Calculator
@@ -1598,6 +1688,150 @@
             `;
         }
 
+        // 🆕 FASE 13 - Render Rilievo Globale per Prodotto
+        function renderRilievoGlobale(project, productType, productLabel, icon) {
+            const rilievo = getRilievoGlobale(project, productType);
+            const completeness = calculateRilievoGlobaleCompleteness(project, productType);
+            const hasInfissi = productType === 'infissi';
+            
+            return `
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-300 rounded-lg p-4 shadow-md mt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                ${icon} 📋 RILIEVO PREESISTENTE - ${productLabel}
+                            </h3>
+                            <p class="text-xs text-gray-600 mt-1">Compila tutte le informazioni per evitare dimenticanze</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="flex items-center gap-2">
+                                <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="bg-purple-500 h-full transition-all duration-500" 
+                                         style="width: ${completeness.percentage}%"></div>
+                                </div>
+                                <span class="text-sm font-bold">${completeness.percentage}%</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">${completeness.completed}/${completeness.total} campi</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <!-- 1. PREESISTENTE -->
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
+                                🏠 Cosa c'è?
+                                ${!rilievo.preesistente || rilievo.preesistente.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
+                            </label>
+                            <input type="text" 
+                                   value="${rilievo.preesistente || ''}"
+                                   onchange="updateRilievoGlobale('${project.id}', '${productType}', 'preesistente', this.value)"
+                                   placeholder="Es: Infisso in legno, Persiana..."
+                                   class="w-full px-3 py-2 border-2 ${!rilievo.preesistente || rilievo.preesistente.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        
+                        <!-- 2. MATERIALE -->
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
+                                🔧 Materiale
+                                ${!rilievo.materiale || rilievo.materiale.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
+                            </label>
+                            <input type="text" 
+                                   value="${rilievo.materiale || ''}"
+                                   onchange="updateRilievoGlobale('${project.id}', '${productType}', 'materiale', this.value)"
+                                   placeholder="Es: Legno, PVC, Alluminio..."
+                                   list="materiale-${productType}-list"
+                                   class="w-full px-3 py-2 border-2 ${!rilievo.materiale || rilievo.materiale.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <datalist id="materiale-${productType}-list">
+                                <option value="Legno">
+                                <option value="PVC">
+                                <option value="Alluminio">
+                                <option value="Ferro">
+                                <option value="Misto">
+                            </datalist>
+                        </div>
+                        
+                        <!-- 3. NOTE AGGIUNTIVE -->
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
+                                📝 Note
+                            </label>
+                            <input type="text" 
+                                   value="${rilievo.note || ''}"
+                                   onchange="updateRilievoGlobale('${project.id}', '${productType}', 'note', this.value)"
+                                   placeholder="Note aggiuntive..."
+                                   class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                    </div>
+                    
+                    <div class="grid ${hasInfissi ? 'md:grid-cols-4' : 'md:grid-cols-2'} gap-4 mt-4 pt-4 border-t-2 border-gray-200">
+                        <!-- CHECKBOX: TOGLIERE -->
+                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${rilievo.togliere ? 'border-orange-300' : 'border-gray-200'}">
+                            <input type="checkbox" 
+                                   id="togliere-${productType}-${project.id}"
+                                   ${rilievo.togliere ? 'checked' : ''}
+                                   onchange="updateRilievoGlobale('${project.id}', '${productType}', 'togliere', this.checked)"
+                                   class="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500">
+                            <label for="togliere-${productType}-${project.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                🔨 Da togliere?
+                                ${rilievo.togliere ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                            </label>
+                        </div>
+                        
+                        <!-- CHECKBOX: SMALTIMENTO -->
+                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${rilievo.smaltimento ? 'border-red-300' : 'border-gray-200'}">
+                            <input type="checkbox" 
+                                   id="smaltimento-${productType}-${project.id}"
+                                   ${rilievo.smaltimento ? 'checked' : ''}
+                                   onchange="updateRilievoGlobale('${project.id}', '${productType}', 'smaltimento', this.checked)"
+                                   class="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                            <label for="smaltimento-${productType}-${project.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                🗑️ Da smaltire?
+                                ${rilievo.smaltimento ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                            </label>
+                        </div>
+                        
+                        ${hasInfissi ? `
+                            <!-- CHECKBOX: COPRIFILI INT (solo per Infissi) -->
+                            <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${rilievo.coprifiliInt ? 'border-blue-300' : 'border-gray-200'}">
+                                <input type="checkbox" 
+                                       id="coprifiliInt-${productType}-${project.id}"
+                                       ${rilievo.coprifiliInt ? 'checked' : ''}
+                                       onchange="updateRilievoGlobale('${project.id}', '${productType}', 'coprifiliInt', this.checked)"
+                                       class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                                <label for="coprifiliInt-${productType}-${project.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                    📏 Coprifili INT?
+                                    ${rilievo.coprifiliInt ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                                </label>
+                            </div>
+                            
+                            <!-- CHECKBOX: COPRIFILI EST (solo per Infissi) -->
+                            <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${rilievo.coprifiliEst ? 'border-purple-300' : 'border-gray-200'}">
+                                <input type="checkbox" 
+                                       id="coprifiliEst-${productType}-${project.id}"
+                                       ${rilievo.coprifiliEst ? 'checked' : ''}
+                                       onchange="updateRilievoGlobale('${project.id}', '${productType}', 'coprifiliEst', this.checked)"
+                                       class="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <label for="coprifiliEst-${productType}-${project.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                    📐 Coprifili EST?
+                                    ${rilievo.coprifiliEst ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                                </label>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${completeness.percentage < 100 ? `
+                        <div class="mt-3 p-2 bg-amber-100 border border-amber-300 rounded text-sm text-amber-800">
+                            ⚠️ <strong>Attenzione:</strong> Compila tutti i campi per evitare dimenticanze!
+                        </div>
+                    ` : `
+                        <div class="mt-3 p-2 bg-green-100 border border-green-300 rounded text-sm text-green-800">
+                            ✅ <strong>Perfetto!</strong> Tutte le informazioni del rilievo sono complete.
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
         function renderBRMConfig(project, productType, productLabel, icon) {
             const configKey = `brmConfig${productType.charAt(0).toUpperCase() + productType.slice(1)}`;
             const config = project[configKey] || { 
@@ -1716,7 +1950,9 @@
                     </h2>
                     <p class="text-gray-600 mb-4">Imposta i valori di default per tutti gli infissi:</p>
                     
-                    <div class="space-y-4">
+                    ${renderRilievoGlobale(project, 'infissi', 'Infissi', '🪟')}
+                    
+                    <div class="space-y-4 mt-6">
                         <div class="grid md:grid-cols-2 gap-4">
                             <!-- 1. AZIENDA -->
                             <div>
@@ -1888,7 +2124,9 @@
                     </h2>
                     <p class="text-gray-600 mb-4">Imposta i valori di default per tutte le persiane:</p>
                     
-                    <div class="space-y-4">
+                    ${renderRilievoGlobale(project, 'persiane', 'Persiane', '🚪')}
+                    
+                    <div class="space-y-4 mt-6">
                         <div class="grid md:grid-cols-2 gap-4">
                             <!-- 1. AZIENDA -->
                             <div>
@@ -2018,7 +2256,9 @@
                     </h2>
                     <p class="text-gray-600 mb-4">Imposta i valori di default per tutte le tapparelle:</p>
                     
-                    <div class="space-y-4">
+                    ${renderRilievoGlobale(project, 'tapparelle', 'Tapparelle', '🎚️')}
+                    
+                    <div class="space-y-4 mt-6">
                         <div class="grid md:grid-cols-2 gap-4">
                             <!-- 1. AZIENDA -->
                             <div>
@@ -2230,7 +2470,9 @@
                     </h2>
                     <p class="text-gray-600 mb-4">Imposta i valori di default per tutti i cassonetti:</p>
                     
-                    <div class="space-y-4">
+                    ${renderRilievoGlobale(project, 'cassonetti', 'Cassonetti', '📦')}
+                    
+                    <div class="space-y-4 mt-6">
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium mb-1">1. Tipo Cassonetto</label>

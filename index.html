@@ -1,8 +1,18 @@
 <!DOCTYPE html>
 <!--
-    Open Porte v3.0 - FASE 13a: RILIEVO PREESISTENTE GLOBALE AGGIORNATO 📋✨🎯
+    Open Porte v3.2 - FASE 15: MISURE IN PRIMA VISTA NEL RILIEVO INFISSI 📏✨
     
-    ✨ MODIFICHE FASE 13a (ULTIME):
+    ✨ MODIFICHE FASE 15:
+    ✅ RILIEVO PREESISTENTE INFISSI - MISURE VISIBILI SUBITO:
+       - Misure Principali (LVT, HVT, LF, HF, TMV, HMT, LVAR, HVAR) in griglia 4 colonne
+       - Delta (Delta INT, Delta EST) in griglia compatta
+       - Altezze (H Soffitto, H Parapetto/Soffitto, H Pavimento/Parapetto)
+       - Posizionate PRIMA di Materiale e Note
+       - Visibili SOLO per Infissi
+       - Funzione updateMisureGlobaliInfissi(projectId, field, value)
+       - Salvataggio in project.misureGlobaliInfissi
+    
+    ✨ MODIFICHE FASE 13a (PRECEDENTI):
     ✅ CAMPO "COSA C'È" - ELIMINATO:
        - Rimosso completamente il campo "🏠 Cosa c'è?" dal rilievo preesistente
        - Layout adattato da 3 a 2 colonne (Materiale + Note)
@@ -771,14 +781,13 @@
         }
 
         function calculateRilievoCompleteness(pos) {
-            if (!pos.rilievo) return { percentage: 0, completed: 0, total: 6 };
+            if (!pos.rilievo) return { percentage: 0, completed: 0, total: 5 };
             
             const rilievo = pos.rilievo;
             let completed = 0;
-            const total = 6; // Numero totale di campi da compilare
+            const total = 5; // materiale, togliere, smaltimento, coprifiliInt, coprifiliEst (campo "preesistente" ELIMINATO in FASE 13a)
             
-            // Conta i campi compilati
-            if (rilievo.preesistente && rilievo.preesistente.trim() !== '') completed++;
+            // Conta i campi compilati (campo "preesistente" ELIMINATO in FASE 13a)
             if (rilievo.togliere !== undefined && rilievo.togliere !== null) completed++;
             if (rilievo.smaltimento !== undefined && rilievo.smaltimento !== null) completed++;
             if (rilievo.materiale && rilievo.materiale.trim() !== '') completed++;
@@ -863,6 +872,174 @@
                     inputEl.style.display = 'block';
                     toggleBtn.innerHTML = '📋 Tendina';
                     // Sincronizza valore
+                    inputEl.value = selectEl.value;
+                }
+            }
+        }
+
+        function toggleMaterialePosMode(posId) {
+            const selectEl = document.getElementById(`materiale-pos-select-${posId}`);
+            const inputEl = document.getElementById(`materiale-pos-input-${posId}`);
+            const toggleBtn = document.getElementById(`materiale-pos-toggle-${posId}`);
+            
+            if (selectEl && inputEl && toggleBtn) {
+                if (selectEl.style.display === 'none') {
+                    // Passa a SELECT
+                    selectEl.style.display = 'block';
+                    inputEl.style.display = 'none';
+                    toggleBtn.innerHTML = '✏️ Scrivi';
+                    // Sincronizza valore
+                    const currentValue = inputEl.value;
+                    const optionExists = Array.from(selectEl.options).some(opt => opt.value === currentValue);
+                    if (optionExists) {
+                        selectEl.value = currentValue;
+                    } else {
+                        selectEl.value = '';
+                    }
+                } else {
+                    // Passa a INPUT
+                    selectEl.style.display = 'none';
+                    inputEl.style.display = 'block';
+                    toggleBtn.innerHTML = '📋 Tendina';
+                    inputEl.value = selectEl.value;
+                }
+            }
+        }
+
+        function copiaRilievoDaGlobale(projectId, posId) {
+            const project = state.projects.find(p => p.id === projectId);
+            const pos = project?.positions.find(p => p.id === posId);
+            
+            if (project && pos) {
+                // Copia dal rilievo globale infissi (default)
+                const rilievoGlobale = getRilievoGlobale(project, 'infissi');
+                
+                // Inizializza pos.rilievo se non esiste
+                if (!pos.rilievo) {
+                    pos.rilievo = {
+                        togliere: false,
+                        smaltimento: false,
+                        materiale: '',
+                        coprifiliInt: false,
+                        coprifiliEst: false,
+                        note: ''
+                    };
+                }
+                
+                // Copia i valori
+                pos.rilievo.materiale = rilievoGlobale.materiale || '';
+                pos.rilievo.note = rilievoGlobale.note || '';
+                pos.rilievo.togliere = rilievoGlobale.togliere || false;
+                pos.rilievo.smaltimento = rilievoGlobale.smaltimento || false;
+                pos.rilievo.coprifiliInt = rilievoGlobale.coprifiliInt || false;
+                pos.rilievo.coprifiliEst = rilievoGlobale.coprifiliEst || false;
+                
+                saveState();
+                render();
+                
+                alert('✅ Dati copiati dal rilievo globale!');
+            }
+        }
+
+        function updateRilievoProdotto(projectId, posId, productType, field, value) {
+            const project = state.projects.find(p => p.id === projectId);
+            const pos = project?.positions.find(p => p.id === posId);
+            
+            if (project && pos) {
+                const rilievoKey = `rilievo${productType.charAt(0).toUpperCase() + productType.slice(1)}`;
+                
+                // Inizializza rilievo se non esiste
+                if (!pos[rilievoKey]) {
+                    pos[rilievoKey] = {
+                        materiale: '',
+                        note: '',
+                        togliere: false,
+                        smaltimento: false
+                    };
+                    
+                    // Aggiungi coprifili solo per infissi
+                    if (productType === 'infissi') {
+                        pos[rilievoKey].coprifiliInt = false;
+                        pos[rilievoKey].coprifiliEst = false;
+                    }
+                }
+                
+                // Gestione checkbox (boolean)
+                if (field === 'togliere' || field === 'smaltimento' || field === 'coprifiliInt' || field === 'coprifiliEst') {
+                    pos[rilievoKey][field] = value === true || value === 'true';
+                } else {
+                    pos[rilievoKey][field] = value;
+                }
+                
+                saveState();
+                render();
+            }
+        }
+
+        function copiaRilievoDaGlobaleProdotto(projectId, posId, productType) {
+            const project = state.projects.find(p => p.id === projectId);
+            const pos = project?.positions.find(p => p.id === posId);
+            
+            if (project && pos) {
+                const rilievoGlobale = getRilievoGlobale(project, productType);
+                const rilievoKey = `rilievo${productType.charAt(0).toUpperCase() + productType.slice(1)}`;
+                
+                // Inizializza pos.rilievo se non esiste
+                if (!pos[rilievoKey]) {
+                    pos[rilievoKey] = {
+                        materiale: '',
+                        note: '',
+                        togliere: false,
+                        smaltimento: false
+                    };
+                    
+                    if (productType === 'infissi') {
+                        pos[rilievoKey].coprifiliInt = false;
+                        pos[rilievoKey].coprifiliEst = false;
+                    }
+                }
+                
+                // Copia i valori
+                pos[rilievoKey].materiale = rilievoGlobale.materiale || '';
+                pos[rilievoKey].note = rilievoGlobale.note || '';
+                pos[rilievoKey].togliere = rilievoGlobale.togliere || false;
+                pos[rilievoKey].smaltimento = rilievoGlobale.smaltimento || false;
+                
+                if (productType === 'infissi') {
+                    pos[rilievoKey].coprifiliInt = rilievoGlobale.coprifiliInt || false;
+                    pos[rilievoKey].coprifiliEst = rilievoGlobale.coprifiliEst || false;
+                }
+                
+                saveState();
+                render();
+                
+                alert('✅ Dati copiati dal rilievo globale!');
+            }
+        }
+
+        function toggleMaterialeProdottoMode(uniqueId) {
+            const selectEl = document.getElementById(`materiale-select-${uniqueId}`);
+            const inputEl = document.getElementById(`materiale-input-${uniqueId}`);
+            const toggleBtn = document.getElementById(`materiale-toggle-${uniqueId}`);
+            
+            if (selectEl && inputEl && toggleBtn) {
+                if (selectEl.style.display === 'none') {
+                    // Passa a SELECT
+                    selectEl.style.display = 'block';
+                    inputEl.style.display = 'none';
+                    toggleBtn.innerHTML = '✏️ Scrivi';
+                    const currentValue = inputEl.value;
+                    const optionExists = Array.from(selectEl.options).some(opt => opt.value === currentValue);
+                    if (optionExists) {
+                        selectEl.value = currentValue;
+                    } else {
+                        selectEl.value = '';
+                    }
+                } else {
+                    // Passa a INPUT
+                    selectEl.style.display = 'none';
+                    inputEl.style.display = 'block';
+                    toggleBtn.innerHTML = '📋 Tendina';
                     inputEl.value = selectEl.value;
                 }
             }
@@ -1751,6 +1928,73 @@
                                 <span class="text-sm font-bold">${completeness.percentage}%</span>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">${completeness.completed}/${completeness.total} campi</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 📏 MISURE PRINCIPALI - SEMPRE VISIBILI PER TEST -->
+                    <div class="bg-yellow-100 border-4 border-red-500 rounded-lg p-4 mb-4">
+                        <p class="text-lg font-bold text-red-900 mb-3">📏📏📏 MISURE PRINCIPALI (mm) 📏📏📏</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            ${['LVT', 'HVT', 'LF', 'HF', 'TMV', 'HMT', 'LVAR', 'HVAR'].map(field => `
+                                <div>
+                                    <label class="text-sm font-bold text-red-700">${field}</label>
+                                    <input type="number" placeholder="0"
+                                           value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi[field]) || ''}"
+                                           onchange="updateMisureGlobaliInfissi('${project.id}', '${field}', this.value)"
+                                           class="w-full px-3 py-2 border-4 border-red-400 rounded mt-1 font-bold text-lg bg-yellow-50">
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-3 mt-4">
+                            <!-- DELTA -->
+                            <div class="bg-blue-100 border-4 border-blue-600 rounded-lg p-3">
+                                <p class="text-sm font-bold text-blue-900 mb-2">📐 Delta (mm)</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-sm font-bold">Delta INT</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.DeltaINT) || ''}"
+                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'DeltaINT', this.value)"
+                                               class="w-full px-3 py-2 border-2 border-blue-400 rounded font-bold text-lg">
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-bold">Delta EST</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.DeltaEST) || ''}"
+                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'DeltaEST', this.value)"
+                                               class="w-full px-3 py-2 border-2 border-blue-400 rounded font-bold text-lg">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ALTEZZE -->
+                            <div class="bg-green-100 border-4 border-green-600 rounded-lg p-3">
+                                <p class="text-sm font-bold text-green-900 mb-2">📊 Altezze (mm)</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="text-xs font-bold">H Soffitto</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.HSoffitto) || ''}"
+                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'HSoffitto', this.value)"
+                                               class="w-full px-2 py-1.5 border-2 border-green-400 rounded font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold">H Par/Soff</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.HParapettoSoffitto) || ''}"
+                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'HParapettoSoffitto', this.value)"
+                                               class="w-full px-2 py-1.5 border-2 border-green-400 rounded font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold">H Pav/Parap</label>
+                                        <input type="number" placeholder="0" 
+                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.HPavimentoParapetto) || ''}"
+                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'HPavimentoParapetto', this.value)"
+                                               class="w-full px-2 py-1.5 border-2 border-green-400 rounded font-bold">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -3138,6 +3382,188 @@
             return '';
         }
 
+        function renderRilievoPerProdotto(project, pos, productType, productLabel, hasCoprifili) {
+            const rilievoKey = `rilievo${productType.charAt(0).toUpperCase() + productType.slice(1)}`;
+            const r = pos[rilievoKey] || {};
+            
+            // Calcola completezza specifica per questo prodotto
+            let completed = 0;
+            let total = 3; // materiale, togliere, smaltimento
+            if (hasCoprifili) total = 5; // + coprifiliInt, coprifiliEst
+            
+            if (r.materiale && r.materiale.trim() !== '') completed++;
+            if (r.togliere !== undefined && r.togliere !== null) completed++;
+            if (r.smaltimento !== undefined && r.smaltimento !== null) completed++;
+            if (hasCoprifili) {
+                if (r.coprifiliInt !== undefined && r.coprifiliInt !== null) completed++;
+                if (r.coprifiliEst !== undefined && r.coprifiliEst !== null) completed++;
+            }
+            
+            const percentage = Math.round((completed / total) * 100);
+            
+            // Determina status
+            let icon, color, statusText, badge;
+            if (percentage === 0) {
+                icon = '⚪'; color = 'gray'; statusText = 'NON INIZIATO'; badge = 'bg-gray-500';
+            } else if (percentage < 50) {
+                icon = '🔴'; color = 'red'; statusText = 'INCOMPLETO'; badge = 'bg-red-500';
+            } else if (percentage < 100) {
+                icon = '🟡'; color = 'amber'; statusText = 'PARZIALE'; badge = 'bg-amber-500';
+            } else {
+                icon = '🟢'; color = 'green'; statusText = 'COMPLETO'; badge = 'bg-green-500';
+            }
+            
+            const uniqueId = `${pos.id}-${productType}`;
+            
+            return `
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-2 ${color === 'green' ? 'border-green-400' : color === 'amber' ? 'border-amber-400' : color === 'red' ? 'border-red-400' : 'border-gray-300'} rounded-lg p-4 shadow-md mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                📋 RILIEVO PREESISTENTE - ${productLabel}
+                            </h3>
+                            <p class="text-xs text-gray-600 mt-1">Compila tutte le informazioni per evitare dimenticanze</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            <button onclick="copiaRilievoDaGlobaleProdotto('${project.id}', '${pos.id}', '${productType}')"
+                                    class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-semibold transition">
+                                📥 Copia da Globale
+                            </button>
+                            <div class="text-right">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-2xl">${icon}</span>
+                                    <span class="text-sm font-bold text-${color}-700">${statusText}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div class="${badge} h-full transition-all duration-500" 
+                                             style="width: ${percentage}%"></div>
+                                    </div>
+                                    <span class="text-sm font-bold">${percentage}%</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">${completed}/${total} campi</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <!-- 1. MATERIALE -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="block text-sm font-semibold flex items-center gap-2">
+                                    🔧 Materiale
+                                    ${!r.materiale || r.materiale.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
+                                </label>
+                                <button onclick="toggleMaterialeProdottoMode('${uniqueId}')" 
+                                        id="materiale-toggle-${uniqueId}"
+                                        class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-full font-medium transition">
+                                    ✏️ Scrivi
+                                </button>
+                            </div>
+                            
+                            <!-- SELECT MODE (default) -->
+                            <select id="materiale-select-${uniqueId}"
+                                    onchange="updateRilievoProdotto('${project.id}', '${pos.id}', '${productType}', 'materiale', this.value)"
+                                    class="w-full px-3 py-2 border-2 ${!r.materiale || r.materiale.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="">Seleziona...</option>
+                                <option value="Legno" ${r.materiale === 'Legno' ? 'selected' : ''}>Legno</option>
+                                <option value="PVC" ${r.materiale === 'PVC' ? 'selected' : ''}>PVC</option>
+                                <option value="Alluminio" ${r.materiale === 'Alluminio' ? 'selected' : ''}>Alluminio</option>
+                                <option value="Ferro" ${r.materiale === 'Ferro' ? 'selected' : ''}>Ferro</option>
+                            </select>
+                            
+                            <!-- INPUT MODE (hidden by default) -->
+                            <input type="text" 
+                                   id="materiale-input-${uniqueId}"
+                                   value="${r.materiale || ''}"
+                                   onchange="updateRilievoProdotto('${project.id}', '${pos.id}', '${productType}', 'materiale', this.value)"
+                                   placeholder="Inserisci materiale..."
+                                   style="display: none;"
+                                   class="w-full px-3 py-2 border-2 ${!r.materiale || r.materiale.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        
+                        <!-- 2. NOTE AGGIUNTIVE -->
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
+                                📝 Note
+                            </label>
+                            <input type="text" 
+                                   value="${r.note || ''}"
+                                   onchange="updateRilievoProdotto('${project.id}', '${pos.id}', '${productType}', 'note', this.value)"
+                                   placeholder="Note aggiuntive..."
+                                   class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                    </div>
+                    
+                    <div class="grid ${hasCoprifili ? 'md:grid-cols-4' : 'md:grid-cols-2'} gap-4 mt-4 pt-4 border-t-2 border-gray-200">
+                        <!-- CHECKBOX: TOGLIERE -->
+                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.togliere ? 'border-orange-300' : 'border-gray-200'}">
+                            <input type="checkbox" 
+                                   id="togliere-${uniqueId}"
+                                   ${r.togliere ? 'checked' : ''}
+                                   onchange="updateRilievoProdotto('${project.id}', '${pos.id}', '${productType}', 'togliere', this.checked)"
+                                   class="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500">
+                            <label for="togliere-${uniqueId}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                🔨 Da togliere?
+                                ${r.togliere ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                            </label>
+                        </div>
+                        
+                        <!-- CHECKBOX: SMALTIMENTO -->
+                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.smaltimento ? 'border-red-300' : 'border-gray-200'}">
+                            <input type="checkbox" 
+                                   id="smaltimento-${uniqueId}"
+                                   ${r.smaltimento ? 'checked' : ''}
+                                   onchange="updateRilievoProdotto('${project.id}', '${pos.id}', '${productType}', 'smaltimento', this.checked)"
+                                   class="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                            <label for="smaltimento-${uniqueId}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                🗑️ Da smaltire?
+                                ${r.smaltimento ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                            </label>
+                        </div>
+                        
+                        ${hasCoprifili ? `
+                            <!-- CHECKBOX: COPRIFILI INT (solo per Infissi) -->
+                            <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.coprifiliInt ? 'border-blue-300' : 'border-gray-200'}">
+                                <input type="checkbox" 
+                                       id="coprifiliInt-${uniqueId}"
+                                       ${r.coprifiliInt ? 'checked' : ''}
+                                       onchange="updateRilievoProdotto('${project.id}', '${pos.id}', '${productType}', 'coprifiliInt', this.checked)"
+                                       class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                                <label for="coprifiliInt-${uniqueId}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                    📏 Coprifili INT?
+                                    ${r.coprifiliInt ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                                </label>
+                            </div>
+                            
+                            <!-- CHECKBOX: COPRIFILI EST (solo per Infissi) -->
+                            <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.coprifiliEst ? 'border-purple-300' : 'border-gray-200'}">
+                                <input type="checkbox" 
+                                       id="coprifiliEst-${uniqueId}"
+                                       ${r.coprifiliEst ? 'checked' : ''}
+                                       onchange="updateRilievoProdotto('${project.id}', '${pos.id}', '${productType}', 'coprifiliEst', this.checked)"
+                                       class="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <label for="coprifiliEst-${uniqueId}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                                    📐 Coprifili EST?
+                                    ${r.coprifiliEst ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
+                                </label>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${percentage < 100 ? `
+                        <div class="mt-3 p-2 bg-amber-100 border border-amber-300 rounded text-sm text-amber-800">
+                            ⚠️ <strong>Attenzione:</strong> Compila tutti i campi per evitare dimenticanze!
+                        </div>
+                    ` : `
+                        <div class="mt-3 p-2 bg-green-100 border border-green-300 rounded text-sm text-green-800">
+                            ✅ <strong>Perfetto!</strong> Tutte le informazioni del rilievo sono complete.
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
         function renderMisureTab(project, pos) {
             const validation = validateMisure(project, pos);
             
@@ -3179,162 +3605,11 @@
                         </div>
                     `}
                     
-                    <!-- 📋 SEZIONE RILIEVO PREESISTENTE -->
-                    ${(() => {
-                        const rilievoStatus = getRilievoStatus(pos);
-                        const completeness = calculateRilievoCompleteness(pos);
-                        const r = pos.rilievo || {};
-                        
-                        return `
-                            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-2 ${rilievoStatus.color === 'green' ? 'border-green-400' : rilievoStatus.color === 'amber' ? 'border-amber-400' : rilievoStatus.color === 'red' ? 'border-red-400' : 'border-gray-300'} rounded-lg p-4 shadow-md mb-4">
-                                <div class="flex justify-between items-center mb-4">
-                                    <div>
-                                        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                            📋 RILIEVO PREESISTENTE
-                                        </h3>
-                                        <p class="text-xs text-gray-600 mt-1">Compila tutte le informazioni per evitare dimenticanze</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="text-2xl">${rilievoStatus.icon}</span>
-                                            <span class="text-sm font-bold text-${rilievoStatus.color}-700">${rilievoStatus.text}</span>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                <div class="${rilievoStatus.badge} h-full transition-all duration-500" 
-                                                     style="width: ${completeness.percentage}%"></div>
-                                            </div>
-                                            <span class="text-sm font-bold">${completeness.percentage}%</span>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">${completeness.completed}/${completeness.total} campi</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid md:grid-cols-3 gap-4">
-                                    <!-- 1. PREESISTENTE -->
-                                    <div>
-                                        <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
-                                            🏠 Cosa c'è?
-                                            ${!r.preesistente || r.preesistente.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
-                                        </label>
-                                        <input type="text" 
-                                               value="${r.preesistente || ''}"
-                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'preesistente', this.value)"
-                                               placeholder="Es: Infisso in legno, Persiana..."
-                                               list="preesistente-list"
-                                               class="w-full px-3 py-2 border-2 ${!r.preesistente || r.preesistente.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                                        <datalist id="preesistente-list">
-                                            <option value="Infisso in legno">
-                                            <option value="Infisso in PVC">
-                                            <option value="Infisso in alluminio">
-                                            <option value="Persiana in legno">
-                                            <option value="Persiana in alluminio">
-                                            <option value="Tapparella">
-                                            <option value="Cassonetto">
-                                            <option value="Nessun prodotto">
-                                        </datalist>
-                                    </div>
-                                    
-                                    <!-- 2. MATERIALE -->
-                                    <div>
-                                        <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
-                                            🔧 Materiale
-                                            ${!r.materiale || r.materiale.trim() === '' ? '<span class="text-red-600">●</span>' : '<span class="text-green-600">✓</span>'}
-                                        </label>
-                                        <input type="text" 
-                                               value="${r.materiale || ''}"
-                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'materiale', this.value)"
-                                               placeholder="Es: Legno, PVC, Alluminio..."
-                                               list="materiale-list"
-                                               class="w-full px-3 py-2 border-2 ${!r.materiale || r.materiale.trim() === '' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-white'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                                        <datalist id="materiale-list">
-                                            <option value="Legno">
-                                            <option value="PVC">
-                                            <option value="Alluminio">
-                                            <option value="Ferro">
-                                            <option value="Misto">
-                                        </datalist>
-                                    </div>
-                                    
-                                    <!-- 3. NOTE AGGIUNTIVE -->
-                                    <div>
-                                        <label class="block text-sm font-semibold mb-2 flex items-center gap-2">
-                                            📝 Note
-                                        </label>
-                                        <input type="text" 
-                                               value="${r.note || ''}"
-                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'note', this.value)"
-                                               placeholder="Note aggiuntive..."
-                                               class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                                    </div>
-                                </div>
-                                
-                                <div class="grid md:grid-cols-4 gap-4 mt-4 pt-4 border-t-2 border-gray-200">
-                                    <!-- CHECKBOX: TOGLIERE -->
-                                    <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.togliere ? 'border-orange-300' : 'border-gray-200'}">
-                                        <input type="checkbox" 
-                                               id="togliere-${pos.id}"
-                                               ${r.togliere ? 'checked' : ''}
-                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'togliere', this.checked)"
-                                               class="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500">
-                                        <label for="togliere-${pos.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
-                                            🔨 Da togliere?
-                                            ${r.togliere ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
-                                        </label>
-                                    </div>
-                                    
-                                    <!-- CHECKBOX: SMALTIMENTO -->
-                                    <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.smaltimento ? 'border-red-300' : 'border-gray-200'}">
-                                        <input type="checkbox" 
-                                               id="smaltimento-${pos.id}"
-                                               ${r.smaltimento ? 'checked' : ''}
-                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'smaltimento', this.checked)"
-                                               class="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500">
-                                        <label for="smaltimento-${pos.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
-                                            🗑️ Da smaltire?
-                                            ${r.smaltimento ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
-                                        </label>
-                                    </div>
-                                    
-                                    <!-- CHECKBOX: COPRIFILI INT -->
-                                    <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.coprifiliInt ? 'border-blue-300' : 'border-gray-200'}">
-                                        <input type="checkbox" 
-                                               id="coprifiliInt-${pos.id}"
-                                               ${r.coprifiliInt ? 'checked' : ''}
-                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'coprifiliInt', this.checked)"
-                                               class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
-                                        <label for="coprifiliInt-${pos.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
-                                            📏 Coprifili INT?
-                                            ${r.coprifiliInt ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
-                                        </label>
-                                    </div>
-                                    
-                                    <!-- CHECKBOX: COPRIFILI EST -->
-                                    <div class="flex items-center gap-3 bg-white p-3 rounded-lg border-2 ${r.coprifiliEst ? 'border-purple-300' : 'border-gray-200'}">
-                                        <input type="checkbox" 
-                                               id="coprifiliEst-${pos.id}"
-                                               ${r.coprifiliEst ? 'checked' : ''}
-                                               onchange="updateRilievo('${project.id}', '${pos.id}', 'coprifiliEst', this.checked)"
-                                               class="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
-                                        <label for="coprifiliEst-${pos.id}" class="text-sm font-semibold cursor-pointer flex items-center gap-2">
-                                            📐 Coprifili EST?
-                                            ${r.coprifiliEst ? '<span class="text-green-600">✓</span>' : '<span class="text-gray-400">○</span>'}
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                ${completeness.percentage < 100 ? `
-                                    <div class="mt-3 p-2 bg-amber-100 border border-amber-300 rounded text-sm text-amber-800">
-                                        ⚠️ <strong>Attenzione:</strong> Compila tutti i campi per evitare dimenticanze durante il sopralluogo!
-                                    </div>
-                                ` : `
-                                    <div class="mt-3 p-2 bg-green-100 border border-green-300 rounded text-sm text-green-800">
-                                        ✅ <strong>Perfetto!</strong> Tutte le informazioni del rilievo sono complete.
-                                    </div>
-                                `}
-                            </div>
-                        `;
-                    })()}
+                    <!-- 📋 SEZIONI RILIEVO PREESISTENTE PER OGNI PRODOTTO -->
+                    ${project.prodotti?.infissi ? renderRilievoPerProdotto(project, pos, 'infissi', '🪟 Infissi', true) : ''}
+                    ${project.prodotti?.persiane ? renderRilievoPerProdotto(project, pos, 'persiane', '🚪 Persiane', false) : ''}
+                    ${project.prodotti?.tapparelle ? renderRilievoPerProdotto(project, pos, 'tapparelle', '🎚️ Tapparelle', false) : ''}
+                    ${project.prodotti?.cassonetti ? renderRilievoPerProdotto(project, pos, 'cassonetti', '📦 Cassonetti', false) : ''}
                     
                     <div class="bg-gray-50 rounded-lg p-4">
                         <p class="text-sm font-bold text-gray-700 mb-3">Misure Principali (mm)</p>
@@ -5674,6 +5949,23 @@
                     falsoSiFields.style.display = value === 'si' ? 'block' : 'none';
                     falsoNoFields.style.display = value === 'no' ? 'block' : 'none';
                 }
+            }
+        };
+
+        // 🆕 FASE 15: Update Misure Globali Infissi
+        window.updateMisureGlobaliInfissi = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.misureGlobaliInfissi) {
+                    project.misureGlobaliInfissi = {
+                        LVT: '', HVT: '', LF: '', HF: '', 
+                        TMV: '', HMT: '', LVAR: '', HVAR: '',
+                        DeltaINT: '', DeltaEST: '',
+                        HSoffitto: '', HParapettoSoffitto: '', HPavimentoParapetto: ''
+                    };
+                }
+                project.misureGlobaliInfissi[field] = value;
+                saveState();
             }
         };
 

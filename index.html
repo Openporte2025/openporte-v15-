@@ -1931,72 +1931,74 @@
                         </div>
                     </div>
                     
-                    <!-- 📏 MISURE PRINCIPALI - SEMPRE VISIBILI PER TEST -->
-                    <div class="bg-yellow-100 border-4 border-red-500 rounded-lg p-4 mb-4">
-                        <p class="text-lg font-bold text-red-900 mb-3">📏📏📏 MISURE PRINCIPALI (mm) 📏📏📏</p>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            ${['LVT', 'HVT', 'LF', 'HF', 'TMV', 'HMT', 'LVAR', 'HVAR'].map(field => `
-                                <div>
-                                    <label class="text-sm font-bold text-red-700">${field}</label>
-                                    <input type="number" placeholder="0"
-                                           value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi[field]) || ''}"
-                                           onchange="updateMisureGlobaliInfissi('${project.id}', '${field}', this.value)"
-                                           class="w-full px-3 py-2 border-4 border-red-400 rounded mt-1 font-bold text-lg bg-yellow-50">
-                                </div>
-                            `).join('')}
+                    ${productType === 'infissi' ? `
+                        <!-- 📏 MISURE PRINCIPALI (SOLO INFISSI) -->
+                        <div class="bg-white border-2 border-blue-400 rounded-lg p-3 mb-3">
+                            <p class="text-sm font-bold text-blue-900 mb-3">📏 Misure Principali (mm)</p>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                ${['LVT', 'HVT', 'LF', 'HF', 'TMV', 'HMT', 'LVAR', 'HVAR'].map(field => `
+                                    <div>
+                                        <label class="text-xs font-bold text-gray-700">${field}</label>
+                                        <input type="number" placeholder="0"
+                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi[field]) || ''}"
+                                               onchange="updateMisureGlobaliInfissi('${project.id}', '${field}', this.value)"
+                                               class="w-full px-2 py-1.5 border-2 border-blue-300 rounded mt-1 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                         
-                        <div class="grid md:grid-cols-2 gap-3 mt-4">
+                        <div class="grid md:grid-cols-2 gap-2 mb-3">
                             <!-- DELTA -->
-                            <div class="bg-blue-100 border-4 border-blue-600 rounded-lg p-3">
-                                <p class="text-sm font-bold text-blue-900 mb-2">📐 Delta (mm)</p>
+                            <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-2">
+                                <p class="text-xs font-bold text-blue-900 mb-2">📐 Delta (mm)</p>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="text-sm font-bold">Delta INT</label>
+                                        <label class="text-xs font-bold">Delta INT</label>
                                         <input type="number" placeholder="0" 
                                                value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.DeltaINT) || ''}"
                                                onchange="updateMisureGlobaliInfissi('${project.id}', 'DeltaINT', this.value)"
-                                               class="w-full px-3 py-2 border-2 border-blue-400 rounded font-bold text-lg">
+                                               class="w-full px-2 py-1 border rounded font-bold text-sm">
                                     </div>
                                     <div>
-                                        <label class="text-sm font-bold">Delta EST</label>
+                                        <label class="text-xs font-bold">Delta EST</label>
                                         <input type="number" placeholder="0" 
                                                value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.DeltaEST) || ''}"
                                                onchange="updateMisureGlobaliInfissi('${project.id}', 'DeltaEST', this.value)"
-                                               class="w-full px-3 py-2 border-2 border-blue-400 rounded font-bold text-lg">
+                                               class="w-full px-2 py-1 border rounded font-bold text-sm">
                                     </div>
                                 </div>
                             </div>
                             
                             <!-- ALTEZZE -->
-                            <div class="bg-green-100 border-4 border-green-600 rounded-lg p-3">
-                                <p class="text-sm font-bold text-green-900 mb-2">📊 Altezze (mm)</p>
-                                <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-2">
+                                <p class="text-xs font-bold text-gray-900 mb-2">📊 Altezze (mm)</p>
+                                <div class="grid grid-cols-3 gap-1">
                                     <div>
-                                        <label class="text-xs font-bold">H Soffitto</label>
+                                        <label class="text-xs font-bold" style="font-size: 10px;">H Soff</label>
                                         <input type="number" placeholder="0" 
                                                value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.HSoffitto) || ''}"
                                                onchange="updateMisureGlobaliInfissi('${project.id}', 'HSoffitto', this.value)"
-                                               class="w-full px-2 py-1.5 border-2 border-green-400 rounded font-bold">
+                                               class="w-full px-1 py-1 border rounded font-bold text-xs">
                                     </div>
                                     <div>
-                                        <label class="text-xs font-bold">H Par/Soff</label>
+                                        <label class="text-xs font-bold" style="font-size: 10px;">H Par/So</label>
                                         <input type="number" placeholder="0" 
                                                value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.HParapettoSoffitto) || ''}"
                                                onchange="updateMisureGlobaliInfissi('${project.id}', 'HParapettoSoffitto', this.value)"
-                                               class="w-full px-2 py-1.5 border-2 border-green-400 rounded font-bold">
+                                               class="w-full px-1 py-1 border rounded font-bold text-xs">
                                     </div>
                                     <div>
-                                        <label class="text-xs font-bold">H Pav/Parap</label>
+                                        <label class="text-xs font-bold" style="font-size: 10px;">H Pav/Pa</label>
                                         <input type="number" placeholder="0" 
                                                value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.HPavimentoParapetto) || ''}"
                                                onchange="updateMisureGlobaliInfissi('${project.id}', 'HPavimentoParapetto', this.value)"
-                                               class="w-full px-2 py-1.5 border-2 border-green-400 rounded font-bold">
+                                               class="w-full px-1 py-1 border rounded font-bold text-xs">
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    ` : ''}
                     
                     <div class="grid md:grid-cols-2 gap-4">
                         <!-- 1. MATERIALE -->
@@ -3605,12 +3607,6 @@
                         </div>
                     `}
                     
-                    <!-- 📋 SEZIONI RILIEVO PREESISTENTE PER OGNI PRODOTTO -->
-                    ${project.prodotti?.infissi ? renderRilievoPerProdotto(project, pos, 'infissi', '🪟 Infissi', true) : ''}
-                    ${project.prodotti?.persiane ? renderRilievoPerProdotto(project, pos, 'persiane', '🚪 Persiane', false) : ''}
-                    ${project.prodotti?.tapparelle ? renderRilievoPerProdotto(project, pos, 'tapparelle', '🎚️ Tapparelle', false) : ''}
-                    ${project.prodotti?.cassonetti ? renderRilievoPerProdotto(project, pos, 'cassonetti', '📦 Cassonetti', false) : ''}
-                    
                     <div class="bg-gray-50 rounded-lg p-4">
                         <p class="text-sm font-bold text-gray-700 mb-3">Misure Principali (mm)</p>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -3668,6 +3664,12 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- 📋 SEZIONI RILIEVO PREESISTENTE PER OGNI PRODOTTO -->
+                    ${project.prodotti?.infissi ? renderRilievoPerProdotto(project, pos, 'infissi', '🪟 Infissi', true) : ''}
+                    ${project.prodotti?.persiane ? renderRilievoPerProdotto(project, pos, 'persiane', '🚪 Persiane', false) : ''}
+                    ${project.prodotti?.tapparelle ? renderRilievoPerProdotto(project, pos, 'tapparelle', '🎚️ Tapparelle', false) : ''}
+                    ${project.prodotti?.cassonetti ? renderRilievoPerProdotto(project, pos, 'cassonetti', '📦 Cassonetti', false) : ''}
                     
                     ${pos.overrideCaratteristiche ? `
                         <div class="bg-yellow-100 p-3 rounded border-2 border-yellow-500">
@@ -6308,9 +6310,34 @@
             `;
         }
 
-        // Initialize App
-        loadState();
-        render();
+        // Navigation function for setup steps - MANCAVA QUESTA!
+        window.navigateToStep = (step) => {
+            state.setupStep = step;
+            render();
+        };
+
+        // Error handler per debug
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Errore JavaScript:', {
+                message: msg,
+                source: url,
+                lineno: lineNo,
+                colno: columnNo,
+                error: error
+            });
+            return false;
+        };
+
+        // Initialize App con gestione errori
+        try {
+            console.log('Inizializzazione app...');
+            loadState();
+            render();
+            console.log('App inizializzata correttamente');
+        } catch (error) {
+            console.error('Errore durante inizializzazione:', error);
+            alert('Si è verificato un errore. Controlla la console per i dettagli.');
+        }
     </script>
 </body>
 </html>

@@ -1,8 +1,157 @@
 <!DOCTYPE html>
 <!--
-    Open Porte v3.2 - FASE 15: MISURE IN PRIMA VISTA NEL RILIEVO INFISSI 📏✨
+    Open Porte v3.3 - INTEGRAZIONE ODOO ✨🎯
     
-    ✨ MODIFICHE FASE 15:
+    ✨ NUOVE FUNZIONALITÀ PER ODOO (22 OTT 2025):
+    ✅ PULSANTE "STAMPA PDF":
+       - Genera un PDF professionale del rilievo completo
+       - Include tutti i dati: cliente, posizioni, prodotti, misure BRM
+       - Pronto per essere caricato su Odoo come allegato
+       - Layout ottimizzato per stampa con intestazione aziendale
+    
+    ✅ PULSANTE "EXPORT JSON PER ODOO":
+       - Esporta il singolo progetto in formato JSON
+       - Struttura ottimizzata per integrazione con Odoo
+       - Include: cliente, posizioni, prodotti, misure, BRM, totali
+       - Nome file: RILIEVO-[Cliente]-[Progetto]-[Data].json
+       - Pronto per essere caricato su Odoo e letto dal sistema
+    
+    ✅ WORKFLOW INTEGRATO:
+       1. Fai rilievo con app → Compila tutti i dati
+       2. Clicca "Stampa PDF" → Salva PDF per archivio/stampa
+       3. Clicca "Export JSON" → Scarica file JSON
+       4. Apri Odoo → Progetto S00XXX → Allega entrambi i file
+       5. La ragazza legge il PDF per fare preventivo
+       6. Il JSON è pronto per future automazioni
+    
+    🎯 VANTAGGI:
+       - Zero costi di sviluppo
+       - Immediate integration con Odoo
+       - Dati sempre aggiornati e tracciati
+       - Squadra posa può scaricare PDF da Odoo su smartphone
+    
+    ✨ MODIFICHE FASE 26 (22 OTT 2025 - PRECEDENTE):
+    ✅ CAMPO "TIPO TAGLI" ELIMINATO:
+       - Rimosso completamente il campo "Tipo Tagli" dalla posizione infissi
+       - Il campo era ridondante con la selezione "Tagli Telaio"
+       - Rimangono attivi: Tagli Telaio (dropdown) e COD.TAGLI (campi multipli editabili)
+    
+    ✨ MODIFICHE FASE 25 (21 OTT 2025):
+    ✅ BRM FINESTRA/PORTAFINESTRA - INFISSI:
+       - Config Globale (STEP 3): Aggiunta sezione "BRM FINESTRA" e "BRM PORTAFINESTRA"
+       - BRM Finestra usa HF per altezza
+       - BRM Portafinestra usa HPF per altezza
+       - Nelle posizioni: Se tipo è F1/F2/F3/FISSO → usa BRM Finestra
+       - Nelle posizioni: Se tipo è PF1/PF2/PF3 → usa BRM Portafinestra
+       - Ricalcolo automatico quando cambia il tipo di infisso
+       
+    ✅ BRM FINESTRA/PORTAFINESTRA - ZANZARIERE:
+       - Config Globale (STEP 6): Aggiunta sezione "BRM FINESTRA" e "BRM PORTAFINESTRA"
+       - BRM Finestra usa LF/HF
+       - BRM Portafinestra usa LPF/HPF
+       - Nelle posizioni: Legge il tipo dell'INFISSO nella stessa posizione
+       - Se infisso è F1/F2/F3/FISSO → usa BRM Finestra
+       - Se infisso è PF1/PF2/PF3 → usa BRM Portafinestra
+       - Ricalcolo automatico quando cambia il tipo di infisso
+       
+    ✅ COD.TAGLI FIX:
+       - RISOLTO: Campo codTagli ora viene copiato dalla config globale in addInfisso
+       - Quando selezioni "4 Lati", vedrai correttamente: SOPRA, SOTTO, SX, DX
+       - Tutti i tag sono modificabili singolarmente
+       
+    ✅ MODIFICHE TECNICHE:
+       - calculateBRM() ora accetta parametro 'tipo' (es: "F1", "PF2")
+       - Se tipo contiene "PF" usa configurazioni _PF (misuraBaseH_PF, etc)
+       - Tutte le funzioni di ricalcolo BRM passano il tipo corretto
+       - updateProduct() ricalcola BRM quando cambia tipo infisso
+    
+    ✨ MODIFICHE FASE 24 (21 OTT 2025 - PRECEDENTE):
+    ✅ INFISSI - HPF AGGIUNTO:
+       - Aggiunto HPF (Altezza Portafinestra) nei dropdown BRM personalizzati
+       - Ora disponibili: HF (finestra) e HPF (portafinestra) per altezza
+       
+    ✅ ZANZARIERE - LPF E HPF AGGIUNTI:
+       - Aggiunto LPF (Larghezza Portafinestra) nei dropdown BRM personalizzati per larghezza
+       - Aggiunto HPF (Altezza Portafinestra) nei dropdown BRM personalizzati per altezza
+       - Distinzione completa tra Finestra (LF/HF) e Portafinestra (LPF/HPF)
+       
+    ✅ CASSONETTI - BRM_C E BRM_B IMPLEMENTATI:
+       - Aggiunto BRM_C e BRM_B nella configurazione globale (brmConfigCassonetti)
+       - Aggiunto calcolo BRM_C e BRM_B nella funzione calculateBRM()
+       - Aggiunto inizializzazione BRM_C e BRM_B in addCassonetto()
+       - Aggiunto ricalcolo BRM_C e BRM_B in ricalcolaBRMCassonetto()
+       - Aggiunto gestione BRM_C e BRM_B in applicaBRMPersonalizzato()
+       - Aggiunto gestione BRM_C e BRM_B in ripristinaGlobale()
+       - Aggiunto gestione BRM_C e BRM_B in personalizzaBRM()
+       - Visualizzazione formula globale e personalizzata per C e B
+       - Dropdown per selezionare misure base (C, B, HCASS, BSuperiore)
+       - Campi risultato per BRM_C e BRM_B
+    
+    ✨ MODIFICHE FASE 20A (20 OTT 2025 - PRECEDENTE):
+    ✅ NUOVO SISTEMA BRM PERSONALIZZATO - COMPLETAMENTE RIDISEGNATO:
+    ✅ NUOVO SISTEMA BRM PERSONALIZZATO - COMPLETAMENTE RIDISEGNATO:
+       - RIMOSSO: Proprietà usaGlobale (confusa e causava errori)
+       - RIMOSSO: Funzione toggleUsaGlobale()
+       - AGGIUNTO: personalizzaBRM() - Crea formula personalizzata per posizione
+       - AGGIUNTO: ripristinaGlobale() - Elimina personalizzazione, torna a globale
+       
+    🎯 NUOVO FUNZIONAMENTO PIÙ CHIARO:
+       - Di default → Ogni posizione usa la formula GLOBALE (dalle impostazioni progetto)
+       - Per personalizzare → Bottone "🎨 Personalizza BRM" (viola)
+       - Personalizzato → Mostra form con dropdown per modificare formula
+       - Ripristina → Bottone "↩️ Usa Globale" (verde) per tornare a formula standard
+       
+    ✅ LOGICA SEMPLIFICATA:
+       - Se esiste product.brmPersonalizzato → Usa formula personalizzata
+       - Se NON esiste → Usa formula globale (project.brmConfigXXX)
+       - Nessun toggle, nessuna ambiguità!
+       
+    ✅ APPLICATO A TUTTI I PRODOTTI:
+       - Infissi, Persiane, Tapparelle, Zanzariere, Cassonetti
+       - Per cassonetti: bottone "Ricalcola BRM" visibile SOLO con formula globale
+       
+    ✅ VANTAGGI:
+       - Più chiaro: o usi globale, o usi personalizzato (no toggle confuso)
+       - Visivamente distinto: bottoni colorati diversamente
+       - Più facile da debuggare: logica lineare senza flag booleani
+       - Più stabile: nessun conflitto tra usaGlobale e brmPersonalizzato
+    
+    ✨ MODIFICHE FASE 15_FIX3 (20 OTT 2025 - PRECEDENTE):
+    ✅ CONFIG GLOBALE INFISSI (STEP 3) - ULTRA SEMPLIFICATA:
+       - RIMOSSO: Misure Principali (LVT, HVT, LF, HF, TMV, HMT, LVAR, HVAR)
+       - RIMOSSO: Delta (Delta INT, Delta EST)
+       - RIMOSSO: Altezze (H Soffitto, H Parapetto/Soffitto, H Pavimento/Parapetto)
+       - Nella config globale STEP 3 rimangono SOLO:
+         * 🔧 Materiale (con toggle SELECT/INPUT)
+         * 📝 Note
+         * 🔨 Da togliere? (checkbox)
+         * 🗑️ Da smaltire? (checkbox)
+         * 📏 Coprifili INT? (checkbox)
+         * 📐 Coprifili EST? (checkbox)
+       - TUTTE le misure (Principali, Delta, Altezze) sono ora SOLO nelle posizioni
+       - Config globale focalizzata su informazioni comuni e scelte operative
+    
+    ✨ MODIFICHE FASE 15_FIX2 (20 OTT 2025 - PRECEDENTE):
+    ✅ MISURE PRINCIPALI INFISSI - SOLO NELLE POSIZIONI:
+       - RIMOSSO: Misure Principali (LVT, HVT, LF, HF, TMV, HMT, LVAR, HVAR) dalla config globale STEP 3
+       - Le Misure Principali ora sono disponibili SOLO dentro ogni singola posizione
+       - Nella config globale (STEP 3) rimangono solo:
+         * Delta (Delta INT, Delta EST)
+         * Altezze (H Soffitto, H Parapetto/Soffitto, H Pavimento/Parapetto)
+         * Materiale
+         * Note
+         * Checkbox (Da togliere, Da smaltire, Coprifili INT, Coprifili EST)
+    
+    ✨ MODIFICHE FASE 15_FIX (20 OTT 2025 - PRECEDENTE):
+    ✅ BRM PERSONALIZZATO SEMPLIFICATO:
+       - updateBRMPersonalizzato() ora fa semplicemente render() completo
+       - RIMOSSO: Codice complesso con querySelector che cercava manualmente gli elementi
+       - RISULTATO: Nessun errore di inserimento nella posizione!
+       - Più stabile, più affidabile, più semplice da manutenere
+       - Il BRM si aggiorna correttamente in tempo reale
+    
+    ✨ MODIFICHE FASE 15 (PRECEDENTE):
+    ✅ RILIEVO PREESISTENTE INFISSI - MISURE VISIBILI SUBITO:
     ✅ RILIEVO PREESISTENTE INFISSI - MISURE VISIBILI SUBITO:
        - Misure Principali (LVT, HVT, LF, HF, TMV, HMT, LVAR, HVAR) in griglia 4 colonne
        - Delta (Delta INT, Delta EST) in griglia compatta
@@ -455,35 +604,30 @@
                     // Migra infissi
                     if (pos.infissi && Array.isArray(pos.infissi) && pos.infissi.length > 0) {
                         pos.infisso = pos.infissi[0]; // Prendi il primo
-                        if (!pos.infisso.usaGlobale) pos.infisso.usaGlobale = true;
                         delete pos.infissi;
                     }
                     
                     // Migra persiane
                     if (pos.persiane && Array.isArray(pos.persiane) && pos.persiane.length > 0) {
                         pos.persiana = pos.persiane[0];
-                        if (!pos.persiana.usaGlobale) pos.persiana.usaGlobale = true;
                         delete pos.persiane;
                     }
                     
                     // Migra tapparelle
                     if (pos.tapparelle && Array.isArray(pos.tapparelle) && pos.tapparelle.length > 0) {
                         pos.tapparella = pos.tapparelle[0];
-                        if (!pos.tapparella.usaGlobale) pos.tapparella.usaGlobale = true;
                         delete pos.tapparelle;
                     }
                     
                     // Migra zanzariere
                     if (pos.zanzariere && Array.isArray(pos.zanzariere) && pos.zanzariere.length > 0) {
                         pos.zanzariera = pos.zanzariere[0];
-                        if (!pos.zanzariera.usaGlobale) pos.zanzariera.usaGlobale = true;
                         delete pos.zanzariere;
                     }
                     
                     // Migra cassonetti
                     if (pos.cassonetti && Array.isArray(pos.cassonetti) && pos.cassonetti.length > 0) {
                         pos.cassonetto = pos.cassonetti[0];
-                        if (!pos.cassonetto.usaGlobale) pos.cassonetto.usaGlobale = true;
                         delete pos.cassonetti;
                     }
                 });
@@ -1075,10 +1219,13 @@
         }
 
         // BRM Calculator
-        function calculateBRM(project, pos, misure, brmConfig) {
+        function calculateBRM(project, pos, misure, brmConfig, tipo = null) {
             if (!brmConfig) {
-                return { L: null, H: null };
+                return { L: null, H: null, C: null, B: null };
             }
+            
+            // Determina se è portafinestra in base al tipo
+            const isPortafinestra = tipo && (tipo.includes('PF') || tipo.toUpperCase().includes('PF'));
             
             // Funzione helper per calcolare formule composite
             const calcolaMisura = (formula, misure) => {
@@ -1104,13 +1251,17 @@
                 return isNaN(valore) ? null : valore;
             };
             
-            // Calcola L separatamente
+            // Calcola L separatamente - usa _PF se è portafinestra e disponibile
             let L = null;
-            if (brmConfig.misuraBaseL) {
-                const baseL = calcolaMisura(brmConfig.misuraBaseL, misure);
+            const misuraBaseLKey = (isPortafinestra && brmConfig.misuraBaseL_PF) ? 'misuraBaseL_PF' : 'misuraBaseL';
+            const operazioneLKey = (isPortafinestra && brmConfig.misuraBaseL_PF) ? 'operazioneL_PF' : 'operazioneL';
+            const valoreLKey = (isPortafinestra && brmConfig.misuraBaseL_PF) ? 'valoreL_PF' : 'valoreL';
+            
+            if (brmConfig[misuraBaseLKey]) {
+                const baseL = calcolaMisura(brmConfig[misuraBaseLKey], misure);
                 if (baseL !== null) {
-                    const valoreL = parseFloat(brmConfig.valoreL) || 0;
-                    if (brmConfig.operazioneL === '+') {
+                    const valoreL = parseFloat(brmConfig[valoreLKey]) || 0;
+                    if (brmConfig[operazioneLKey] === '+') {
                         L = baseL + valoreL;
                     } else {
                         L = baseL - valoreL;
@@ -1118,13 +1269,17 @@
                 }
             }
             
-            // Calcola H separatamente
+            // Calcola H separatamente - usa _PF se è portafinestra e disponibile
             let H = null;
-            if (brmConfig.misuraBaseH) {
-                const baseH = calcolaMisura(brmConfig.misuraBaseH, misure);
+            const misuraBaseHKey = (isPortafinestra && brmConfig.misuraBaseH_PF) ? 'misuraBaseH_PF' : 'misuraBaseH';
+            const operazioneHKey = (isPortafinestra && brmConfig.misuraBaseH_PF) ? 'operazioneH_PF' : 'operazioneH';
+            const valoreHKey = (isPortafinestra && brmConfig.misuraBaseH_PF) ? 'valoreH_PF' : 'valoreH';
+            
+            if (brmConfig[misuraBaseHKey]) {
+                const baseH = calcolaMisura(brmConfig[misuraBaseHKey], misure);
                 if (baseH !== null) {
-                    const valoreH = parseFloat(brmConfig.valoreH) || 0;
-                    if (brmConfig.operazioneH === '+') {
+                    const valoreH = parseFloat(brmConfig[valoreHKey]) || 0;
+                    if (brmConfig[operazioneHKey] === '+') {
                         H = baseH + valoreH;
                     } else {
                         H = baseH - valoreH;
@@ -1132,7 +1287,35 @@
                 }
             }
             
-            return { L, H };
+            // Calcola C separatamente (per cassonetti)
+            let C = null;
+            if (brmConfig.misuraBaseC) {
+                const baseC = calcolaMisura(brmConfig.misuraBaseC, misure);
+                if (baseC !== null) {
+                    const valoreC = parseFloat(brmConfig.valoreC) || 0;
+                    if (brmConfig.operazioneC === '+') {
+                        C = baseC + valoreC;
+                    } else {
+                        C = baseC - valoreC;
+                    }
+                }
+            }
+            
+            // Calcola B separatamente (per cassonetti)
+            let B = null;
+            if (brmConfig.misuraBaseB) {
+                const baseB = calcolaMisura(brmConfig.misuraBaseB, misure);
+                if (baseB !== null) {
+                    const valoreB = parseFloat(brmConfig.valoreB) || 0;
+                    if (brmConfig.operazioneB === '+') {
+                        B = baseB + valoreB;
+                    } else {
+                        B = baseB - valoreB;
+                    }
+                }
+            }
+            
+            return { L, H, C, B };
         }
 
         // Project Management
@@ -1181,6 +1364,8 @@
                 brmConfigCassonetti: { 
                     misuraBaseL: '', operazioneL: '-', valoreL: '0',
                     misuraBaseH: '', operazioneH: '-', valoreH: '0',
+                    misuraBaseC: '', operazioneC: '-', valoreC: '0',
+                    misuraBaseB: '', operazioneB: '-', valoreB: '0',
                     note: '',
                     SRSX: '0',
                     SRDX: '0',
@@ -1254,11 +1439,11 @@
                         allarme: project.configInfissi?.allarme || '',
                         vetro: project.configInfissi?.vetro || '',
                         tagliTelaio: project.configInfissi?.tagliTelaio || '',
+                        codTagli: project.configInfissi?.codTagli ? [...project.configInfissi.codTagli] : [],
                         motoreAzienda: project.configInfissi?.motoreAzienda || '',
                         motoreModello: project.configInfissi?.motoreModello || '',
                         BRM_L: brm.L,
                         BRM_H: brm.H,
-                        usaGlobale: true, // di default usa la config globale
                         note: '',
                         foto: []
                     };
@@ -1284,7 +1469,6 @@
                         apertura: project.configPersiane?.apertura || '',
                         BRM_L: brm.L,
                         BRM_H: brm.H,
-                        usaGlobale: true,
                         note: '',
                         foto: []
                     };
@@ -1311,7 +1495,6 @@
                         motoreModello: project.configTapparelle?.motoreModello || '',
                         BRM_L: brm.L,
                         BRM_H: brm.H,
-                        usaGlobale: true,
                         note: '',
                         foto: []
                     };
@@ -1326,7 +1509,9 @@
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
-                    const brm = calculateBRM(project, pos, pos.misure, project.brmConfigZanzariere);
+                    // Determina il tipo in base all'infisso presente nella posizione
+                    const tipoInfisso = pos.infisso?.tipo || '';
+                    const brm = calculateBRM(project, pos, pos.misure, project.brmConfigZanzariere, tipoInfisso);
                     // UNA SOLA ZANZARIERA per posizione
                     pos.zanzariera = {
                         id: generateId(),
@@ -1336,7 +1521,6 @@
                         coloreRete: project.configZanzariere?.coloreRete || '',
                         BRM_L: brm.L,
                         BRM_H: brm.H,
-                        usaGlobale: true,
                         note: '',
                         foto: []
                     };
@@ -1370,7 +1554,8 @@
                         BSuperiore: '0',
                         BRM_L: null,
                         BRM_H: null,
-                        usaGlobale: true,
+                        BRM_C: null,
+                        BRM_B: null,
                         note: '',
                         foto: []
                     };
@@ -1379,6 +1564,8 @@
                     const brm = calculateBRM(project, pos, pos.cassonetto, project.brmConfigCassonetti);
                     pos.cassonetto.BRM_L = brm.L;
                     pos.cassonetto.BRM_H = brm.H;
+                    pos.cassonetto.BRM_C = brm.C;
+                    pos.cassonetto.BRM_B = brm.B;
                     
                     saveState();
                     render();
@@ -1408,18 +1595,67 @@
                 if (pos && pos[productType]) {
                     pos[productType][field] = value;
                     
+                    // INFISSI: Se cambia tagliTelaio, RESET dei codTagli per aggiornamento immediato
+                    if (productType === 'infisso' && field === 'tagliTelaio') {
+                        const tagliMap = {
+                            'sopra': ['SOPRA'],
+                            'sotto': ['SOTTO'],
+                            'dx': ['DX'],
+                            'sx': ['SX'],
+                            'sopra-sotto': ['SOPRA', 'SOTTO'],
+                            'dx-sx': ['SX', 'DX'],
+                            '4-lati': ['SOPRA', 'SOTTO', 'SX', 'DX'],
+                            'sopra-laterali': ['SOPRA', 'SX', 'DX'],
+                            'sotto-laterali': ['SOTTO', 'SX', 'DX']
+                        };
+                        // Copia i valori dalla config globale se esistono, altrimenti usa default
+                        const defaultTagli = tagliMap[value] || [];
+                        pos[productType].codTagli = project.configInfissi?.codTagli?.length === defaultTagli.length
+                            ? [...project.configInfissi.codTagli]
+                            : [...defaultTagli];
+                    }
+                    
+                    // INFISSI: Se cambia il tipo (F1->PF1 etc), ricalcola BRM di infisso E zanzariera
+                    if (productType === 'infisso' && field === 'tipo') {
+                        const inf = pos.infisso;
+                        // Ricalcola BRM infisso
+                        if (inf.brmPersonalizzato) {
+                            const brm = calculateBRM(project, pos, pos.misure, inf.brmPersonalizzato, value);
+                            inf.BRM_L = brm.L;
+                            inf.BRM_H = brm.H;
+                        } else {
+                            const brm = calculateBRM(project, pos, pos.misure, project.brmConfigInfissi, value);
+                            inf.BRM_L = brm.L;
+                            inf.BRM_H = brm.H;
+                        }
+                        
+                        // Ricalcola anche BRM zanzariera se presente
+                        if (pos.zanzariera) {
+                            const zan = pos.zanzariera;
+                            if (zan.brmPersonalizzato) {
+                                const brm = calculateBRM(project, pos, pos.misure, zan.brmPersonalizzato, value);
+                                zan.BRM_L = brm.L;
+                                zan.BRM_H = brm.H;
+                            } else {
+                                const brm = calculateBRM(project, pos, pos.misure, project.brmConfigZanzariere, value);
+                                zan.BRM_L = brm.L;
+                                zan.BRM_H = brm.H;
+                            }
+                        }
+                    }
+                    
                     // CASSONETTI: Se cambiano le misure, ricalcola il BRM
                     const misureCassonetto = ['LS', 'SRSX', 'ZSX', 'SRDX', 'ZDX', 'HCASS', 'B', 'C', 'BSuperiore'];
                     if (productType === 'cassonetto' && misureCassonetto.includes(field)) {
                         const cas = pos.cassonetto;
-                        if (cas.usaGlobale) {
-                            // Usa formula globale
-                            const brm = calculateBRM(project, pos, cas, project.brmConfigCassonetti);
+                        if (cas.brmPersonalizzato) {
+                            // Usa formula personalizzata
+                            const brm = calculateBRM(project, pos, cas, cas.brmPersonalizzato);
                             cas.BRM_L = brm.L;
                             cas.BRM_H = brm.H;
                         } else {
-                            // Usa formula personalizzata
-                            const brm = calculateBRM(project, pos, cas, cas.brmPersonalizzato);
+                            // Usa formula globale
+                            const brm = calculateBRM(project, pos, cas, project.brmConfigCassonetti);
                             cas.BRM_L = brm.L;
                             cas.BRM_H = brm.H;
                         }
@@ -1435,18 +1671,25 @@
                     if (productType === 'cassonetto' && misureCassonetto.includes(field)) {
                         render();
                     }
+                    // Re-render se cambia tagliTelaio per mostrare i nuovi campi COD.TAGLI
+                    if (productType === 'infisso' && field === 'tagliTelaio') {
+                        render();
+                    }
+                    // Re-render se cambia il tipo di infisso per aggiornare i BRM visualizzati
+                    if (productType === 'infisso' && field === 'tipo') {
+                        render();
+                    }
                 }
             }
         }
 
-        // Toggle usaGlobale e ricalcola BRM
-        function toggleUsaGlobale(projectId, posId, productType) {
+        // Personalizza BRM per questa specifica posizione
+        window.personalizzaBRM = (projectId, posId, productType) => {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos && pos[productType]) {
                     const product = pos[productType];
-                    product.usaGlobale = !product.usaGlobale;
                     
                     const configMap = {
                         'infisso': 'brmConfigInfissi',
@@ -1457,37 +1700,168 @@
                     };
                     const configKey = configMap[productType];
                     
-                    // Per i cassonetti, le misure sono nel cassonetto stesso (LS, SRSX, etc)
-                    // Per gli altri prodotti, le misure sono in pos.misure
-                    const misure = (productType === 'cassonetto') ? product : pos.misure;
-                    
-                    if (product.usaGlobale) {
-                        // Attivo usaGlobale: ricalcola il BRM con la config globale
-                        if (configKey) {
-                            const brm = calculateBRM(project, pos, misure, project[configKey]);
-                            product.BRM_L = brm.L;
-                            product.BRM_H = brm.H;
+                    // Crea brmPersonalizzato copiando la config globale come base
+                    if (configKey && project[configKey]) {
+                        const globalConfig = project[configKey];
+                        product.brmPersonalizzato = {
+                            misuraBaseL: globalConfig.misuraBaseL || '',
+                            operazioneL: globalConfig.operazioneL || '-',
+                            valoreL: globalConfig.valoreL || '0',
+                            misuraBaseH: globalConfig.misuraBaseH || '',
+                            operazioneH: globalConfig.operazioneH || '-',
+                            valoreH: globalConfig.valoreH || '0'
+                        };
+                        
+                        // Se è un cassonetto, aggiungi anche C e B
+                        if (productType === 'cassonetto') {
+                            product.brmPersonalizzato.misuraBaseC = globalConfig.misuraBaseC || '';
+                            product.brmPersonalizzato.operazioneC = globalConfig.operazioneC || '-';
+                            product.brmPersonalizzato.valoreC = globalConfig.valoreC || '0';
+                            product.brmPersonalizzato.misuraBaseB = globalConfig.misuraBaseB || '';
+                            product.brmPersonalizzato.operazioneB = globalConfig.operazioneB || '-';
+                            product.brmPersonalizzato.valoreB = globalConfig.valoreB || '0';
                         }
-                    } else {
-                        // Disattivo usaGlobale: inizializza formula personalizzata
-                        // Copia la formula dalla config globale come punto di partenza
-                        if (configKey && project[configKey]) {
-                            const globalConfig = project[configKey];
-                            product.brmPersonalizzato = {
-                                misuraBaseL: globalConfig.misuraBaseL || '',
-                                operazioneL: globalConfig.operazioneL || '-',
-                                valoreL: globalConfig.valoreL || '0',
-                                misuraBaseH: globalConfig.misuraBaseH || '',
-                                operazioneH: globalConfig.operazioneH || '-',
-                                valoreH: globalConfig.valoreH || '0'
-                            };
-                            
-                            // Ricalcola BRM con la formula personalizzata
-                            const brm = calculateBRM(project, pos, misure, product.brmPersonalizzato);
-                            product.BRM_L = brm.L;
-                            product.BRM_H = brm.H;
+                        
+                        // Determina il tipo per infissi e zanzariere
+                        let tipo = null;
+                        if (productType === 'infisso') {
+                            tipo = product.tipo;
+                        } else if (productType === 'zanzariera') {
+                            tipo = pos.infisso?.tipo || '';
+                        }
+                        
+                        // Ricalcola BRM con la formula personalizzata
+                        const misure = (productType === 'cassonetto') ? product : pos.misure;
+                        const brm = calculateBRM(project, pos, misure, product.brmPersonalizzato, tipo);
+                        product.BRM_L = brm.L;
+                        product.BRM_H = brm.H;
+                        if (productType === 'cassonetto') {
+                            product.BRM_C = brm.C;
+                            product.BRM_B = brm.B;
                         }
                     }
+                    
+                    saveState();
+                    render();
+                }
+            }
+        }
+
+        // ✅ APPLICA MODIFICHE BRM - Conferma e salva le modifiche al BRM personalizzato
+        window.applicaBRMPersonalizzato = (projectId, posId, productType) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos[productType] && pos[productType].brmPersonalizzato) {
+                    const product = pos[productType];
+                    
+                    // ✅ FIX: LEGGI I VALORI CORRENTI DAL DOM prima di salvare!
+                    const misuraBaseLSelect = document.querySelector(`#brm-misuraBaseL-${productType}-${posId}`);
+                    const operazioneLSelect = document.querySelector(`#brm-operazioneL-${productType}-${posId}`);
+                    const valoreLInput = document.querySelector(`#brm-valoreL-${productType}-${posId}`);
+                    const misuraBaseHSelect = document.querySelector(`#brm-misuraBaseH-${productType}-${posId}`);
+                    const operazioneHSelect = document.querySelector(`#brm-operazioneH-${productType}-${posId}`);
+                    const valoreHInput = document.querySelector(`#brm-valoreH-${productType}-${posId}`);
+                    
+                    // Aggiorna lo state con i valori dal DOM
+                    if (misuraBaseLSelect) product.brmPersonalizzato.misuraBaseL = misuraBaseLSelect.value;
+                    if (operazioneLSelect) product.brmPersonalizzato.operazioneL = operazioneLSelect.value;
+                    if (valoreLInput) product.brmPersonalizzato.valoreL = valoreLInput.value;
+                    if (misuraBaseHSelect) product.brmPersonalizzato.misuraBaseH = misuraBaseHSelect.value;
+                    if (operazioneHSelect) product.brmPersonalizzato.operazioneH = operazioneHSelect.value;
+                    if (valoreHInput) product.brmPersonalizzato.valoreH = valoreHInput.value;
+                    
+                    // Se è un cassonetto, gestisci anche C e B
+                    if (productType === 'cassonetto') {
+                        const misuraBaseCSelect = document.querySelector(`#brm-misuraBaseC-${productType}-${posId}`);
+                        const operazioneCSelect = document.querySelector(`#brm-operazioneC-${productType}-${posId}`);
+                        const valoreCInput = document.querySelector(`#brm-valoreC-${productType}-${posId}`);
+                        const misuraBaseBSelect = document.querySelector(`#brm-misuraBaseB-${productType}-${posId}`);
+                        const operazioneBSelect = document.querySelector(`#brm-operazioneB-${productType}-${posId}`);
+                        const valoreBInput = document.querySelector(`#brm-valoreB-${productType}-${posId}`);
+                        
+                        if (misuraBaseCSelect) product.brmPersonalizzato.misuraBaseC = misuraBaseCSelect.value;
+                        if (operazioneCSelect) product.brmPersonalizzato.operazioneC = operazioneCSelect.value;
+                        if (valoreCInput) product.brmPersonalizzato.valoreC = valoreCInput.value;
+                        if (misuraBaseBSelect) product.brmPersonalizzato.misuraBaseB = misuraBaseBSelect.value;
+                        if (operazioneBSelect) product.brmPersonalizzato.operazioneB = operazioneBSelect.value;
+                        if (valoreBInput) product.brmPersonalizzato.valoreB = valoreBInput.value;
+                    }
+                    
+                    // Determina il tipo per infissi e zanzariere
+                    let tipo = null;
+                    if (productType === 'infisso') {
+                        tipo = product.tipo;
+                    } else if (productType === 'zanzariera') {
+                        tipo = pos.infisso?.tipo || '';
+                    }
+                    
+                    // Ricalcola BRM con i nuovi valori
+                    const misure = (productType === 'cassonetto') ? product : pos.misure;
+                    const brm = calculateBRM(project, pos, misure, product.brmPersonalizzato, tipo);
+                    product.BRM_L = brm.L;
+                    product.BRM_H = brm.H;
+                    if (productType === 'cassonetto') {
+                        product.BRM_C = brm.C;
+                        product.BRM_B = brm.B;
+                    }
+                    
+                    // Salva lo stato
+                    saveState();
+                    
+                    // Fai un render completo per consolidare le modifiche
+                    render();
+                    
+                    // Mostra notifica di successo
+                    if (productType === 'cassonetto') {
+                        showNotification(`✅ BRM salvato! L=${brm.L || '?'}mm, H=${brm.H || '?'}mm, C=${brm.C || '?'}mm, B=${brm.B || '?'}mm`, 'success');
+                    } else {
+                        showNotification(`✅ BRM salvato! L=${brm.L || '?'}mm, H=${brm.H || '?'}mm`, 'success');
+                    }
+                }
+            }
+        }
+
+        // Ripristina uso formula globale (elimina personalizzazione)
+        window.ripristinaGlobale = (projectId, posId, productType) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos[productType]) {
+                    const product = pos[productType];
+                    
+                    // Elimina il brmPersonalizzato
+                    delete product.brmPersonalizzato;
+                    
+                    const configMap = {
+                        'infisso': 'brmConfigInfissi',
+                        'persiana': 'brmConfigPersiane',
+                        'tapparella': 'brmConfigTapparelle',
+                        'zanzariera': 'brmConfigZanzariere',
+                        'cassonetto': 'brmConfigCassonetti'
+                    };
+                    const configKey = configMap[productType];
+                    
+                    // Determina il tipo per infissi e zanzariere
+                    let tipo = null;
+                    if (productType === 'infisso') {
+                        tipo = product.tipo;
+                    } else if (productType === 'zanzariera') {
+                        tipo = pos.infisso?.tipo || '';
+                    }
+                    
+                    // Ricalcola BRM con la config globale
+                    if (configKey) {
+                        const misure = (productType === 'cassonetto') ? product : pos.misure;
+                        const brm = calculateBRM(project, pos, misure, project[configKey], tipo);
+                        product.BRM_L = brm.L;
+                        product.BRM_H = brm.H;
+                        if (productType === 'cassonetto') {
+                            product.BRM_C = brm.C;
+                            product.BRM_B = brm.B;
+                        }
+                    }
+                    
                     saveState();
                     render();
                 }
@@ -1513,15 +1887,19 @@
                     if (!cas.C) cas.C = '0';
                     if (!cas.BSuperiore) cas.BSuperiore = '0';
                     
-                    // Ricalcola BRM (solo con formula globale)
-                    if (cas.usaGlobale) {
+                    // Ricalcola BRM (solo con formula globale, non personalizzata)
+                    if (!cas.brmPersonalizzato) {
                         const brm = calculateBRM(project, pos, cas, project.brmConfigCassonetti);
                         cas.BRM_L = brm.L;
                         cas.BRM_H = brm.H;
+                        cas.BRM_C = brm.C;
+                        cas.BRM_B = brm.B;
                         
                         saveState();
                         render();
-                        showNotification('BRM ricalcolato! L=' + (cas.BRM_L || 'null') + 'mm, H=' + (cas.BRM_H || 'null') + 'mm', 'success');
+                        showNotification('BRM ricalcolato! L=' + (cas.BRM_L || 'null') + 'mm, H=' + (cas.BRM_H || 'null') + 'mm, C=' + (cas.BRM_C || 'null') + 'mm, B=' + (cas.BRM_B || 'null') + 'mm', 'success');
+                    } else {
+                        showNotification('Non puoi ricalcolare BRM con formula personalizzata. Prima ripristina la formula globale.', 'error');
                     }
                 }
             }
@@ -1547,37 +1925,119 @@
                     // Per i cassonetti, le misure sono nel cassonetto stesso
                     const misure = (productType === 'cassonetto') ? product : pos.misure;
                     
+                    // Determina il tipo per infissi e zanzariere
+                    let tipo = null;
+                    if (productType === 'infisso') {
+                        tipo = product.tipo;
+                    } else if (productType === 'zanzariera') {
+                        tipo = pos.infisso?.tipo || '';
+                    }
+                    
                     // Ricalcola BRM con la nuova formula
-                    const brm = calculateBRM(project, pos, misure, product.brmPersonalizzato);
+                    const brm = calculateBRM(project, pos, misure, product.brmPersonalizzato, tipo);
                     product.BRM_L = brm.L;
                     product.BRM_H = brm.H;
                     
-                    // Salva nello state
+                    // Salva PRIMA di aggiornare l'interfaccia
                     saveState();
                     
-                    // Aggiorna manualmente solo i campi BRM visualizzati (senza fare render completo)
-                    // Questo mantiene il valore del dropdown selezionato
-                    const brmDisplay = document.querySelector('#app');
-                    if (brmDisplay) {
-                        // Trova e aggiorna il testo del BRM Larghezza
-                        const brmLElements = brmDisplay.querySelectorAll('input[readonly]');
-                        brmLElements.forEach(el => {
-                            if (el.previousElementSibling && el.previousElementSibling.textContent.includes('BRM Larghezza')) {
-                                el.value = brm.L || '';
-                            }
-                            if (el.previousElementSibling && el.previousElementSibling.textContent.includes('BRM Altezza')) {
-                                el.value = brm.H || '';
-                            }
-                        });
-                    }
+                    // ✅ FIX: Aggiorna SOLO i valori BRM visualizzati, NON ricreare tutto il DOM
+                    updateBRMDisplay(projectId, posId, productType, product);
                     
                     // Mostra una notifica con il nuovo valore BRM
                     showNotification(`BRM aggiornato! L=${brm.L || '?'}mm, H=${brm.H || '?'}mm`, 'success');
-                    
-                    // NON fare render() per mantenere il valore del dropdown
                 }
             }
         }
+        
+        // ✅ NUOVA FUNZIONE: Aggiorna solo i valori BRM visualizzati senza ricreare i dropdown
+        function updateBRMDisplay(projectId, posId, productType, product) {
+            // Aggiorna la formula visualizzata
+            const formulaL = document.querySelector(`#formula-brm-l-${productType}-${posId}`);
+            const formulaH = document.querySelector(`#formula-brm-h-${productType}-${posId}`);
+            
+            if (formulaL && product.brmPersonalizzato) {
+                formulaL.textContent = `= ${product.brmPersonalizzato.misuraBaseL || '?'} ${product.brmPersonalizzato.operazioneL || '+'} ${product.brmPersonalizzato.valoreL || '0'}mm`;
+            }
+            
+            if (formulaH && product.brmPersonalizzato) {
+                formulaH.textContent = `= ${product.brmPersonalizzato.misuraBaseH || '?'} ${product.brmPersonalizzato.operazioneH || '+'} ${product.brmPersonalizzato.valoreH || '0'}mm`;
+            }
+            
+            // Aggiorna i risultati BRM
+            const brmLResult = document.querySelector(`#brm-l-result-${productType}-${posId}`);
+            const brmHResult = document.querySelector(`#brm-h-result-${productType}-${posId}`);
+            
+            if (brmLResult) {
+                brmLResult.textContent = product.BRM_L || '-';
+            }
+            
+            if (brmHResult) {
+                brmHResult.textContent = product.BRM_H || '-';
+            }
+        }
+
+        // === FASE 23A: GESTIONE COD.TAGLI ===
+        
+        // Funzione per aggiornare la config globale degli infissi
+        window.updateConfigInfissi = (projectId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configInfissi) {
+                    project.configInfissi = {};
+                }
+                project.configInfissi[field] = value;
+                
+                // Se cambia tagliTelaio, RESET immediato dei codTagli per forzare aggiornamento
+                if (field === 'tagliTelaio') {
+                    const tagliMap = {
+                        'sopra': ['SOPRA'],
+                        'sotto': ['SOTTO'],
+                        'dx': ['DX'],
+                        'sx': ['SX'],
+                        'sopra-sotto': ['SOPRA', 'SOTTO'],
+                        'dx-sx': ['SX', 'DX'],
+                        '4-lati': ['SOPRA', 'SOTTO', 'SX', 'DX'],
+                        'sopra-laterali': ['SOPRA', 'SX', 'DX'],
+                        'sotto-laterali': ['SOTTO', 'SX', 'DX']
+                    };
+                    // RESET esplicito per forzare il render a mostrare i nuovi campi
+                    project.configInfissi.codTagli = [...(tagliMap[value] || [])];
+                }
+                
+                saveState();
+                render();
+            }
+        };
+        
+        // Funzione per aggiornare un singolo COD.TAGLI globale
+        window.updateCodTagliGlobale = (projectId, index, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                if (!project.configInfissi.codTagli) {
+                    project.configInfissi.codTagli = [];
+                }
+                project.configInfissi.codTagli[index] = value;
+                saveState();
+                // Non fare render completo per mantenere il focus
+            }
+        };
+        
+        // Funzione per aggiornare un singolo COD.TAGLI in una posizione
+        window.updateCodTagliPosizione = (projectId, posId, index, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos && pos.infisso) {
+                    if (!pos.infisso.codTagli) {
+                        pos.infisso.codTagli = [];
+                    }
+                    pos.infisso.codTagli[index] = value;
+                    saveState();
+                    // Non fare render completo per mantenere il focus
+                }
+            }
+        };
 
         // MAIN COMPONENTS
         function Header() {
@@ -1666,12 +2126,26 @@
 
             return `
                 <div class="max-w-7xl mx-auto p-4">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
                         <button onclick="state.currentProject = null; state.screen = 'list'; render()" 
                                 class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-all flex items-center gap-2">
                             <span>←</span>
                             <span>Torna ai Progetti</span>
                         </button>
+                        
+                        <div class="flex gap-2 flex-wrap">
+                            <button onclick="printCurrentProjectPDF()" 
+                                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg">
+                                <span>🖨️</span>
+                                <span>Stampa PDF</span>
+                            </button>
+                            
+                            <button onclick="exportCurrentProjectJSON()" 
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg">
+                                <span>💾</span>
+                                <span>Export JSON per Odoo</span>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="flex justify-between items-center mb-6 bg-white rounded-lg p-4 shadow overflow-x-auto">
@@ -1931,75 +2405,6 @@
                         </div>
                     </div>
                     
-                    ${productType === 'infissi' ? `
-                        <!-- 📏 MISURE PRINCIPALI (SOLO INFISSI) -->
-                        <div class="bg-white border-2 border-blue-400 rounded-lg p-3 mb-3">
-                            <p class="text-sm font-bold text-blue-900 mb-3">📏 Misure Principali (mm)</p>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                ${['LVT', 'HVT', 'LF', 'HF', 'TMV', 'HMT', 'LVAR', 'HVAR'].map(field => `
-                                    <div>
-                                        <label class="text-xs font-bold text-gray-700">${field}</label>
-                                        <input type="number" placeholder="0"
-                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi[field]) || ''}"
-                                               onchange="updateMisureGlobaliInfissi('${project.id}', '${field}', this.value)"
-                                               class="w-full px-2 py-1.5 border-2 border-blue-300 rounded mt-1 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        
-                        <div class="grid md:grid-cols-2 gap-2 mb-3">
-                            <!-- DELTA -->
-                            <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-2">
-                                <p class="text-xs font-bold text-blue-900 mb-2">📐 Delta (mm)</p>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="text-xs font-bold">Delta INT</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.DeltaINT) || ''}"
-                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'DeltaINT', this.value)"
-                                               class="w-full px-2 py-1 border rounded font-bold text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs font-bold">Delta EST</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.DeltaEST) || ''}"
-                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'DeltaEST', this.value)"
-                                               class="w-full px-2 py-1 border rounded font-bold text-sm">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- ALTEZZE -->
-                            <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-2">
-                                <p class="text-xs font-bold text-gray-900 mb-2">📊 Altezze (mm)</p>
-                                <div class="grid grid-cols-3 gap-1">
-                                    <div>
-                                        <label class="text-xs font-bold" style="font-size: 10px;">H Soff</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.HSoffitto) || ''}"
-                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'HSoffitto', this.value)"
-                                               class="w-full px-1 py-1 border rounded font-bold text-xs">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs font-bold" style="font-size: 10px;">H Par/So</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.HParapettoSoffitto) || ''}"
-                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'HParapettoSoffitto', this.value)"
-                                               class="w-full px-1 py-1 border rounded font-bold text-xs">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs font-bold" style="font-size: 10px;">H Pav/Pa</label>
-                                        <input type="number" placeholder="0" 
-                                               value="${(project.misureGlobaliInfissi && project.misureGlobaliInfissi.HPavimentoParapetto) || ''}"
-                                               onchange="updateMisureGlobaliInfissi('${project.id}', 'HPavimentoParapetto', this.value)"
-                                               class="w-full px-1 py-1 border rounded font-bold text-xs">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
                     <div class="grid md:grid-cols-2 gap-4">
                         <!-- 1. MATERIALE -->
                         <div>
@@ -2128,10 +2533,18 @@
             
             // Misure di larghezza specifiche per cassonetti o generiche
             let misureLarghezza = ['LF', 'LVT', 'LVAR', 'TMV', 'LS'];
+            let misureAltezza = ['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'];
+            let misureLarghezzaPF = ['LPF', 'LVT', 'LVAR', 'TMV', 'LS'];
+            let misureAltezzaPF = ['HPF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'];
+            
             if (productType === 'cassonetti') {
-                misureLarghezza = ['LARGH_CASS', 'LS', 'LVT', 'TMV', 'LF', 'MIS_FIN_INF_L', 'LS+SRDX+SRSX'];
+                // ✅ MISURE SPECIFICHE PER CASSONETTI
+                misureLarghezza = ['LARGH_CASS', 'SRDX', 'SRSX', 'LS', 'LVT', 'LF', 'TMV'];
+                misureAltezza = ['ALT_CASS', 'HF', 'HVT', 'HMT', 'PROFONDITA'];
             }
-            const misureAltezza = ['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'];
+            
+            // Decide se mostrare campi aggiuntivi per portafinestra
+            const showPortafinestra = (productType === 'infissi' || productType === 'zanzariere');
             
             return `
                 <div class="brm-calculator mt-6 p-4">
@@ -2139,75 +2552,191 @@
                         <span class="text-xl">${icon}</span>
                         📏 Calcolo BRM per ${productLabel}
                         ${productType === 'cassonetti' ? '<span class="ml-2 text-xs bg-green-500 text-white px-2 py-1 rounded">✅ Misure Specifiche Cassonetti</span>' : ''}
+                        ${showPortafinestra ? '<span class="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded">🪟 Finestra / Portafinestra</span>' : ''}
                     </h3>
                     
-                    <div class="grid md:grid-cols-2 gap-4 mb-3">
-                        <div class="bg-white p-3 rounded-lg border-2 border-amber-300">
-                            <h4 class="font-semibold text-amber-800 mb-2">📐 BRM Larghezza</h4>
-                            <div class="grid grid-cols-3 gap-2 mb-2">
-                                <div>
-                                    <label class="text-xs font-medium text-amber-800 block mb-1">Misura</label>
-                                    <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'misuraBaseL', this.value)"
-                                            class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
-                                        <option value="">-</option>
-                                        ${misureLarghezza.map(m => `
-                                            <option value="${m}" ${config.misuraBaseL === m ? 'selected' : ''}>${m}</option>
-                                        `).join('')}
-                                    </select>
+                    <!-- BRM FINESTRA -->
+                    <div class="bg-green-50 border-2 border-green-300 rounded-lg p-3 mb-4">
+                        <h4 class="font-bold text-green-800 mb-3">🪟 BRM FINESTRA ${showPortafinestra && productType === 'zanzariere' ? '(F1, F2, F3, FISSO)' : productType === 'infissi' ? '(F1, F2, F3, FISSO)' : ''}</h4>
+                        <div class="grid ${productType === 'zanzariere' ? 'md:grid-cols-2' : 'md:grid-cols-2'} gap-4">
+                            ${productType === 'zanzariere' ? `
+                                <div class="bg-white p-3 rounded-lg border-2 border-amber-300">
+                                    <h5 class="font-semibold text-amber-800 mb-2 text-sm">📐 BRM Larghezza Finestra</h5>
+                                    <div class="grid grid-cols-3 gap-2 mb-2">
+                                        <div>
+                                            <label class="text-xs font-medium text-amber-800 block mb-1">Misura</label>
+                                            <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'misuraBaseL', this.value)"
+                                                    class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                                <option value="">-</option>
+                                                ${misureLarghezza.map(m => `
+                                                    <option value="${m}" ${config.misuraBaseL === m ? 'selected' : ''}>${m}</option>
+                                                `).join('')}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-amber-800 block mb-1">Op.</label>
+                                            <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'operazioneL', this.value)"
+                                                    class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                                <option value="+" ${config.operazioneL === '+' ? 'selected' : ''}>+</option>
+                                                <option value="-" ${config.operazioneL === '-' ? 'selected' : ''}>-</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-amber-800 block mb-1">mm</label>
+                                            <input type="number" value="${config.valoreL || '0'}"
+                                                   onchange="updateBRMConfig('${project.id}', '${configKey}', 'valoreL', this.value)"
+                                                   class="w-full px-2 py-1 border border-amber-500 rounded text-sm">
+                                        </div>
+                                    </div>
+                                    <div class="brm-result text-xs">
+                                        ${config.misuraBaseL ? `📏 BRM L = ${config.misuraBaseL} ${config.operazioneL} ${config.valoreL}mm` : 'Seleziona misura'}
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="text-xs font-medium text-amber-800 block mb-1">Op.</label>
-                                    <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'operazioneL', this.value)"
-                                            class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
-                                        <option value="+" ${config.operazioneL === '+' ? 'selected' : ''}>+</option>
-                                        <option value="-" ${config.operazioneL === '-' ? 'selected' : ''}>-</option>
-                                    </select>
+                            ` : `
+                                <div class="bg-white p-3 rounded-lg border-2 border-amber-300">
+                                    <h5 class="font-semibold text-amber-800 mb-2">📐 BRM Larghezza</h5>
+                                    <div class="grid grid-cols-3 gap-2 mb-2">
+                                        <div>
+                                            <label class="text-xs font-medium text-amber-800 block mb-1">Misura</label>
+                                            <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'misuraBaseL', this.value)"
+                                                    class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                                <option value="">-</option>
+                                                ${misureLarghezza.map(m => `
+                                                    <option value="${m}" ${config.misuraBaseL === m ? 'selected' : ''}>${m}</option>
+                                                `).join('')}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-amber-800 block mb-1">Op.</label>
+                                            <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'operazioneL', this.value)"
+                                                    class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                                <option value="+" ${config.operazioneL === '+' ? 'selected' : ''}>+</option>
+                                                <option value="-" ${config.operazioneL === '-' ? 'selected' : ''}>-</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-amber-800 block mb-1">mm</label>
+                                            <input type="number" value="${config.valoreL || '0'}"
+                                                   onchange="updateBRMConfig('${project.id}', '${configKey}', 'valoreL', this.value)"
+                                                   class="w-full px-2 py-1 border border-amber-500 rounded text-sm">
+                                        </div>
+                                    </div>
+                                    <div class="brm-result">
+                                        ${config.misuraBaseL ? `📏 BRM L = ${config.misuraBaseL} ${config.operazioneL} ${config.valoreL}mm` : 'Seleziona misura'}
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="text-xs font-medium text-amber-800 block mb-1">mm</label>
-                                    <input type="number" value="${config.valoreL || '0'}"
-                                           onchange="updateBRMConfig('${project.id}', '${configKey}', 'valoreL', this.value)"
-                                           class="w-full px-2 py-1 border border-amber-500 rounded text-sm">
+                            `}
+                            
+                            <div class="bg-white p-3 rounded-lg border-2 border-amber-300">
+                                <h5 class="font-semibold text-amber-800 mb-2 ${productType === 'zanzariere' ? 'text-sm' : ''}">📐 BRM Altezza ${showPortafinestra ? 'Finestra' : ''}</h5>
+                                <div class="grid grid-cols-3 gap-2 mb-2">
+                                    <div>
+                                        <label class="text-xs font-medium text-amber-800 block mb-1">Misura</label>
+                                        <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'misuraBaseH', this.value)"
+                                                class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                            <option value="">-</option>
+                                            ${misureAltezza.map(m => `
+                                                <option value="${m}" ${config.misuraBaseH === m ? 'selected' : ''}>${m}</option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-medium text-amber-800 block mb-1">Op.</label>
+                                        <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'operazioneH', this.value)"
+                                                class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
+                                            <option value="+" ${config.operazioneH === '+' ? 'selected' : ''}>+</option>
+                                            <option value="-" ${config.operazioneH === '-' ? 'selected' : ''}>-</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-medium text-amber-800 block mb-1">mm</label>
+                                        <input type="number" value="${config.valoreH || '0'}"
+                                               onchange="updateBRMConfig('${project.id}', '${configKey}', 'valoreH', this.value)"
+                                               class="w-full px-2 py-1 border border-amber-500 rounded text-sm">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="brm-result">
-                                ${config.misuraBaseL ? `📏 BRM L = ${config.misuraBaseL} ${config.operazioneL} ${config.valoreL}mm` : 'Seleziona misura'}
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white p-3 rounded-lg border-2 border-amber-300">
-                            <h4 class="font-semibold text-amber-800 mb-2">📐 BRM Altezza</h4>
-                            <div class="grid grid-cols-3 gap-2 mb-2">
-                                <div>
-                                    <label class="text-xs font-medium text-amber-800 block mb-1">Misura</label>
-                                    <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'misuraBaseH', this.value)"
-                                            class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
-                                        <option value="">-</option>
-                                        ${misureAltezza.map(m => `
-                                            <option value="${m}" ${config.misuraBaseH === m ? 'selected' : ''}>${m}</option>
-                                        `).join('')}
-                                    </select>
+                                <div class="brm-result ${productType === 'zanzariere' ? 'text-xs' : ''}">
+                                    ${config.misuraBaseH ? `📏 BRM H = ${config.misuraBaseH} ${config.operazioneH} ${config.valoreH}mm` : 'Seleziona misura'}
                                 </div>
-                                <div>
-                                    <label class="text-xs font-medium text-amber-800 block mb-1">Op.</label>
-                                    <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'operazioneH', this.value)"
-                                            class="w-full px-2 py-1 border border-amber-500 rounded text-sm bg-white">
-                                        <option value="+" ${config.operazioneH === '+' ? 'selected' : ''}>+</option>
-                                        <option value="-" ${config.operazioneH === '-' ? 'selected' : ''}>-</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium text-amber-800 block mb-1">mm</label>
-                                    <input type="number" value="${config.valoreH || '0'}"
-                                           onchange="updateBRMConfig('${project.id}', '${configKey}', 'valoreH', this.value)"
-                                           class="w-full px-2 py-1 border border-amber-500 rounded text-sm">
-                                </div>
-                            </div>
-                            <div class="brm-result">
-                                ${config.misuraBaseH ? `📏 BRM H = ${config.misuraBaseH} ${config.operazioneH} ${config.valoreH}mm` : 'Seleziona misura'}
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- BRM PORTAFINESTRA (solo per infissi e zanzariere) -->
+                    ${showPortafinestra ? `
+                        <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 mb-4">
+                            <h4 class="font-bold text-blue-800 mb-3">🚪 BRM PORTAFINESTRA (PF1, PF2, PF3)</h4>
+                            <div class="grid ${productType === 'zanzariere' ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-4">
+                                ${productType === 'zanzariere' ? `
+                                    <div class="bg-white p-3 rounded-lg border-2 border-blue-400">
+                                        <h5 class="font-semibold text-blue-800 mb-2 text-sm">📐 BRM Larghezza Portafinestra</h5>
+                                        <div class="grid grid-cols-3 gap-2 mb-2">
+                                            <div>
+                                                <label class="text-xs font-medium text-blue-800 block mb-1">Misura</label>
+                                                <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'misuraBaseL_PF', this.value)"
+                                                        class="w-full px-2 py-1 border border-blue-500 rounded text-sm bg-white">
+                                                    <option value="">-</option>
+                                                    ${misureLarghezzaPF.map(m => `
+                                                        <option value="${m}" ${config.misuraBaseL_PF === m ? 'selected' : ''}>${m}</option>
+                                                    `).join('')}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs font-medium text-blue-800 block mb-1">Op.</label>
+                                                <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'operazioneL_PF', this.value)"
+                                                        class="w-full px-2 py-1 border border-blue-500 rounded text-sm bg-white">
+                                                    <option value="+" ${config.operazioneL_PF === '+' ? 'selected' : ''}>+</option>
+                                                    <option value="-" ${(config.operazioneL_PF === '-' || !config.operazioneL_PF) ? 'selected' : ''}>-</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs font-medium text-blue-800 block mb-1">mm</label>
+                                                <input type="number" value="${config.valoreL_PF || '0'}"
+                                                       onchange="updateBRMConfig('${project.id}', '${configKey}', 'valoreL_PF', this.value)"
+                                                       class="w-full px-2 py-1 border border-blue-500 rounded text-sm">
+                                            </div>
+                                        </div>
+                                        <div class="brm-result text-xs">
+                                            ${config.misuraBaseL_PF ? `📏 BRM L PF = ${config.misuraBaseL_PF} ${config.operazioneL_PF || '-'} ${config.valoreL_PF || '0'}mm` : 'Seleziona misura'}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="bg-white p-3 rounded-lg border-2 border-blue-400">
+                                    <h5 class="font-semibold text-blue-800 mb-2 ${productType === 'zanzariere' ? 'text-sm' : ''}">📐 BRM Altezza Portafinestra</h5>
+                                    <div class="grid grid-cols-3 gap-2 mb-2">
+                                        <div>
+                                            <label class="text-xs font-medium text-blue-800 block mb-1">Misura</label>
+                                            <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'misuraBaseH_PF', this.value)"
+                                                    class="w-full px-2 py-1 border border-blue-500 rounded text-sm bg-white">
+                                                <option value="">-</option>
+                                                ${misureAltezzaPF.map(m => `
+                                                    <option value="${m}" ${config.misuraBaseH_PF === m ? 'selected' : ''}>${m}</option>
+                                                `).join('')}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-blue-800 block mb-1">Op.</label>
+                                            <select onchange="updateBRMConfig('${project.id}', '${configKey}', 'operazioneH_PF', this.value)"
+                                                    class="w-full px-2 py-1 border border-blue-500 rounded text-sm bg-white">
+                                                <option value="+" ${config.operazioneH_PF === '+' ? 'selected' : ''}>+</option>
+                                                <option value="-" ${(config.operazioneH_PF === '-' || !config.operazioneH_PF) ? 'selected' : ''}>-</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-blue-800 block mb-1">mm</label>
+                                            <input type="number" value="${config.valoreH_PF || '0'}"
+                                                   onchange="updateBRMConfig('${project.id}', '${configKey}', 'valoreH_PF', this.value)"
+                                                   class="w-full px-2 py-1 border border-blue-500 rounded text-sm">
+                                        </div>
+                                    </div>
+                                    <div class="brm-result ${productType === 'zanzariere' ? 'text-xs' : ''}">
+                                        ${config.misuraBaseH_PF ? `📏 BRM H PF = ${config.misuraBaseH_PF} ${config.operazioneH_PF || '-'} ${config.valoreH_PF || '0'}mm` : 'Seleziona misura'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
                     
                     <div>
                         <label class="block text-xs font-medium text-amber-800 mb-1">📝 Note Formula</label>
@@ -2368,28 +2897,29 @@
                                 </select>
                             </div>
 
-                            <!-- 11. COD.TAGLI (Automatico basato su selezione Tagli Telaio) -->
+                            <!-- 11. COD.TAGLI (Editabili - si sincronizzano con le posizioni) -->
                             <div>
                                 <label class="block text-sm font-medium mb-1">11. COD.TAGLI</label>
-                                <input type="text" 
-                                       value="${(() => {
-                                           const tagliTelaio = project.configInfissi?.tagliTelaio || '';
-                                           const codiciTagli = {
-                                               'sopra': 'SOPRA',
-                                               'sotto': 'SOTTO',
-                                               'sopra-sotto': 'SOPRA SOTTO',
-                                               'dx': 'DX',
-                                               'sx': 'SX',
-                                               'dx-sx': 'DX SX',
-                                               '4-lati': 'SOPRA SOTTO SX DX',
-                                               'sopra-laterali': 'SOPRA SX DX',
-                                               'sotto-laterali': 'SOTTO SX DX'
-                                           };
-                                           return codiciTagli[tagliTelaio] || '';
-                                       })()}"
-                                       readonly
-                                       placeholder="Seleziona Tagli Telaio per vedere il codice"
-                                       class="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-700 font-mono">
+                                <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));">
+                                    ${(() => {
+                                        const tagliTelaio = project.configInfissi?.tagliTelaio || '';
+                                        const codTagli = project.configInfissi?.codTagli || [];
+                                        
+                                        if (codTagli.length === 0) {
+                                            return '<input type="text" readonly placeholder="Seleziona Tagli Telaio" class="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-700 font-mono">';
+                                        }
+                                        
+                                        // Mostra direttamente i campi basati su codTagli (già corretto da updateConfigInfissi)
+                                        return codTagli.map((taglio, idx) => `
+                                            <input type="text" 
+                                                   value="${taglio}"
+                                                   onchange="updateCodTagliGlobale('${project.id}', ${idx}, this.value)"
+                                                   placeholder="${taglio}"
+                                                   class="w-full px-2 py-1.5 border-2 border-purple-300 rounded-lg text-gray-700 font-mono text-center font-bold focus:ring-2 focus:ring-purple-500">
+                                        `).join('');
+                                    })()}
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">💡 Questi valori si copiano nelle posizioni (modificabili singolarmente)</p>
                             </div>
                         </div>
                     </div>
@@ -3265,6 +3795,27 @@
                                         <option value="${p.id}" ${p.id === pos.id ? 'selected' : ''}>${p.name}</option>
                                     `).join('')}
                                 </select>
+                                
+                                ${(() => {
+                                    const tab = pos.activeTab || 'misure';
+                                    const configMap = {
+                                        'infissi': { step: 3, label: '⚙️ Config Infissi', btnClass: 'bg-purple-600 hover:bg-purple-700' },
+                                        'persiane': { step: 4, label: '⚙️ Config Persiane', btnClass: 'bg-blue-600 hover:bg-blue-700' },
+                                        'tapparelle': { step: 5, label: '⚙️ Config Tapparelle', btnClass: 'bg-indigo-600 hover:bg-indigo-700' },
+                                        'zanzariere': { step: 6, label: '⚙️ Config Zanzariere', btnClass: 'bg-green-600 hover:bg-green-700' },
+                                        'cassonetti': { step: 7, label: '⚙️ Config Cassonetti', btnClass: 'bg-orange-600 hover:bg-orange-700' }
+                                    };
+                                    const config = configMap[tab];
+                                    if (config && project.prodotti?.[tab]) {
+                                        return `
+                                            <button onclick="state.screen = 'project-detail'; state.setupStep = ${config.step}; render();"
+                                                    class="px-3 py-1.5 ${config.btnClass} text-white rounded-lg font-medium text-sm transition">
+                                                ${config.label}
+                                            </button>
+                                        `;
+                                    }
+                                    return '';
+                                })()}
                             </div>
                             <div class="flex gap-2">
                                 ${project.positions.length > 1 ? `
@@ -3788,6 +4339,55 @@
                                 </div>
                             </div>
 
+                            <!-- 🔧 TIPO INFISSO ASSOCIATO -->
+                            <div class="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-3">
+                                <h5 class="font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+                                    🔧 Tipo Infisso Associato
+                                </h5>
+                                <p class="text-sm text-gray-600 mb-3">Seleziona tipo:</p>
+                                <div class="flex gap-6">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" 
+                                               name="tipoInfissoAssociato-${project.id}-${pos.id}"
+                                               value="F"
+                                               ${(() => {
+                                                   // Auto-selezione: se tipo contiene PF → PF, altrimenti F
+                                                   if (inf.tipoInfissoAssociato) {
+                                                       return inf.tipoInfissoAssociato === 'F' ? 'checked' : '';
+                                                   } else {
+                                                       // Default: se tipo non contiene PF → seleziona F
+                                                       return (inf.tipo && !inf.tipo.includes('PF')) ? 'checked' : '';
+                                                   }
+                                               })()}
+                                               onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'tipoInfissoAssociato', 'F')"
+                                               class="w-4 h-4">
+                                        <span class="font-medium">F (Finestra)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" 
+                                               name="tipoInfissoAssociato-${project.id}-${pos.id}"
+                                               value="PF"
+                                               ${(() => {
+                                                   // Auto-selezione: se tipo contiene PF → PF
+                                                   if (inf.tipoInfissoAssociato) {
+                                                       return inf.tipoInfissoAssociato === 'PF' ? 'checked' : '';
+                                                   } else {
+                                                       // Default: se tipo contiene PF → seleziona PF
+                                                       return (inf.tipo && inf.tipo.includes('PF')) ? 'checked' : '';
+                                                   }
+                                               })()}
+                                               onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'tipoInfissoAssociato', 'PF')"
+                                               class="w-4 h-4">
+                                        <span class="font-medium">PF (Porta Finestra)</span>
+                                    </label>
+                                </div>
+                                ${!inf.tipoInfissoAssociato && !inf.tipo ? `
+                                    <div class="mt-3 bg-amber-100 border-l-4 border-amber-500 p-3">
+                                        <p class="text-sm text-amber-800">⚠️ Seleziona prima se F o PF</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+
                             <!-- ⚙️ CONFIGURAZIONE -->
                             <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-3">
                                 <h5 class="font-semibold text-green-800 mb-3 flex items-center gap-2">
@@ -3923,13 +4523,36 @@
                                             <option value="sotto-laterali">
                                         </datalist>
                                     </div>
-                                    <div>
-                                        <label class="text-xs font-medium">Tipo Tagli</label>
-                                        <input type="text" value="${inf.tipoTagli || ''}"
-                                               placeholder="--"
-                                               onchange="updateProduct('${project.id}', '${pos.id}', 'infisso', 'tipoTagli', this.value)"
-                                               class="w-full compact-input border rounded mt-1">
+                                </div>
+                                
+                                <!-- COD.TAGLI MULTIPLI (editabili, sincronizzati con config globale) -->
+                                <div class="mt-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="text-xs font-medium">COD.TAGLI</label>
+                                        <button onclick="state.screen = 'project-detail'; state.setupStep = 3; render();"
+                                                class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded font-medium transition">
+                                            ⚙️ Config Globale
+                                        </button>
                                     </div>
+                                    <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));">
+                                        ${(() => {
+                                            const codTagli = inf.codTagli || [];
+                                            
+                                            if (codTagli.length === 0) {
+                                                return '<input type="text" readonly placeholder="Seleziona Tagli Telaio" class="w-full px-2 py-1 border rounded bg-gray-50 text-gray-700 text-xs">';
+                                            }
+                                            
+                                            // Mostra direttamente i campi basati su codTagli (già corretto da updateProduct)
+                                            return codTagli.map((taglio, idx) => `
+                                                <input type="text" 
+                                                       value="${taglio}"
+                                                       onchange="updateCodTagliPosizione('${project.id}', '${pos.id}', ${idx}, this.value)"
+                                                       placeholder="${taglio}"
+                                                       class="w-full px-2 py-1 border-2 border-blue-300 rounded text-gray-700 text-xs text-center font-bold focus:ring-2 focus:ring-blue-500">
+                                            `).join('');
+                                        })()}
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-1">💡 Valori copiati da Config Globale (modificabili qui)</p>
                                 </div>
                             </div>
 
@@ -3938,13 +4561,20 @@
                                     <h5 class="font-bold text-amber-800 flex items-center gap-2">
                                         📏 BRM - Misura per Ordine
                                     </h5>
-                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'infisso')"
-                                            class="px-3 py-1.5 ${inf.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
-                                        ${inf.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
-                                    </button>
+                                    ${!inf.brmPersonalizzato ? `
+                                        <button onclick="personalizzaBRM('${project.id}', '${pos.id}', 'infisso')"
+                                                class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm transition-all">
+                                            🎨 Personalizza BRM
+                                        </button>
+                                    ` : `
+                                        <button onclick="ripristinaGlobale('${project.id}', '${pos.id}', 'infisso')"
+                                                class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-all">
+                                            ↩️ Usa Globale
+                                        </button>
+                                    `}
                                 </div>
                                 
-                                ${inf.usaGlobale ? `
+                                ${!inf.brmPersonalizzato ? `
                                     <div class="bg-white p-3 rounded border-2 border-amber-400">
                                         <p class="text-sm text-amber-800 mb-2">
                                             <strong>Formula Globale Attiva:</strong>
@@ -3986,7 +4616,7 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'misuraBaseL', this.value)"
+                                                    <select id="brm-misuraBaseL-infisso-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'misuraBaseL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
                                                         ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
@@ -3996,7 +4626,7 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'operazioneL', this.value)"
+                                                    <select id="brm-operazioneL-infisso-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'operazioneL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${inf.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${inf.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
@@ -4004,12 +4634,12 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${inf.brmPersonalizzato?.valoreL || '0'}"
+                                                    <input type="number" id="brm-valoreL-infisso-${pos.id}" value="${inf.brmPersonalizzato?.valoreL || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'valoreL', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-l-infisso-${pos.id}">
                                                 = ${inf.brmPersonalizzato?.misuraBaseL || '?'} ${inf.brmPersonalizzato?.operazioneL || '+'} ${inf.brmPersonalizzato?.valoreL || '0'}mm
                                             </div>
                                         </div>
@@ -4020,17 +4650,17 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'misuraBaseH', this.value)"
+                                                    <select id="brm-misuraBaseH-infisso-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'misuraBaseH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
-                                                        ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
+                                                        ${['HF', 'HPF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
                                                             <option value="${m}" ${inf.brmPersonalizzato?.misuraBaseH === m ? 'selected' : ''}>${m}</option>
                                                         `).join('')}
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'operazioneH', this.value)"
+                                                    <select id="brm-operazioneH-infisso-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'operazioneH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${inf.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${inf.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
@@ -4038,27 +4668,35 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${inf.brmPersonalizzato?.valoreH || '0'}"
+                                                    <input type="number" id="brm-valoreH-infisso-${pos.id}" value="${inf.brmPersonalizzato?.valoreH || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso', 'valoreH', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-h-infisso-${pos.id}">
                                                 = ${inf.brmPersonalizzato?.misuraBaseH || '?'} ${inf.brmPersonalizzato?.operazioneH || '+'} ${inf.brmPersonalizzato?.valoreH || '0'}mm
                                             </div>
                                         </div>
+                                    </div>
+                                    
+                                    <!-- 💾 PULSANTE APPLICA MODIFICHE BRM -->
+                                    <div class="mt-3 flex justify-center">
+                                        <button onclick="applicaBRMPersonalizzato('${project.id}', '${pos.id}', 'infisso')"
+                                                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-all">
+                                            💾 Salva
+                                        </button>
                                     </div>
                                     
                                     <!-- Risultati BRM Calcolati -->
                                     <div class="grid md:grid-cols-2 gap-3">
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
-                                            <input type="number" value="${inf.BRM_L || ''}" readonly
+                                            <input type="number" value="${inf.BRM_L || ''}" readonly id="brm-l-result-infisso-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
-                                            <input type="number" value="${inf.BRM_H || ''}" readonly
+                                            <input type="number" value="${inf.BRM_H || ''}" readonly id="brm-h-result-infisso-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
@@ -4302,13 +4940,20 @@
                                     <h5 class="font-bold text-amber-800 flex items-center gap-2">
                                         📏 BRM - Misura per Ordine
                                     </h5>
-                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'persiana')"
-                                            class="px-3 py-1.5 ${per.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
-                                        ${per.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
-                                    </button>
+                                    ${!per.brmPersonalizzato ? `
+                                        <button onclick="personalizzaBRM('${project.id}', '${pos.id}', 'persiana')"
+                                                class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm transition-all">
+                                            🎨 Personalizza BRM
+                                        </button>
+                                    ` : `
+                                        <button onclick="ripristinaGlobale('${project.id}', '${pos.id}', 'persiana')"
+                                                class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-all">
+                                            ↩️ Usa Globale
+                                        </button>
+                                    `}
                                 </div>
                                 
-                                ${per.usaGlobale ? `
+                                ${!per.brmPersonalizzato ? `
                                     <div class="bg-white p-3 rounded border-2 border-amber-400">
                                         <p class="text-sm text-amber-800 mb-2"><strong>Formula Globale Attiva:</strong></p>
                                         <div class="grid grid-cols-2 gap-3 text-sm">
@@ -4336,7 +4981,7 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'misuraBaseL', this.value)"
+                                                    <select id="brm-misuraBaseL-persiana-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'misuraBaseL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
                                                         ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
@@ -4346,7 +4991,7 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'operazioneL', this.value)"
+                                                    <select id="brm-operazioneL-persiana-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'operazioneL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${per.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${per.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
@@ -4354,12 +4999,12 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${per.brmPersonalizzato?.valoreL || '0'}"
+                                                    <input type="number" id="brm-valoreL-persiana-${pos.id}" value="${per.brmPersonalizzato?.valoreL || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'valoreL', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-l-persiana-${pos.id}">
                                                 = ${per.brmPersonalizzato?.misuraBaseL || '?'} ${per.brmPersonalizzato?.operazioneL || '+'} ${per.brmPersonalizzato?.valoreL || '0'}mm
                                             </div>
                                         </div>
@@ -4370,7 +5015,7 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'misuraBaseH', this.value)"
+                                                    <select id="brm-misuraBaseH-persiana-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'misuraBaseH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
                                                         ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
@@ -4380,7 +5025,7 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'operazioneH', this.value)"
+                                                    <select id="brm-operazioneH-persiana-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'operazioneH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${per.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${per.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
@@ -4388,27 +5033,35 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${per.brmPersonalizzato?.valoreH || '0'}"
+                                                    <input type="number" id="brm-valoreH-persiana-${pos.id}" value="${per.brmPersonalizzato?.valoreH || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana', 'valoreH', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-h-persiana-${pos.id}">
                                                 = ${per.brmPersonalizzato?.misuraBaseH || '?'} ${per.brmPersonalizzato?.operazioneH || '+'} ${per.brmPersonalizzato?.valoreH || '0'}mm
                                             </div>
                                         </div>
+                                    </div>
+                                    
+                                    <!-- 💾 PULSANTE APPLICA MODIFICHE BRM -->
+                                    <div class="mt-3 flex justify-center">
+                                        <button onclick="applicaBRMPersonalizzato('${project.id}', '${pos.id}', 'persiana')"
+                                                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-all">
+                                            💾 Salva
+                                        </button>
                                     </div>
                                     
                                     <!-- Risultati BRM Calcolati -->
                                     <div class="grid md:grid-cols-2 gap-3">
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
-                                            <input type="number" value="${per.BRM_L || ''}" readonly
+                                            <input type="number" value="${per.BRM_L || ''}" readonly id="brm-l-result-persiana-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
-                                            <input type="number" value="${per.BRM_H || ''}" readonly
+                                            <input type="number" value="${per.BRM_H || ''}" readonly id="brm-h-result-persiana-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
@@ -4705,13 +5358,20 @@
                                     <h5 class="font-bold text-amber-800 flex items-center gap-2">
                                         📏 BRM - Misura per Ordine
                                     </h5>
-                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'tapparella')"
-                                            class="px-3 py-1.5 ${tap.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
-                                        ${tap.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
-                                    </button>
+                                    ${!tap.brmPersonalizzato ? `
+                                        <button onclick="personalizzaBRM('${project.id}', '${pos.id}', 'tapparella')"
+                                                class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm transition-all">
+                                            🎨 Personalizza BRM
+                                        </button>
+                                    ` : `
+                                        <button onclick="ripristinaGlobale('${project.id}', '${pos.id}', 'tapparella')"
+                                                class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-all">
+                                            ↩️ Usa Globale
+                                        </button>
+                                    `}
                                 </div>
                                 
-                                ${tap.usaGlobale ? `
+                                ${!tap.brmPersonalizzato ? `
                                     <div class="bg-white p-3 rounded border-2 border-amber-400">
                                         <p class="text-sm text-amber-800 mb-2"><strong>Formula Globale Attiva:</strong></p>
                                         <div class="grid grid-cols-2 gap-3 text-sm">
@@ -4739,7 +5399,7 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'misuraBaseL', this.value)"
+                                                    <select id="brm-misuraBaseL-tapparella-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'misuraBaseL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
                                                         ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
@@ -4749,7 +5409,7 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'operazioneL', this.value)"
+                                                    <select id="brm-operazioneL-tapparella-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'operazioneL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${tap.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${tap.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
@@ -4757,12 +5417,12 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${tap.brmPersonalizzato?.valoreL || '0'}"
+                                                    <input type="number" id="brm-valoreL-tapparella-${pos.id}" value="${tap.brmPersonalizzato?.valoreL || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'valoreL', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-l-tapparella-${pos.id}">
                                                 = ${tap.brmPersonalizzato?.misuraBaseL || '?'} ${tap.brmPersonalizzato?.operazioneL || '+'} ${tap.brmPersonalizzato?.valoreL || '0'}mm
                                             </div>
                                         </div>
@@ -4773,7 +5433,7 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'misuraBaseH', this.value)"
+                                                    <select id="brm-misuraBaseH-tapparella-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'misuraBaseH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
                                                         ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
@@ -4783,7 +5443,7 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'operazioneH', this.value)"
+                                                    <select id="brm-operazioneH-tapparella-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'operazioneH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${tap.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${tap.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
@@ -4791,27 +5451,35 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${tap.brmPersonalizzato?.valoreH || '0'}"
+                                                    <input type="number" id="brm-valoreH-tapparella-${pos.id}" value="${tap.brmPersonalizzato?.valoreH || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella', 'valoreH', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-h-tapparella-${pos.id}">
                                                 = ${tap.brmPersonalizzato?.misuraBaseH || '?'} ${tap.brmPersonalizzato?.operazioneH || '+'} ${tap.brmPersonalizzato?.valoreH || '0'}mm
                                             </div>
                                         </div>
+                                    </div>
+                                    
+                                    <!-- 💾 PULSANTE APPLICA MODIFICHE BRM -->
+                                    <div class="mt-3 flex justify-center">
+                                        <button onclick="applicaBRMPersonalizzato('${project.id}', '${pos.id}', 'tapparella')"
+                                                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-all">
+                                            💾 Salva
+                                        </button>
                                     </div>
                                     
                                     <!-- Risultati BRM Calcolati -->
                                     <div class="grid md:grid-cols-2 gap-3">
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
-                                            <input type="number" value="${tap.BRM_L || ''}" readonly
+                                            <input type="number" value="${tap.BRM_L || ''}" readonly id="brm-l-result-tapparella-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
-                                            <input type="number" value="${tap.BRM_H || ''}" readonly
+                                            <input type="number" value="${tap.BRM_H || ''}" readonly id="brm-h-result-tapparella-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
@@ -4983,13 +5651,20 @@
                                     <h5 class="font-bold text-amber-800 flex items-center gap-2">
                                         📏 BRM - Misura per Ordine
                                     </h5>
-                                    <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'zanzariera')"
-                                            class="px-3 py-1.5 ${zan.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
-                                        ${zan.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
-                                    </button>
+                                    ${!zan.brmPersonalizzato ? `
+                                        <button onclick="personalizzaBRM('${project.id}', '${pos.id}', 'zanzariera')"
+                                                class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm transition-all">
+                                            🎨 Personalizza BRM
+                                        </button>
+                                    ` : `
+                                        <button onclick="ripristinaGlobale('${project.id}', '${pos.id}', 'zanzariera')"
+                                                class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-all">
+                                            ↩️ Usa Globale
+                                        </button>
+                                    `}
                                 </div>
                                 
-                                ${zan.usaGlobale ? `
+                                ${!zan.brmPersonalizzato ? `
                                     <div class="bg-white p-3 rounded border-2 border-amber-400">
                                         <p class="text-sm text-amber-800 mb-2"><strong>Formula Globale Attiva:</strong></p>
                                         <div class="grid grid-cols-2 gap-3 text-sm">
@@ -5017,17 +5692,17 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'misuraBaseL', this.value)"
+                                                    <select id="brm-misuraBaseL-zanzariera-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'misuraBaseL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
-                                                        ${['LF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
+                                                        ${['LF', 'LPF', 'LVT', 'LVAR', 'TMV', 'LS'].map(m => `
                                                             <option value="${m}" ${zan.brmPersonalizzato?.misuraBaseL === m ? 'selected' : ''}>${m}</option>
                                                         `).join('')}
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'operazioneL', this.value)"
+                                                    <select id="brm-operazioneL-zanzariera-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'operazioneL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${zan.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${zan.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
@@ -5035,12 +5710,12 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${zan.brmPersonalizzato?.valoreL || '0'}"
+                                                    <input type="number" id="brm-valoreL-zanzariera-${pos.id}" value="${zan.brmPersonalizzato?.valoreL || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'valoreL', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-l-zanzariera-${pos.id}">
                                                 = ${zan.brmPersonalizzato?.misuraBaseL || '?'} ${zan.brmPersonalizzato?.operazioneL || '+'} ${zan.brmPersonalizzato?.valoreL || '0'}mm
                                             </div>
                                         </div>
@@ -5051,17 +5726,17 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'misuraBaseH', this.value)"
+                                                    <select id="brm-misuraBaseH-zanzariera-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'misuraBaseH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
-                                                        ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
+                                                        ${['HF', 'HPF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
                                                             <option value="${m}" ${zan.brmPersonalizzato?.misuraBaseH === m ? 'selected' : ''}>${m}</option>
                                                         `).join('')}
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'operazioneH', this.value)"
+                                                    <select id="brm-operazioneH-zanzariera-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'operazioneH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${zan.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${zan.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
@@ -5069,27 +5744,35 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${zan.brmPersonalizzato?.valoreH || '0'}"
+                                                    <input type="number" id="brm-valoreH-zanzariera-${pos.id}" value="${zan.brmPersonalizzato?.valoreH || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera', 'valoreH', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-h-zanzariera-${pos.id}">
                                                 = ${zan.brmPersonalizzato?.misuraBaseH || '?'} ${zan.brmPersonalizzato?.operazioneH || '+'} ${zan.brmPersonalizzato?.valoreH || '0'}mm
                                             </div>
                                         </div>
+                                    </div>
+                                    
+                                    <!-- 💾 PULSANTE APPLICA MODIFICHE BRM -->
+                                    <div class="mt-3 flex justify-center">
+                                        <button onclick="applicaBRMPersonalizzato('${project.id}', '${pos.id}', 'zanzariera')"
+                                                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-all">
+                                            💾 Salva
+                                        </button>
                                     </div>
                                     
                                     <!-- Risultati BRM Calcolati -->
                                     <div class="grid md:grid-cols-2 gap-3">
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
-                                            <input type="number" value="${zan.BRM_L || ''}" readonly
+                                            <input type="number" value="${zan.BRM_L || ''}" readonly id="brm-l-result-zanzariera-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
-                                            <input type="number" value="${zan.BRM_H || ''}" readonly
+                                            <input type="number" value="${zan.BRM_H || ''}" readonly id="brm-h-result-zanzariera-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
@@ -5319,25 +6002,32 @@
                                         📏 BRM - Misura per Ordine
                                     </h5>
                                     <div class="flex gap-2">
-                                        ${cas.usaGlobale ? `
+                                        ${!cas.brmPersonalizzato ? `
                                             <button onclick="ricalcolaBRMCassonetto('${project.id}', '${pos.id}')"
                                                     class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-all">
                                                 🔄 Ricalcola BRM
                                             </button>
-                                        ` : ''}
-                                        <button onclick="toggleUsaGlobale('${project.id}', '${pos.id}', 'cassonetto')"
-                                                class="px-3 py-1.5 ${cas.usaGlobale ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg font-medium text-sm transition-all">
-                                            ${cas.usaGlobale ? '✅ Usa Globale' : '🔽 Usa Globale'}
-                                        </button>
+                                            <button onclick="personalizzaBRM('${project.id}', '${pos.id}', 'cassonetto')"
+                                                    class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm transition-all">
+                                                🎨 Personalizza BRM
+                                            </button>
+                                        ` : `
+                                            <button onclick="ripristinaGlobale('${project.id}', '${pos.id}', 'cassonetto')"
+                                                    class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-all">
+                                                ↩️ Usa Globale
+                                            </button>
+                                        `}
                                     </div>
                                 </div>
                                 
-                                ${cas.usaGlobale ? `
+                                ${!cas.brmPersonalizzato ? `
                                     <div class="bg-white p-3 rounded border-2 border-amber-400">
                                         <p class="text-sm text-amber-800 mb-2"><strong>Formula Globale Attiva:</strong></p>
                                         <div class="grid grid-cols-2 gap-3 text-sm">
                                             <div><span class="font-semibold">BRM L =</span> ${project.brmConfigCassonetti?.misuraBaseL || '?'} ${project.brmConfigCassonetti?.operazioneL || '-'} ${project.brmConfigCassonetti?.valoreL || '0'}mm</div>
                                             <div><span class="font-semibold">BRM H =</span> ${project.brmConfigCassonetti?.misuraBaseH || '?'} ${project.brmConfigCassonetti?.operazioneH || '-'} ${project.brmConfigCassonetti?.valoreH || '0'}mm</div>
+                                            <div><span class="font-semibold">BRM C =</span> ${project.brmConfigCassonetti?.misuraBaseC || '?'} ${project.brmConfigCassonetti?.operazioneC || '-'} ${project.brmConfigCassonetti?.valoreC || '0'}mm</div>
+                                            <div><span class="font-semibold">BRM B =</span> ${project.brmConfigCassonetti?.misuraBaseB || '?'} ${project.brmConfigCassonetti?.operazioneB || '-'} ${project.brmConfigCassonetti?.valoreB || '0'}mm</div>
                                         </div>
                                     </div>
                                     <div class="grid md:grid-cols-2 gap-3 mt-3">
@@ -5348,6 +6038,14 @@
                                         <div class="bg-white p-2 rounded border">
                                             <label class="text-xs font-semibold text-amber-800 block">📏 BRM Altezza</label>
                                             <input type="number" value="${cas.BRM_H || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM C</label>
+                                            <input type="number" value="${cas.BRM_C || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                        <div class="bg-white p-2 rounded border">
+                                            <label class="text-xs font-semibold text-amber-800 block">📏 BRM B</label>
+                                            <input type="number" value="${cas.BRM_B || ''}" readonly class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
                                 ` : `
@@ -5360,17 +6058,17 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'misuraBaseL', this.value)"
+                                                    <select id="brm-misuraBaseL-cassonetto-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'misuraBaseL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
-                                                        ${['LARGH_CASS', 'LS', 'LVT', 'TMV', 'LF', 'MIS_FIN_INF_L', 'LS+SRDX+SRSX'].map(m => `
+                                                        ${['LARGH_CASS', 'SRDX', 'SRSX', 'LS', 'LVT', 'LF', 'TMV'].map(m => `
                                                             <option value="${m}" ${cas.brmPersonalizzato?.misuraBaseL === m ? 'selected' : ''}>${m}</option>
                                                         `).join('')}
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'operazioneL', this.value)"
+                                                    <select id="brm-operazioneL-cassonetto-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'operazioneL', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${cas.brmPersonalizzato?.operazioneL === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${cas.brmPersonalizzato?.operazioneL === '-' ? 'selected' : ''}>-</option>
@@ -5378,12 +6076,12 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${cas.brmPersonalizzato?.valoreL || '0'}"
+                                                    <input type="number" id="brm-valoreL-cassonetto-${pos.id}" value="${cas.brmPersonalizzato?.valoreL || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'valoreL', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-l-cassonetto-${pos.id}">
                                                 = ${cas.brmPersonalizzato?.misuraBaseL || '?'} ${cas.brmPersonalizzato?.operazioneL || '+'} ${cas.brmPersonalizzato?.valoreL || '0'}mm
                                             </div>
                                         </div>
@@ -5394,17 +6092,17 @@
                                             <div class="grid grid-cols-3 gap-2">
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Misura</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'misuraBaseH', this.value)"
+                                                    <select id="brm-misuraBaseH-cassonetto-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'misuraBaseH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="">-</option>
-                                                        ${['HF', 'HVT', 'HVAR', 'HMT', 'HSoffitto', 'HParapettoSoffitto', 'HPavimentoParapetto'].map(m => `
+                                                        ${['ALT_CASS', 'HF', 'HVT', 'HMT', 'PROFONDITA'].map(m => `
                                                             <option value="${m}" ${cas.brmPersonalizzato?.misuraBaseH === m ? 'selected' : ''}>${m}</option>
                                                         `).join('')}
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">Op.</label>
-                                                    <select onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'operazioneH', this.value)"
+                                                    <select id="brm-operazioneH-cassonetto-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'operazioneH', this.value)"
                                                             class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
                                                         <option value="+" ${cas.brmPersonalizzato?.operazioneH === '+' ? 'selected' : ''}>+</option>
                                                         <option value="-" ${cas.brmPersonalizzato?.operazioneH === '-' ? 'selected' : ''}>-</option>
@@ -5412,27 +6110,113 @@
                                                 </div>
                                                 <div>
                                                     <label class="text-xs text-gray-600 block mb-1">mm</label>
-                                                    <input type="number" value="${cas.brmPersonalizzato?.valoreH || '0'}"
+                                                    <input type="number" id="brm-valoreH-cassonetto-${pos.id}" value="${cas.brmPersonalizzato?.valoreH || '0'}"
                                                            onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'valoreH', this.value)"
                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
                                                 </div>
                                             </div>
-                                            <div class="mt-1 text-xs text-purple-700 font-semibold">
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-h-cassonetto-${pos.id}">
                                                 = ${cas.brmPersonalizzato?.misuraBaseH || '?'} ${cas.brmPersonalizzato?.operazioneH || '+'} ${cas.brmPersonalizzato?.valoreH || '0'}mm
                                             </div>
                                         </div>
+                                        
+                                        <!-- BRM C -->
+                                        <div class="mb-3">
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM C</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select id="brm-misuraBaseC-cassonetto-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'misuraBaseC', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['C', 'B', 'HCASS', 'BSuperiore'].map(m => `
+                                                            <option value="${m}" ${cas.brmPersonalizzato?.misuraBaseC === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select id="brm-operazioneC-cassonetto-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'operazioneC', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${cas.brmPersonalizzato?.operazioneC === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${cas.brmPersonalizzato?.operazioneC === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" id="brm-valoreC-cassonetto-${pos.id}" value="${cas.brmPersonalizzato?.valoreC || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'valoreC', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-c-cassonetto-${pos.id}">
+                                                = ${cas.brmPersonalizzato?.misuraBaseC || '?'} ${cas.brmPersonalizzato?.operazioneC || '+'} ${cas.brmPersonalizzato?.valoreC || '0'}mm
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- BRM B -->
+                                        <div>
+                                            <label class="text-xs font-semibold text-purple-800 block mb-1">📏 BRM B</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Misura</label>
+                                                    <select id="brm-misuraBaseB-cassonetto-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'misuraBaseB', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="">-</option>
+                                                        ${['B', 'C', 'HCASS', 'BSuperiore'].map(m => `
+                                                            <option value="${m}" ${cas.brmPersonalizzato?.misuraBaseB === m ? 'selected' : ''}>${m}</option>
+                                                        `).join('')}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">Op.</label>
+                                                    <select id="brm-operazioneB-cassonetto-${pos.id}" onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'operazioneB', this.value)"
+                                                            class="w-full px-2 py-1 border border-purple-500 rounded text-sm bg-white">
+                                                        <option value="+" ${cas.brmPersonalizzato?.operazioneB === '+' ? 'selected' : ''}>+</option>
+                                                        <option value="-" ${cas.brmPersonalizzato?.operazioneB === '-' ? 'selected' : ''}>-</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-600 block mb-1">mm</label>
+                                                    <input type="number" id="brm-valoreB-cassonetto-${pos.id}" value="${cas.brmPersonalizzato?.valoreB || '0'}"
+                                                           onchange="updateBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto', 'valoreB', this.value)"
+                                                           class="w-full px-2 py-1 border border-purple-500 rounded text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-purple-700 font-semibold" id="formula-brm-b-cassonetto-${pos.id}">
+                                                = ${cas.brmPersonalizzato?.misuraBaseB || '?'} ${cas.brmPersonalizzato?.operazioneB || '+'} ${cas.brmPersonalizzato?.valoreB || '0'}mm
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 💾 PULSANTE APPLICA MODIFICHE BRM -->
+                                    <div class="mt-3 flex justify-center">
+                                        <button onclick="applicaBRMPersonalizzato('${project.id}', '${pos.id}', 'cassonetto')"
+                                                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-all">
+                                            💾 Salva
+                                        </button>
                                     </div>
                                     
                                     <!-- Risultati BRM Calcolati -->
                                     <div class="grid md:grid-cols-2 gap-3">
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Larghezza</label>
-                                            <input type="number" value="${cas.BRM_L || ''}" readonly
+                                            <input type="number" value="${cas.BRM_L || ''}" readonly id="brm-l-result-cassonetto-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                         <div class="bg-white p-2 rounded border-2 border-green-500">
                                             <label class="text-xs font-semibold text-green-800 block">✅ BRM Altezza</label>
-                                            <input type="number" value="${cas.BRM_H || ''}" readonly
+                                            <input type="number" value="${cas.BRM_H || ''}" readonly id="brm-h-result-cassonetto-${pos.id}"
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM C</label>
+                                            <input type="number" value="${cas.BRM_C || ''}" readonly id="brm-c-result-cassonetto-${pos.id}"
+                                                   class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
+                                        </div>
+                                        <div class="bg-white p-2 rounded border-2 border-green-500">
+                                            <label class="text-xs font-semibold text-green-800 block">✅ BRM B</label>
+                                            <input type="number" value="${cas.BRM_B || ''}" readonly id="brm-b-result-cassonetto-${pos.id}"
                                                    class="w-full compact-input border rounded mt-1 font-bold text-lg bg-gray-50">
                                         </div>
                                     </div>
@@ -5810,15 +6594,6 @@
                 project.prodotti[product] = checked;
                 saveState();
                 render();
-            }
-        };
-
-        window.updateConfigInfissi = (projectId, field, value) => {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                if (!project.configInfissi) project.configInfissi = {};
-                project.configInfissi[field] = value;
-                saveState();
             }
         };
 
@@ -6294,6 +7069,287 @@
             
             input.click();
         };
+
+        // NUOVE FUNZIONI PER ODOO - Export Singolo Progetto
+        window.exportCurrentProjectJSON = () => {
+            try {
+                const project = state.projects.find(p => p.id === state.currentProject);
+                if (!project) {
+                    showNotification('Nessun progetto selezionato', 'error');
+                    return;
+                }
+                
+                const data = {
+                    commessa_id: project.id,
+                    versione: "1.0",
+                    data_rilievo: new Date().toISOString(),
+                    cliente: {
+                        nome: project.client || '',
+                        progetto: project.name || '',
+                        piano: project.clientData?.piano || '',
+                        indirizzo: project.clientData?.indirizzo || '',
+                        telefono: project.clientData?.telefono || ''
+                    },
+                    note_progetto: project.clientData?.note || '',
+                    posizioni: project.positions.map(pos => {
+                        const posData = {
+                            id: pos.id,
+                            nome: pos.nome || pos.id,
+                            piano: pos.piano || '',
+                            stanza: pos.stanza || '',
+                            misure: pos.misure || {}
+                        };
+                        
+                        // Aggiungi infisso se presente
+                        if (pos.infisso) {
+                            posData.infisso = {
+                                quantita: pos.infisso.quantita || 1,
+                                tipo: pos.infisso.tipo || '',
+                                apertura: pos.infisso.apertura || '',
+                                azienda: pos.infisso.azienda || '',
+                                misure: pos.misure || {},
+                                brm: pos.infisso.brm || {},
+                                finitura_int: pos.infisso.finituraInt || '',
+                                finitura_est: pos.infisso.finituraEst || '',
+                                colore_int: pos.infisso.coloreInt || '',
+                                colore_est: pos.infisso.coloreEst || '',
+                                tipo_anta: pos.infisso.tipoAnta || '',
+                                telaio: pos.infisso.telaio || '',
+                                allarme: pos.infisso.allarme || '',
+                                vetro: pos.infisso.vetro || '',
+                                tagli_telaio: pos.infisso.tagliTelaio || '',
+                                cod_tagli: pos.infisso.codTagli || {}
+                            };
+                        }
+                        
+                        // Aggiungi persiana se presente
+                        if (pos.persiana) {
+                            posData.persiana = {
+                                quantita: pos.persiana.quantita || 1,
+                                tipo: pos.persiana.tipo || '',
+                                apertura: pos.persiana.apertura || '',
+                                modello: pos.persiana.modello || '',
+                                fissaggio: pos.persiana.fissaggio || '',
+                                tipo_telaio: pos.persiana.tipoTelaio || '',
+                                colore_persiana: pos.persiana.colorePersiana || '',
+                                colore_telaio: pos.persiana.coloreTelaio || '',
+                                battuta: pos.persiana.battuta || '',
+                                brm: pos.persiana.brm || {},
+                                foto: pos.persiana.foto ? 'presente' : 'no'
+                            };
+                        }
+                        
+                        // Aggiungi tapparella se presente
+                        if (pos.tapparella) {
+                            posData.tapparella = {
+                                quantita: pos.tapparella.quantita || 1,
+                                azienda: pos.tapparella.azienda || '',
+                                modello: pos.tapparella.modello || '',
+                                colore: pos.tapparella.colore || '',
+                                manuale_motorizzato: pos.tapparella.manualeMotoriz || '',
+                                sost_esistente: pos.tapparella.sostEsistente || '',
+                                guida: pos.tapparella.guida || '',
+                                colore_guida: pos.tapparella.coloreGuida || '',
+                                brm: pos.tapparella.brm || {},
+                                motori: pos.tapparella.motori || []
+                            };
+                        }
+                        
+                        // Aggiungi zanzariera se presente
+                        if (pos.zanzariera) {
+                            posData.zanzariera = {
+                                quantita: pos.zanzariera.quantita || 1,
+                                tipo: pos.zanzariera.tipo || '',
+                                apertura: pos.zanzariera.apertura || '',
+                                tipo_infisso_associato: pos.zanzariera.tipoInfissoAssociato || '',
+                                colore_telaio: pos.zanzariera.coloreTelaio || '',
+                                tipo_rete: pos.zanzariera.tipoRete || '',
+                                colore_rete: pos.zanzariera.coloreRete || '',
+                                brm: pos.zanzariera.brm || {}
+                            };
+                        }
+                        
+                        // Aggiungi cassonetto se presente
+                        if (pos.cassonetto) {
+                            posData.cassonetto = {
+                                quantita: pos.cassonetto.quantita || 1,
+                                tipo: pos.cassonetto.tipo || '',
+                                tipo_cassonetto: pos.cassonetto.tipoCassonetto || '',
+                                azienda: pos.cassonetto.azienda || '',
+                                colore: pos.cassonetto.colore || '',
+                                sovrappi_sostit: pos.cassonetto.sovrappiSostit || '',
+                                a_soffitto: pos.cassonetto.aSoffitto || '',
+                                misure: {
+                                    LS: pos.cassonetto.LS || 0,
+                                    SRSX: pos.cassonetto.SRSX || 0,
+                                    ZSX: pos.cassonetto.ZSX || 0,
+                                    SRDX: pos.cassonetto.SRDX || 0,
+                                    ZDX: pos.cassonetto.ZDX || 0,
+                                    HCASS: pos.cassonetto.HCASS || 0,
+                                    B: pos.cassonetto.B || 0,
+                                    C: pos.cassonetto.C || 0,
+                                    BSuperiore: pos.cassonetto.BSuperiore || 0
+                                },
+                                brm: pos.cassonetto.brm || {}
+                            };
+                        }
+                        
+                        return posData;
+                    }),
+                    totali: {
+                        n_posizioni: project.positions.length,
+                        n_infissi: project.positions.filter(p => p.infisso).length,
+                        n_persiane: project.positions.filter(p => p.persiana).length,
+                        n_tapparelle: project.positions.filter(p => p.tapparella).length,
+                        n_zanzariere: project.positions.filter(p => p.zanzariera).length,
+                        n_cassonetti: project.positions.filter(p => p.cassonetto).length
+                    }
+                };
+                
+                const jsonString = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `RILIEVO-${project.client || 'Cliente'}-${project.name || 'Progetto'}-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showNotification(`✅ JSON esportato per Odoo!`, 'success');
+                
+            } catch (error) {
+                console.error('Errore export JSON:', error);
+                showNotification(`Errore durante export: ${error.message}`, 'error');
+            }
+        };
+
+        // Funzione per stampare PDF del rilievo
+        window.printCurrentProjectPDF = () => {
+            try {
+                const project = state.projects.find(p => p.id === state.currentProject);
+                if (!project) {
+                    showNotification('Nessun progetto selezionato', 'error');
+                    return;
+                }
+                
+                // Genera HTML per stampa - continua nel prossimo file
+                const printHTML = generatePrintHTML(project);
+                
+                // Apri finestra di stampa
+                const printWindow = window.open('', '', 'width=900,height=700');
+                printWindow.document.write(printHTML);
+                printWindow.document.close();
+                
+                // Aspetta che il contenuto sia caricato prima di stampare
+                printWindow.onload = () => {
+                    printWindow.focus();
+                    setTimeout(() => {
+                        printWindow.print();
+                    }, 250);
+                };
+                
+                showNotification('📄 Finestra di stampa aperta!', 'success');
+                
+            } catch (error) {
+                console.error('Errore stampa PDF:', error);
+                showNotification(`Errore durante stampa: ${error.message}`, 'error');
+            }
+        };
+
+        // Funzione helper per generare HTML di stampa
+        function generatePrintHTML(project) {
+            return `<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Rilievo - ${project.client || 'Cliente'}</title>
+<style>
+@media print { @page { margin: 1cm; } body { margin: 0; } .page-break { page-break-after: always; } }
+body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+h1 { color: #1e293b; border-bottom: 3px solid #6366f1; padding-bottom: 10px; margin-bottom: 20px; }
+h2 { color: #475569; background: #f1f5f9; padding: 10px; margin-top: 30px; border-left: 4px solid #6366f1; }
+h3 { color: #334155; margin-top: 20px; background: #e2e8f0; padding: 8px; }
+h4 { color: #475569; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px; }
+table { width: 100%; border-collapse: collapse; margin: 15px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+th { background-color: #6366f1; color: white; font-weight: bold; }
+tr:nth-child(even) { background-color: #f8fafc; }
+.header-info { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+.header-info p { margin: 5px 0; }
+.totali { background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border: 2px solid #fbbf24; }
+.nota { background: #dbeafe; padding: 10px; border-left: 4px solid #3b82f6; margin: 10px 0; font-size: 0.9em; }
+.logo { text-align: center; margin-bottom: 20px; color: #6366f1; font-size: 1.2em; font-weight: bold; }
+</style></head><body>
+<div class="logo">OPEN PORTE & FINESTRE SRL</div>
+<h1>📋 RILIEVO MISURE</h1>
+<div class="header-info">
+<p><strong>🏢 Cliente:</strong> ${project.client || 'N/D'}</p>
+<p><strong>📁 Progetto:</strong> ${project.name || 'N/D'}</p>
+<p><strong>📍 Piano:</strong> ${project.clientData?.piano || 'N/D'}</p>
+<p><strong>🏠 Indirizzo:</strong> ${project.clientData?.indirizzo || 'N/D'}</p>
+<p><strong>📞 Telefono:</strong> ${project.clientData?.telefono || 'N/D'}</p>
+<p><strong>📅 Data Rilievo:</strong> ${new Date().toLocaleDateString('it-IT')} ${new Date().toLocaleTimeString('it-IT')}</p>
+${project.clientData?.note ? `<p><strong>📝 Note:</strong> ${project.clientData.note}</p>` : ''}
+</div>
+<div class="totali">
+<strong>📊 RIEPILOGO TOTALI:</strong><br>
+• Posizioni: ${project.positions.length}<br>
+• Infissi: ${project.positions.filter(p => p.infisso).length}<br>
+• Persiane: ${project.positions.filter(p => p.persiana).length}<br>
+• Tapparelle: ${project.positions.filter(p => p.tapparella).length}<br>
+• Zanzariere: ${project.positions.filter(p => p.zanzariera).length}<br>
+• Cassonetti: ${project.positions.filter(p => p.cassonetto).length}
+</div>
+<h2>📐 DETTAGLIO POSIZIONI</h2>
+${project.positions.map((pos, idx) => generatePositionHTML(pos, idx, project.positions.length)).join('')}
+<div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; color: #64748b; font-size: 0.9em;">
+<p>Documento generato automaticamente da Open Porte App</p>
+<p>OPEN PORTE & FINESTRE SRL - Capitale Sociale €20.000</p>
+</div>
+</body></html>`;
+        }
+
+        // Helper per generare HTML singola posizione
+        function generatePositionHTML(pos, idx, total) {
+            return `<div class="page-break-avoid">
+<h3>Posizione ${idx + 1}: ${pos.nome || pos.id}${pos.piano ? ' - ' + pos.piano : ''}</h3>
+${pos.stanza ? `<p><strong>Stanza:</strong> ${pos.stanza}</p>` : ''}
+<p><strong>📏 Misure Vano:</strong></p>
+<table><tr><th>L</th><th>H</th><th>LVT</th><th>HVT</th><th>LF</th><th>HF</th></tr>
+<tr><td>${pos.misure?.L || '-'}</td><td>${pos.misure?.H || '-'}</td><td>${pos.misure?.LVT || '-'}</td><td>${pos.misure?.HVT || '-'}</td><td>${pos.misure?.LF || '-'}</td><td>${pos.misure?.HF || '-'}</td></tr></table>
+${pos.infisso ? `<h4>🪟 INFISSO</h4><table><tr><th>Campo</th><th>Valore</th></tr>
+<tr><td>Quantità</td><td>${pos.infisso.quantita || 1}</td></tr>
+<tr><td>Tipo</td><td>${pos.infisso.tipo || '-'}</td></tr>
+<tr><td>Apertura</td><td>${pos.infisso.apertura || '-'}</td></tr>
+<tr><td>Azienda</td><td>${pos.infisso.azienda || '-'}</td></tr>
+<tr><td>Finitura Int</td><td>${pos.infisso.finituraInt || '-'}</td></tr>
+<tr><td>Finitura Est</td><td>${pos.infisso.finituraEst || '-'}</td></tr>
+<tr><td>Colore Int</td><td>${pos.infisso.coloreInt || '-'}</td></tr>
+<tr><td>Colore Est</td><td>${pos.infisso.coloreEst || '-'}</td></tr>
+<tr><td>Vetro</td><td>${pos.infisso.vetro || '-'}</td></tr>
+${pos.infisso.brm ? `<tr><td><strong>BRM L</strong></td><td><strong>${pos.infisso.brm.L || '-'} mm</strong></td></tr>
+<tr><td><strong>BRM H</strong></td><td><strong>${pos.infisso.brm.H || '-'} mm</strong></td></tr>` : ''}</table>` : ''}
+${pos.persiana ? `<h4>🚪 PERSIANA</h4><table><tr><th>Campo</th><th>Valore</th></tr>
+<tr><td>Quantità</td><td>${pos.persiana.quantita || 1}</td></tr>
+<tr><td>Tipo</td><td>${pos.persiana.tipo || '-'}</td></tr>
+<tr><td>Colore Persiana</td><td>${pos.persiana.colorePersiana || '-'}</td></tr>
+${pos.persiana.brm ? `<tr><td><strong>BRM L</strong></td><td><strong>${pos.persiana.brm.L || '-'} mm</strong></td></tr>
+<tr><td><strong>BRM H</strong></td><td><strong>${pos.persiana.brm.H || '-'} mm</strong></td></tr>` : ''}</table>` : ''}
+${pos.tapparella ? `<h4>🎚️ TAPPARELLA</h4><table><tr><th>Campo</th><th>Valore</th></tr>
+<tr><td>Quantità</td><td>${pos.tapparella.quantita || 1}</td></tr>
+<tr><td>Azienda</td><td>${pos.tapparella.azienda || '-'}</td></tr>
+<tr><td>Modello</td><td>${pos.tapparella.modello || '-'}</td></tr></table>` : ''}
+${pos.zanzariera ? `<h4>🦟 ZANZARIERA</h4><table><tr><th>Campo</th><th>Valore</th></tr>
+<tr><td>Quantità</td><td>${pos.zanzariera.quantita || 1}</td></tr>
+<tr><td>Tipo</td><td>${pos.zanzariera.tipo || '-'}</td></tr></table>` : ''}
+${pos.cassonetto ? `<h4>📦 CASSONETTO</h4><table><tr><th>Campo</th><th>Valore</th></tr>
+<tr><td>Tipo</td><td>${pos.cassonetto.tipo || '-'}</td></tr>
+<tr><td>LS</td><td>${pos.cassonetto.LS || 0} mm</td></tr>
+<tr><td>HCASS</td><td>${pos.cassonetto.HCASS || 0} mm</td></tr></table>` : ''}
+${idx < total - 1 ? '<div class="page-break"></div>' : ''}
+</div>`;
+        }
 
         // Main Render Function
         function render() {

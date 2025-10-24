@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <!--
     Open Porte v3.4 - FASE 28: STEP DINAMICI + MURO IN PRODOTTI ✅🗿
@@ -1552,6 +1553,34 @@
             return project;
         }
 
+        function deleteProject(projectId) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            // Chiedi conferma con il nome del progetto
+            const confirmMessage = `Sei sicuro di voler eliminare il progetto "${project.name}" (Cliente: ${project.client})?\n\nQuesta azione è IRREVERSIBILE e cancellerà:\n- Tutte le ${project.positions.length} posizioni\n- Tutti i dati e le configurazioni\n- Tutte le foto associate`;
+            
+            if (!confirm(confirmMessage)) {
+                return; // Annullato dall'utente
+            }
+            
+            // Rimuovi il progetto dall'array
+            const index = state.projects.findIndex(p => p.id === projectId);
+            if (index !== -1) {
+                state.projects.splice(index, 1);
+                
+                // Se era il progetto corrente, resetta
+                if (state.currentProject === projectId) {
+                    state.currentProject = null;
+                    state.screen = 'list';
+                }
+                
+                saveState();
+                showNotification('Progetto eliminato con successo', 'success');
+                render();
+            }
+        }
+
         function addPosition(projectId) {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
@@ -2280,14 +2309,21 @@
             return `
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                     ${state.projects.map(p => `
-                        <div class="section-card hover:transform hover:scale-105 transition-all cursor-pointer"
+                        <div class="section-card hover:transform hover:scale-105 transition-all cursor-pointer relative"
                              onclick="openProject('${p.id}')">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
                                     <h3 class="font-bold text-lg">${p.name}</h3>
                                     <p class="text-sm text-gray-600">${p.client}</p>
                                 </div>
-                                <span class="text-2xl">🗂️</span>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="event.stopPropagation(); deleteProject('${p.id}')"
+                                            class="text-red-600 hover:bg-red-100 p-2 rounded-lg transition-all"
+                                            title="Elimina progetto">
+                                        🗑️
+                                    </button>
+                                    <span class="text-2xl">🗂️</span>
+                                </div>
                             </div>
                             <div class="flex justify-between items-center text-sm">
                                 <span class="text-gray-500">${p.positions.length} posizioni</span>

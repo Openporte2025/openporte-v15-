@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <!--
     Open Porte v3.4 - FASE 28: STEP DINAMICI + MURO IN PRODOTTI ✅🗿
@@ -6,7 +5,7 @@
     ✨ MODIFICHE FASE 28 (22 OTT 2025):
     ✅ STEP DINAMICI IN BASE AI PRODOTTI SELEZIONATI:
        - La barra degli step mostra SOLO i prodotti selezionati
-       - MURO INTEGRATO NELLO STEP "PRODOTTI": Step 2 contiene sia selezione prodotti che config muro
+       - MURO INTEGRATO NELLO STEP "PRODOTTI": Step 2 contiene siaa selezione prodotti che config muro
        - Ordine: Cliente → Prodotti+Muro → Config Prodotti selezionati → Posizioni
        - I numeri degli step si adattano automaticamente (es: 1,2,3,4 invece di 1,2,3,4,5,6,7,8,9)
        - Navigazione intelligente: i pulsanti Avanti/Indietro saltano solo agli step validi
@@ -2449,7 +2448,17 @@
                                 
                                 return `
                                     <select id="${selectId}" 
-                                            onchange="handleSelectWithCustom('${project.id}', 'piano', '${selectId}', '${inputId}', this.value, ${JSON.stringify(pianoOptions)})"
+                                            onchange="
+                                                const input = document.getElementById('${inputId}');
+                                                if (this.value === '__ALTRO__') {
+                                                    input.style.display = 'block';
+                                                    input.focus();
+                                                } else if (this.value) {
+                                                    input.style.display = 'none';
+                                                    input.value = '';
+                                                    updateClientData('${project.id}', 'piano', this.value);
+                                                }
+                                            "
                                             class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
                                         <option value="">Seleziona piano...</option>
                                         ${pianoOptions.map(opt => `

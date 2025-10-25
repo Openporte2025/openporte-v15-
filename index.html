@@ -7968,7 +7968,7 @@
                 const data = {
                     projects: state.projects,
                     exportDate: new Date().toISOString(),
-                    version: '3.3-FASE27',
+                    version: '3.5-FASE006-JSON-COMPLETO',
                     totalProjects: state.projects.length
                 };
                 
@@ -8070,7 +8070,7 @@
                 
                 const data = {
                     commessa_id: project.id,
-                    versione: "1.0",
+                    versione: "1.0-FASE006",
                     data_rilievo: new Date().toISOString(),
                     cliente: {
                         nome: project.client || '',
@@ -8081,12 +8081,34 @@
                     },
                     note_progetto: project.clientData?.note || '',
                     posizioni: project.positions.map(pos => {
+                        // 📊 TEMPLATE COMPLETO MISURE - Include tutti i campi anche se = 0
+                        const misureComplete = {
+                            // Misure principali
+                            LVT: pos.misure?.LVT ?? 0,
+                            HVT: pos.misure?.HVT ?? 0,
+                            LF: pos.misure?.LF ?? 0,
+                            HF: pos.misure?.HF ?? 0,
+                            TMV: pos.misure?.TMV ?? 0,
+                            HMT: pos.misure?.HMT ?? 0,
+                            L4: pos.misure?.L4 ?? 0,
+                            H4: pos.misure?.H4 ?? 0,
+                            // Delta
+                            DeltaINT: pos.misure?.DeltaINT ?? 0,
+                            DeltaEST: pos.misure?.DeltaEST ?? 0,
+                            // Altezze
+                            HSoffitto: pos.misure?.HSoffitto ?? 0,
+                            HParapettoSoffitto: pos.misure?.HParapettoSoffitto ?? 0,
+                            HPavimentoParapetto: pos.misure?.HPavimentoParapetto ?? 0
+                        };
+                        
                         const posData = {
                             id: pos.id,
                             nome: pos.nome || pos.id,
                             piano: pos.piano || '',
                             stanza: pos.stanza || '',
-                            misure: pos.misure || {}
+                            ambiente: pos.ambiente || '',
+                            quantita: pos.quantita || 1,
+                            misure: misureComplete
                         };
                         
                         // Aggiungi infisso se presente
@@ -8096,8 +8118,13 @@
                                 tipo: pos.infisso.tipo || '',
                                 apertura: pos.infisso.apertura || '',
                                 azienda: pos.infisso.azienda || '',
-                                misure: pos.misure || {},
-                                brm: pos.infisso.brm || {},
+                                misure: misureComplete,  // 📊 Usa template completo
+                                brm: {  // 📊 Template completo BRM
+                                    L: pos.infisso.brm?.L ?? null,
+                                    H: pos.infisso.brm?.H ?? null,
+                                    C: pos.infisso.brm?.C ?? null,
+                                    B: pos.infisso.brm?.B ?? null
+                                },
                                 finitura_int: pos.infisso.finituraInt || '',
                                 finitura_est: pos.infisso.finituraEst || '',
                                 colore_int: pos.infisso.coloreInt || '',
@@ -8123,7 +8150,12 @@
                                 colore_persiana: pos.persiana.colorePersiana || '',
                                 colore_telaio: pos.persiana.coloreTelaio || '',
                                 battuta: pos.persiana.battuta || '',
-                                brm: pos.persiana.brm || {},
+                                brm: {  // 📊 Template completo BRM
+                                    L: pos.persiana.brm?.L ?? null,
+                                    H: pos.persiana.brm?.H ?? null,
+                                    C: pos.persiana.brm?.C ?? null,
+                                    B: pos.persiana.brm?.B ?? null
+                                },
                                 foto: pos.persiana.foto ? 'presente' : 'no'
                             };
                         }
@@ -8139,7 +8171,12 @@
                                 sost_esistente: pos.tapparella.sostEsistente || '',
                                 guida: pos.tapparella.guida || '',
                                 colore_guida: pos.tapparella.coloreGuida || '',
-                                brm: pos.tapparella.brm || {},
+                                brm: {  // 📊 Template completo BRM
+                                    L: pos.tapparella.brm?.L ?? null,
+                                    H: pos.tapparella.brm?.H ?? null,
+                                    C: pos.tapparella.brm?.C ?? null,
+                                    B: pos.tapparella.brm?.B ?? null
+                                },
                                 motori: pos.tapparella.motori || []
                             };
                         }
@@ -8154,7 +8191,12 @@
                                 colore_telaio: pos.zanzariera.coloreTelaio || '',
                                 tipo_rete: pos.zanzariera.tipoRete || '',
                                 colore_rete: pos.zanzariera.coloreRete || '',
-                                brm: pos.zanzariera.brm || {}
+                                brm: {  // 📊 Template completo BRM
+                                    L: pos.zanzariera.brm?.L ?? null,
+                                    H: pos.zanzariera.brm?.H ?? null,
+                                    C: pos.zanzariera.brm?.C ?? null,
+                                    B: pos.zanzariera.brm?.B ?? null
+                                }
                             };
                         }
                         
@@ -8168,18 +8210,23 @@
                                 colore: pos.cassonetto.colore || '',
                                 sovrappi_sostit: pos.cassonetto.sovrappiSostit || '',
                                 a_soffitto: pos.cassonetto.aSoffitto || '',
-                                misure: {
-                                    LS: pos.cassonetto.LS || 0,
-                                    SRSX: pos.cassonetto.SRSX || 0,
-                                    ZSX: pos.cassonetto.ZSX || 0,
-                                    SRDX: pos.cassonetto.SRDX || 0,
-                                    ZDX: pos.cassonetto.ZDX || 0,
-                                    HCASS: pos.cassonetto.HCASS || 0,
-                                    B: pos.cassonetto.B || 0,
-                                    C: pos.cassonetto.C || 0,
-                                    BSuperiore: pos.cassonetto.BSuperiore || 0
+                                misure: {  // 📊 Template completo con ?? operator
+                                    LS: pos.cassonetto.LS ?? 0,
+                                    SRSX: pos.cassonetto.SRSX ?? 0,
+                                    ZSX: pos.cassonetto.ZSX ?? 0,
+                                    SRDX: pos.cassonetto.SRDX ?? 0,
+                                    ZDX: pos.cassonetto.ZDX ?? 0,
+                                    HCASS: pos.cassonetto.HCASS ?? 0,
+                                    B: pos.cassonetto.B ?? 0,
+                                    C: pos.cassonetto.C ?? 0,
+                                    BSuperiore: pos.cassonetto.BSuperiore ?? 0
                                 },
-                                brm: pos.cassonetto.brm || {}
+                                brm: {  // 📊 Template completo BRM
+                                    L: pos.cassonetto.brm?.L ?? null,
+                                    H: pos.cassonetto.brm?.H ?? null,
+                                    C: pos.cassonetto.brm?.C ?? null,
+                                    B: pos.cassonetto.brm?.B ?? null
+                                }
                             };
                         }
                         

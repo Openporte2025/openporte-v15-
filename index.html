@@ -701,6 +701,7 @@
                     state = JSON.parse(saved);
                     migrateOldData(); // Migra dati vecchi formato array -> singolo oggetto
                     cleanNegativeValues(); // ✅ NUOVO: Pulisce valori negativi nei BRM
+                    migrateOldProjectsMetadata(); // ✅ SOLUZIONE C: Migra progetti senza metadata
                 } catch (e) {
                     console.error('Error loading state:', e);
                 }
@@ -814,6 +815,671 @@
 
         function generateId() {
             return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🎯 SOLUZIONE C: SISTEMA ANTI-DUPLICATI ENTERPRISE (Chat 010)
+        // ═══════════════════════════════════════════════════════════════
+        
+        // ───────────────────────────────────────────────────────────────
+        // 📋 SEZIONE 1: DEVICE IDENTIFICATION
+        // ───────────────────────────────────────────────────────────────
+        
+        function getDeviceId() {
+            // Ottiene o crea ID univoco dispositivo
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + generateId();
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
+        function getDeviceName() {
+            // Ottiene o rileva nome dispositivo
+            let deviceName = localStorage.getItem('deviceName');
+            if (!deviceName) {
+                deviceName = detectDeviceName();
+                // Permetti modifica nome
+                const customName = localStorage.getItem('customDeviceName');
+                if (customName) deviceName = customName;
+                localStorage.setItem('deviceName', deviceName);
+            }
+            return deviceName;
+        }
+
+        function detectDeviceName() {
+            // Rileva tipo dispositivo automaticamente
+            const ua = navigator.userAgent;
+            
+            if (/iPad/i.test(ua)) return 'Tablet iPad';
+            if (/iPhone/i.test(ua)) return 'Smartphone iPhone';
+            if (/Android/i.test(ua)) {
+                if (/Mobile/i.test(ua)) return 'Smartphone Android';
+                return 'Tablet Android';
+            }
+            if (/Windows/i.test(ua)) return 'PC Windows';
+            if (/Mac/i.test(ua)) return 'PC Mac';
+            if (/Linux/i.test(ua)) return 'PC Linux';
+            
+            return 'Dispositivo Sconosciuto';
+        }
+
+        function setCustomDeviceName(name) {
+            // Permette utente di personalizzare nome dispositivo
+            localStorage.setItem('customDeviceName', name);
+            localStorage.setItem('deviceName', name);
+            showNotification(`✅ Nome dispositivo impostato: ${name}`, 'success');
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // 📋 SEZIONE 2: METADATA & VERSIONING
+        // ───────────────────────────────────────────────────────────────
+
+        function initMetadata() {
+            // Inizializza metadata per nuovo progetto
+            return {
+                createdAt: new Date().toISOString(),
+                lastModified: new Date().toISOString(),
+                version: "1.0",
+                deviceId: getDeviceId(),
+                deviceName: getDeviceName(),
+                syncStatus: "local",  // local | synced | conflict
+                history: [{
+                    timestamp: new Date().toISOString(),
+                    device: getDeviceName(),
+                    deviceId: getDeviceId(),
+                    action: "created",
+                    changes: "Progetto creato"
+                }]
+            };
+        }
+
+        function updateProjectTimestamp(projectId, action, changes) {
+            // Auto-aggiorna timestamp e history ad ogni modifica
+            const project = state.projects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            // Inizializza metadata se non esiste (backward compatibility)
+            if (!project.metadata) {
+                project.metadata = initMetadata();
+                project.metadata.createdAt = project.createdDate || new Date().toISOString();
+            }
+            
+            // Aggiorna timestamp
+            project.metadata.lastModified = new Date().toISOString();
+            
+            // Incrementa versione
+            project.metadata.version = incrementVersion(project.metadata.version);
+            
+            // Aggiorna status
+            project.metadata.syncStatus = "local";
+            
+            // Aggiungi a history
+            project.metadata.history.push({
+                timestamp: new Date().toISOString(),
+                device: getDeviceName(),
+                deviceId: getDeviceId(),
+                action: action,
+                changes: changes
+            });
+            
+            // Limita history a ultimi 50 entries
+            if (project.metadata.history.length > 50) {
+                project.metadata.history = project.metadata.history.slice(-50);
+            }
+            
+            saveState();
+        }
+
+        function incrementVersion(currentVersion) {
+            // Incrementa numero versione (1.0 → 1.1 → 1.2 ... → 2.0)
+            const [major, minor] = currentVersion.split('.').map(Number);
+            const newMinor = minor + 1;
+            
+            if (newMinor >= 10) {
+                return `${major + 1}.0`;
+            }
+            return `${major}.${newMinor}`;
+        }
+
+        function migrateOldProjectsMetadata() {
+            // Migra progetti vecchi senza metadata
+            let migrated = 0;
+            
+            state.projects.forEach(project => {
+                if (!project.metadata) {
+                    project.metadata = initMetadata();
+                    // Usa date esistenti se disponibili
+                    if (project.createdDate) {
+                        project.metadata.createdAt = project.createdDate;
+                    }
+                    migrated++;
+                }
+            });
+            
+            if (migrated > 0) {
+                saveState();
+                console.log(`✅ Migrati ${migrated} progetti con metadata`);
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // 📋 SEZIONE 3: IMPORT JSON
+        // ───────────────────────────────────────────────────────────────
+
+        function importProjectsJSON() {
+            // Crea input file nascosto
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                showNotification('📥 Lettura file in corso...', 'info');
+                
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    
+                    // Valida struttura
+                    if (!validateImportJSON(data)) {
+                        showNotification('❌ File JSON non valido', 'error');
+                        return;
+                    }
+                    
+                    // Processa import
+                    await processImport(data);
+                    
+                } catch (error) {
+                    console.error('Errore import:', error);
+                    showNotification('❌ Errore durante import: ' + error.message, 'error');
+                }
+            };
+            
+            input.click();
+        }
+
+        function validateImportJSON(data) {
+            // Valida struttura JSON importato
+            if (!data || typeof data !== 'object') return false;
+            
+            // Accetta sia formato singolo progetto che array progetti
+            if (Array.isArray(data.projects)) {
+                // Formato export multiplo
+                return data.projects.every(p => p.id && p.name);
+            } else if (data.id && data.name) {
+                // Formato singolo progetto
+                return true;
+            }
+            
+            return false;
+        }
+
+        async function processImport(data) {
+            // Processa l'import con gestione duplicati
+            
+            // Converti in array se singolo progetto
+            let importedProjects = Array.isArray(data.projects) ? data.projects : [data];
+            
+            showNotification(`📊 Analisi ${importedProjects.length} progetti...`, 'info');
+            
+            // Rileva duplicati
+            const analysis = detectDuplicates(importedProjects);
+            
+            // Mostra preview
+            const proceed = await showImportPreview(analysis);
+            if (!proceed) return;
+            
+            // Crea backup pre-import
+            createBackup(`Pre-import: ${importedProjects.length} progetti`);
+            
+            // Processa progetti nuovi (facile)
+            analysis.newProjects.forEach(project => {
+                state.projects.push(project);
+            });
+            
+            // Processa conflitti (complesso)
+            for (const conflict of analysis.conflicts) {
+                const resolution = await resolveConflict(conflict);
+                applyConflictResolution(conflict, resolution);
+            }
+            
+            // Salva e aggiorna
+            saveState();
+            render();
+            
+            // Notifica risultato
+            const replacedCount = analysis.conflicts.filter(c => c.resolution === 'replace').length;
+            const keptCount = analysis.conflicts.filter(c => c.resolution === 'keep').length;
+            
+            showNotification(
+                `✅ Import completato!\nNuovi: ${analysis.newProjects.length} | Aggiornati: ${replacedCount} | Mantenuti: ${keptCount}`,
+                'success'
+            );
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // 📋 SEZIONE 4: RILEVAMENTO DUPLICATI
+        // ───────────────────────────────────────────────────────────────
+
+        function detectDuplicates(importedProjects) {
+            // Analizza e classifica progetti importati
+            const results = {
+                newProjects: [],      // Mai visti prima
+                existingProjects: [], // Identici, nessun conflitto
+                conflicts: []         // Stessi ma diversi
+            };
+            
+            importedProjects.forEach(imported => {
+                const existing = state.projects.find(p => p.id === imported.id);
+                
+                if (!existing) {
+                    // Progetto nuovo
+                    results.newProjects.push(imported);
+                } else {
+                    // Progetto esistente - confronta versioni
+                    const comparison = compareProjects(existing, imported);
+                    
+                    if (comparison.identical) {
+                        // Identici, nessun conflitto
+                        results.existingProjects.push({
+                            imported: imported,
+                            existing: existing
+                        });
+                    } else {
+                        // Diversi, conflitto!
+                        results.conflicts.push({
+                            imported: imported,
+                            existing: existing,
+                            comparison: comparison
+                        });
+                    }
+                }
+            });
+            
+            return results;
+        }
+
+        function compareProjects(project1, project2) {
+            // Confronta due progetti in dettaglio
+            const result = {
+                identical: false,
+                newerProject: null,  // 'project1' | 'project2' | null
+                differences: {
+                    positions: false,
+                    products: false,
+                    caratteristiche: false,
+                    clientData: false
+                },
+                timestamps: {
+                    project1: project1.metadata?.lastModified || null,
+                    project2: project2.metadata?.lastModified || null
+                }
+            };
+            
+            // Confronta timestamp
+            const ts1 = new Date(project1.metadata?.lastModified || 0);
+            const ts2 = new Date(project2.metadata?.lastModified || 0);
+            
+            if (ts1 > ts2) {
+                result.newerProject = 'project1';
+            } else if (ts2 > ts1) {
+                result.newerProject = 'project2';
+            }
+            
+            // Confronta contenuti
+            if (project1.positions?.length !== project2.positions?.length) {
+                result.differences.positions = true;
+            }
+            
+            if (JSON.stringify(project1.prodotti) !== JSON.stringify(project2.prodotti)) {
+                result.differences.products = true;
+            }
+            
+            if (JSON.stringify(project1.caratteristicheMuro) !== JSON.stringify(project2.caratteristicheMuro)) {
+                result.differences.caratteristiche = true;
+            }
+            
+            if (project1.name !== project2.name || project1.client !== project2.client) {
+                result.differences.clientData = true;
+            }
+            
+            // Determina se identici
+            result.identical = !Object.values(result.differences).some(d => d);
+            
+            return result;
+        }
+
+        // ─────────────────────────────────────────────────────────────── 
+        // 📋 SEZIONE 5: GESTIONE CONFLITTI
+        // ───────────────────────────────────────────────────────────────
+
+        async function resolveConflict(conflict) {
+            // Mostra dialog e ottiene scelta utente
+            return new Promise((resolve) => {
+                showConflictDialog(conflict, resolve);
+            });
+        }
+
+        function showConflictDialog(conflict, callback) {
+            // Crea e mostra dialog modale conflitto
+            const { imported, existing, comparison } = conflict;
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.right = '0';
+            modal.style.bottom = '0';
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-auto">
+                    <div class="p-6">
+                        <h2 class="text-2xl font-bold mb-4 text-red-600">
+                            ⚠️ Conflitto Rilevato
+                        </h2>
+                        
+                        <div class="mb-4">
+                            <p class="font-semibold text-lg">${existing.name}</p>
+                            <p class="text-gray-600">${existing.client || 'Nessun cliente'}</p>
+                            <p class="text-sm text-gray-500">ID: ${existing.id}</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-6 border rounded-lg p-4">
+                            <div class="border-r pr-4">
+                                <h3 class="font-bold mb-2 text-blue-600">📱 LOCALE</h3>
+                                <p class="text-sm"><strong>Data:</strong> ${formatDate(comparison.timestamps.project1)}</p>
+                                <p class="text-sm"><strong>Dispositivo:</strong> ${existing.metadata?.deviceName || 'Sconosciuto'}</p>
+                                <p class="text-sm"><strong>Posizioni:</strong> ${existing.positions?.length || 0}</p>
+                                <p class="text-sm"><strong>Versione:</strong> ${existing.metadata?.version || '1.0'}</p>
+                                ${comparison.newerProject === 'project1' ? '<p class="text-green-600 font-bold mt-2">⭐ Più recente</p>' : ''}
+                            </div>
+                            
+                            <div class="pl-4">
+                                <h3 class="font-bold mb-2 text-purple-600">📥 IMPORTATO</h3>
+                                <p class="text-sm"><strong>Data:</strong> ${formatDate(comparison.timestamps.project2)}</p>
+                                <p class="text-sm"><strong>Dispositivo:</strong> ${imported.metadata?.deviceName || 'Sconosciuto'}</p>
+                                <p class="text-sm"><strong>Posizioni:</strong> ${imported.positions?.length || 0}</p>
+                                <p class="text-sm"><strong>Versione:</strong> ${imported.metadata?.version || '1.0'}</p>
+                                ${comparison.newerProject === 'project2' ? '<p class="text-green-600 font-bold mt-2">⭐ Più recente</p>' : ''}
+                            </div>
+                        </div>
+                        
+                        ${renderDifferences(comparison.differences)}
+                        
+                        <div class="space-y-3 mb-6">
+                            <p class="font-semibold">Cosa vuoi fare?</p>
+                            
+                            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-blue-50">
+                                <input type="radio" name="resolution" value="replace" class="mr-3" ${comparison.newerProject === 'project2' ? 'checked' : ''}>
+                                <div>
+                                    <p class="font-semibold">Sostituisci con versione importata</p>
+                                    <p class="text-sm text-gray-600">La versione locale sarà sovrascritta</p>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-green-50">
+                                <input type="radio" name="resolution" value="keep" class="mr-3" ${comparison.newerProject === 'project1' ? 'checked' : ''}>
+                                <div>
+                                    <p class="font-semibold">Mantieni versione locale</p>
+                                    <p class="text-sm text-gray-600">La versione importata sarà ignorata</p>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-purple-50">
+                                <input type="radio" name="resolution" value="duplicate" class="mr-3">
+                                <div>
+                                    <p class="font-semibold">Crea nuovo progetto (duplica)</p>
+                                    <p class="text-sm text-gray-600">Mantieni entrambe le versioni come progetti separati</p>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <button onclick="window.closeConflictDialog('cancel')" 
+                                    class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
+                                Annulla
+                            </button>
+                            <button onclick="window.closeConflictDialog('apply')" 
+                                    class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Applica
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Funzione per chiudere dialog
+            window.closeConflictDialog = (action) => {
+                if (action === 'apply') {
+                    const selected = document.querySelector('input[name="resolution"]:checked');
+                    const resolution = selected ? selected.value : 'keep';
+                    conflict.resolution = resolution; // Salva per stats
+                    callback(resolution);
+                } else {
+                    callback('cancel');
+                }
+                document.body.removeChild(modal);
+                delete window.closeConflictDialog;
+            };
+        }
+
+        function renderDifferences(differences) {
+            // Renderizza elenco differenze trovate
+            const diffs = [];
+            if (differences.positions) diffs.push('Numero posizioni diverso');
+            if (differences.products) diffs.push('Prodotti selezionati diversi');
+            if (differences.caratteristiche) diffs.push('Caratteristiche muro diverse');
+            if (differences.clientData) diffs.push('Dati cliente diversi');
+            
+            if (diffs.length === 0) {
+                return '<p class="text-sm text-gray-600 mb-4">⚠️ Stesso ID ma versioni diverse</p>';
+            }
+            
+            return `
+                <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p class="font-semibold text-sm mb-2">Differenze rilevate:</p>
+                    <ul class="text-sm space-y-1">
+                        ${diffs.map(d => `<li>• ${d}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        function applyConflictResolution(conflict, resolution) {
+            // Applica la risoluzione scelta dall'utente
+            const { imported, existing } = conflict;
+            const existingIndex = state.projects.findIndex(p => p.id === existing.id);
+            
+            switch (resolution) {
+                case 'replace':
+                    // Sostituisci locale con importato
+                    if (imported.metadata) {
+                        imported.metadata.syncStatus = 'synced';
+                    }
+                    state.projects[existingIndex] = imported;
+                    break;
+                    
+                case 'keep':
+                    // Mantieni locale, ignora importato
+                    if (existing.metadata) {
+                        existing.metadata.syncStatus = 'synced';
+                    }
+                    // Non fare nulla
+                    break;
+                    
+                case 'duplicate':
+                    // Crea nuovo ID per importato e aggiungi
+                    imported.id = generateId();
+                    imported.name = imported.name + ' (importato)';
+                    if (imported.metadata) {
+                        imported.metadata.syncStatus = 'local';
+                    }
+                    state.projects.push(imported);
+                    break;
+                    
+                case 'cancel':
+                    // Non fare nulla
+                    break;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // 📋 SEZIONE 6: BACKUP SYSTEM
+        // ───────────────────────────────────────────────────────────────
+
+        function createBackup(reason) {
+            // Crea backup completo stato corrente
+            const backup = {
+                id: `backup_${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                reason: reason || 'Backup manuale',
+                projects: JSON.parse(JSON.stringify(state.projects)),
+                count: state.projects.length,
+                deviceName: getDeviceName()
+            };
+            
+            const backups = getBackups();
+            backups.push(backup);
+            
+            // Mantieni solo ultimi 10 backup
+            if (backups.length > 10) {
+                backups.shift();
+            }
+            
+            localStorage.setItem('openPorteBackups', JSON.stringify(backups));
+            
+            console.log(`💾 Backup creato: ${backup.id}`);
+            return backup.id;
+        }
+
+        function getBackups() {
+            // Ottiene lista backup
+            const stored = localStorage.getItem('openPorteBackups');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function restoreBackup(backupId) {
+            // Ripristina backup specifico
+            const backups = getBackups();
+            const backup = backups.find(b => b.id === backupId);
+            
+            if (!backup) {
+                showNotification('❌ Backup non trovato', 'error');
+                return false;
+            }
+            
+            if (!confirm(`Ripristinare backup del ${formatDate(backup.timestamp)}?\nQuesta azione sovrascriverà i dati correnti.`)) {
+                return false;
+            }
+            
+            // Crea backup corrente prima di restore (safety)
+            createBackup('Pre-restore safety backup');
+            
+            // Restore
+            state.projects = JSON.parse(JSON.stringify(backup.projects));
+            saveState();
+            render();
+            
+            showNotification(`✅ Backup ripristinato: ${backup.reason}`, 'success');
+            return true;
+        }
+
+        function deleteBackup(backupId) {
+            // Elimina backup specifico
+            let backups = getBackups();
+            backups = backups.filter(b => b.id !== backupId);
+            localStorage.setItem('openPorteBackups', JSON.stringify(backups));
+            
+            showNotification('🗑️ Backup eliminato', 'info');
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // 📋 SEZIONE 7: UI HELPER FUNCTIONS
+        // ───────────────────────────────────────────────────────────────
+
+        async function showImportPreview(analysis) {
+            // Mostra preview progetti da importare
+            return new Promise((resolve) => {
+                const { newProjects, existingProjects, conflicts } = analysis;
+                
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.right = '0';
+                modal.style.bottom = '0';
+                
+                modal.innerHTML = `
+                    <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full">
+                        <div class="p-6">
+                            <h2 class="text-2xl font-bold mb-4 text-blue-600">
+                                📥 Anteprima Import
+                            </h2>
+                            
+                            <div class="space-y-4 mb-6">
+                                <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                    <p class="font-bold text-green-700">✅ Nuovi Progetti: ${newProjects.length}</p>
+                                    <p class="text-sm text-gray-600">Saranno aggiunti senza conflitti</p>
+                                </div>
+                                
+                                ${conflicts.length > 0 ? `
+                                <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <p class="font-bold text-yellow-700">⚠️ Conflitti Rilevati: ${conflicts.length}</p>
+                                    <p class="text-sm text-gray-600">Ti verrà chiesto come gestirli</p>
+                                </div>
+                                ` : ''}
+                                
+                                ${existingProjects.length > 0 ? `
+                                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p class="font-bold text-blue-700">📋 Progetti Identici: ${existingProjects.length}</p>
+                                    <p class="text-sm text-gray-600">Saranno ignorati (già presenti)</p>
+                                </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="flex gap-3">
+                                <button onclick="window.closeImportPreview(false)" 
+                                        class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
+                                    Annulla
+                                </button>
+                                <button onclick="window.closeImportPreview(true)" 
+                                        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    Continua Import
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                window.closeImportPreview = (proceed) => {
+                    document.body.removeChild(modal);
+                    delete window.closeImportPreview;
+                    resolve(proceed);
+                };
+            });
+        }
+
+        function formatDate(isoString) {
+            // Formatta data ISO in formato leggibile
+            if (!isoString) return 'Mai';
+            const date = new Date(isoString);
+            return date.toLocaleString('it-IT', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -969,6 +1635,14 @@
                                 class="px-4 py-2 rounded-lg font-semibold transition-all duration-200
                                        bg-purple-500 text-white hover:bg-purple-400">
                                 💾 JSON
+                            </button>
+                            
+                            <!-- Pulsante Import -->
+                            <button 
+                                onclick="importProjectsJSON()"
+                                class="px-4 py-2 rounded-lg font-semibold transition-all duration-200
+                                       bg-indigo-500 text-white hover:bg-indigo-400">
+                                📥 Import
                             </button>
                             
                         </div>
@@ -2007,7 +2681,9 @@
                     ZDX: '0'
                 },
                 positions: [],
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                // ✅ SOLUZIONE C: Metadata per tracking e sincronizzazione
+                metadata: initMetadata()
             };
             state.projects.push(project);
             state.currentProject = project.id;
@@ -2073,6 +2749,8 @@
                     noteVisibilita: []
                 };
                 project.positions.push(pos);
+                // ✅ SOLUZIONE C: Track modifica
+                updateProjectTimestamp(projectId, 'addPosition', `Aggiunta posizione: ${pos.name}`);
                 saveState();
                 state.currentPosition = pos.id;
                 showNotification('Posizione aggiunta', 'success');
@@ -2905,6 +3583,12 @@
                                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg">
                                 <span>💾</span>
                                 <span>Export JSON per Odoo</span>
+                            </button>
+                            
+                            <button onclick="importProjectsJSON()" 
+                                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg">
+                                <span>📥</span>
+                                <span>Import JSON</span>
                             </button>
                         </div>
                     </div>

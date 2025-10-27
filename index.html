@@ -3489,7 +3489,7 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 ${state.screen === 'list' ? `
-                                    <button onclick="importProjects()" 
+                                    <button onclick="importProjectsJSON()" 
                                             class="px-4 py-1.5 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center gap-2">
                                         <span>📥</span>
                                         <span>Importa</span>
@@ -9210,74 +9210,6 @@
                 console.error('Errore export:', error);
                 showNotification(`Errore durante export: ${error.message}`, 'error');
             }
-        };
-
-        window.importProjects = () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const data = JSON.parse(event.target.result);
-                        
-                        if (!data.projects || !Array.isArray(data.projects)) {
-                            throw new Error('File non valido');
-                        }
-                        
-                        const conferma = confirm(
-                            `Importare ${data.projects.length} progetti?\n\n` +
-                            `OK = SOSTITUISCI progetti attuali\n` +
-                            `Annulla = annulla`
-                        );
-                        
-                        if (!conferma) {
-                            showNotification('Importazione annullata', 'info');
-                            return;
-                        }
-                        
-                        const aggiungi = confirm(
-                            `AGGIUNGERE ai progetti esistenti?\n\n` +
-                            `OK = AGGIUNGI\n` +
-                            `Annulla = SOSTITUISCI`
-                        );
-                        
-                        if (aggiungi) {
-                            const nuoviProgetti = data.projects.map(p => ({
-                                ...p,
-                                id: generateId()
-                            }));
-                            state.projects = [...state.projects, ...nuoviProgetti];
-                        } else {
-                            state.projects = data.projects;
-                        }
-                        
-                        state.currentProject = null;
-                        state.screen = 'list';
-                        
-                        saveState();
-                        render();
-                        
-                        showNotification(
-                            `Importazione completata! ${data.projects.length} progetti ${aggiungi ? 'aggiunti' : 'importati'}`,
-                            'success'
-                        );
-                        
-                    } catch (error) {
-                        console.error('Errore import:', error);
-                        showNotification(`Errore durante importazione: ${error.message}`, 'error');
-                    }
-                };
-                
-                reader.readAsText(file);
-            };
-            
-            input.click();
         };
 
         // NUOVE FUNZIONI PER ODOO - Export Singolo Progetto

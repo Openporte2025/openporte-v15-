@@ -1,8 +1,40 @@
 <!DOCTYPE html>
 <!--
-    Open Porte v3.4 - FASE 28: STEP DINAMICI + MURO IN PRODOTTI ✅🗿
+    Open Porte v3.5 - Chat 007 FASE 03: EXPORT JSON COMPLETO ✅📤
     
-    ✨ MODIFICHE FASE 28 (22 OTT 2025):
+    ✨ MODIFICHE FASE 03 (25 OTT 2025):
+    ✅ EXPORT JSON COMPLETO CON DATI MURO:
+       - Aggiunto campo "nome_ricerca" per ricerca facile (cliente + progetto)
+       - Aggiunto "caratteristiche_muro_globali" con tutti i dati globali del progetto
+       - Aggiunto "caratteristiche_muro_override" per ogni posizione (se presente)
+       - Aggiunto "rilievo_preesistente" per ogni posizione (se presente)
+       - Include: telaio, falso, guida, coprifilo, profondità muro, battuta superiore tapparella
+       - Versione JSON aggiornata a "1.0-FASE007"
+       
+    🔍 RICERCA NEL JSON:
+       Cerca il campo "nome_ricerca" per trovare rapidamente il progetto
+       Esempio: "nome_ricerca": "Mario Rossi Appartamento Centro"
+    
+    ✨ MODIFICHE FASE 02 (25 OTT 2025 - PRECEDENTE):
+    ✅ BSup PRE-COMPILATO CON BATTUTA SUPERIORE TAPPARELLA:
+       - Quando aggiungi un cassonetto, BSuperiore viene automaticamente pre-compilato
+       - Il valore iniziale è "Battuta Superiore con Tapparella" dalle caratteristiche muro
+       - Usa le caratteristiche muro override se presenti, altrimenti quelle globali
+       - Il campo rimane MODIFICABILE dall'utente
+       - Migrazione automatica: cassonetti esistenti vengono inizializzati all'avvio
+       - Funzioni modificate: addCassonetto(), ricalcolaBRMCassonetto(), cleanNegativeValues()
+    
+    ✨ MODIFICHE FASE 01 (25 OTT 2025 - PRECEDENTE):
+    ✅ OVERRIDE MANUALE VALIDAZIONE MISURE:
+       - Nuovo sistema per confermare manualmente misure con errore di validazione
+       - Pulsante "✓ Conferma OK" appare accanto ai campi con errore (bordo rosso)
+       - Dopo conferma: campo diventa VERDE con badge "✅ CONFERMATO (manuale)"
+       - L'override ignora solo l'errore specifico di quel campo
+       - Pulsante "✕ Annulla conferma" per rimuovere l'override se necessario
+       - Gli override vengono salvati nel state (pos.validationOverrides)
+       - Utile per casi particolari sul campo dove la misura è corretta ma la validazione automatica è troppo restrittiva
+    
+    ✨ MODIFICHE FASE 28 (22 OTT 2025 - PRECEDENTE):
     ✅ STEP DINAMICI IN BASE AI PRODOTTI SELEZIONATI:
        - La barra degli step mostra SOLO i prodotti selezionati
        - MURO INTEGRATO NELLO STEP "PRODOTTI": Step 2 contiene sia selezione prodotti che config muro
@@ -554,6 +586,61 @@
         .validation-message.success {
             color: #10b981;
         }
+        /* 🛡️ OVERRIDE VALIDAZIONE MANUALE */
+        .input-overridden {
+            border: 2px solid #10b981 !important;
+            background: #f0fdf4 !important;
+        }
+        .validation-override-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+        .btn-override-confirm {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 0.5rem;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-override-confirm:hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+        .btn-override-cancel {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: #6b7280;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 0.5rem;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-override-cancel:hover {
+            background: #4b5563;
+            transform: scale(1.05);
+        }
         .validation-summary {
             position: sticky;
             top: 0;
@@ -659,6 +746,20 @@
                                 });
                             }
                         });
+                        
+                        // 🔧 Inizializza BSuperiore nei cassonetti esistenti
+                        if (pos.cassonetto) {
+                            const cm = pos.overrideCaratteristiche && pos.caratteristicheMuroOverride 
+                                ? pos.caratteristicheMuroOverride 
+                                : project.caratteristicheMuro || {};
+                            
+                            const bSuperioreDefault = cm.battutaSuperioreTapparella || '0';
+                            
+                            // Se BSuperiore non esiste o è '0', inizializzalo con battutaSuperioreTapparella
+                            if (!pos.cassonetto.BSuperiore || pos.cassonetto.BSuperiore === '0') {
+                                pos.cassonetto.BSuperiore = bSuperioreDefault;
+                            }
+                        }
                     });
                 }
             });
@@ -715,6 +816,284 @@
             return Date.now().toString(36) + Math.random().toString(36).substr(2);
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // 🎯 FASE 02: MENU NAVIGAZIONE UNIFICATO (Chat 009)
+        // ═══════════════════════════════════════════════════════════════
+        
+        // Genera HTML navbar fisso in alto con tutti i pulsanti di navigazione
+        function renderTopNavbar() {
+            const project = state.projects[state.currentProject];
+            if (!project) return '';
+            
+            // Determina quali prodotti sono selezionati
+            const hasInfissi = project.prodotti?.infissi || false;
+            const hasPersiane = project.prodotti?.persiane || false;
+            const hasTapparelle = project.prodotti?.tapparelle || false;
+            const hasZanzariere = project.prodotti?.zanzariere || false;
+            const hasCassonetti = project.prodotti?.cassonetti || false;
+            
+            // Verifica prerequisiti per navigazione
+            const canGoToPositions = hasInfissi || hasPersiane || hasTapparelle || 
+                                     hasZanzariere || hasCassonetti;
+            
+            // Determina se sezione è attiva (highlight) - USA state.setupStep
+            const isStep1Active = state.setupStep === 1;
+            const isStep2Active = state.setupStep === 2;
+            const isStep3Active = state.setupStep === 3 && hasInfissi;
+            const isStep4Active = state.setupStep === 4 && hasPersiane;
+            const isStep5Active = state.setupStep === 5 && hasTapparelle;
+            const isStep6Active = state.setupStep === 6 && hasZanzariere;
+            const isStep7Active = state.setupStep === 7 && hasCassonetti;
+            const isStep9Active = state.setupStep === 9;
+            
+            return `
+                <div class="w-full bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg" 
+                     style="position: sticky; top: 0; z-index: 1000;">
+                    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+                        
+                        <!-- SEZIONE SINISTRA: Navigazione -->
+                        <div class="flex gap-2 flex-wrap">
+                            
+                            <!-- Pulsante Cliente -->
+                            <button 
+                                onclick="navigateToStep(1)"
+                                class="px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${isStep1Active 
+                                    ? 'bg-white text-blue-700 shadow-md' 
+                                    : 'bg-blue-500 text-white hover:bg-blue-400'}">
+                                📊 Cliente
+                            </button>
+                            
+                            <!-- Pulsante Setup -->
+                            <button 
+                                onclick="navigateToStep(2)"
+                                class="px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${isStep2Active 
+                                    ? 'bg-white text-blue-700 shadow-md' 
+                                    : 'bg-blue-500 text-white hover:bg-blue-400'}">
+                                🛠️ Setup
+                            </button>
+                            
+                            <!-- Dropdown Config -->
+                            <div class="relative" id="configDropdownContainer">
+                                <button 
+                                    onclick="toggleConfigDropdown(event)"
+                                    class="px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${(isStep3Active || isStep4Active || isStep5Active || 
+                                           isStep6Active || isStep7Active)
+                                           ? 'bg-white text-blue-700 shadow-md' 
+                                           : 'bg-blue-500 text-white hover:bg-blue-400'}">
+                                    ⚙️ Config ▼
+                                </button>
+                                
+                                <!-- Menu Dropdown (nascosto di default) -->
+                                <div id="configDropdown" 
+                                     class="hidden absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl 
+                                            border border-gray-200 min-w-[200px] py-2"
+                                     style="z-index: 1001;">
+                                    
+                                    ${hasInfissi ? `
+                                        <button 
+                                            onclick="navigateToStep(3)"
+                                            class="w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors ${isStep3Active ? 'bg-blue-100 font-semibold text-blue-700' : 'text-gray-700'}">
+                                            🪟 Infissi
+                                        </button>
+                                    ` : ''}
+                                    
+                                    ${hasPersiane ? `
+                                        <button 
+                                            onclick="navigateToStep(4)"
+                                            class="w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors ${isStep4Active ? 'bg-blue-100 font-semibold text-blue-700' : 'text-gray-700'}">
+                                            🚪 Persiane
+                                        </button>
+                                    ` : ''}
+                                    
+                                    ${hasTapparelle ? `
+                                        <button 
+                                            onclick="navigateToStep(5)"
+                                            class="w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors ${isStep5Active ? 'bg-blue-100 font-semibold text-blue-700' : 'text-gray-700'}">
+                                            🎚️ Tapparelle
+                                        </button>
+                                    ` : ''}
+                                    
+                                    ${hasZanzariere ? `
+                                        <button 
+                                            onclick="navigateToStep(6)"
+                                            class="w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors ${isStep6Active ? 'bg-blue-100 font-semibold text-blue-700' : 'text-gray-700'}">
+                                            🦟 Zanzariere
+                                        </button>
+                                    ` : ''}
+                                    
+                                    ${hasCassonetti ? `
+                                        <button 
+                                            onclick="navigateToStep(7)"
+                                            class="w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors ${isStep7Active ? 'bg-blue-100 font-semibold text-blue-700' : 'text-gray-700'}">
+                                            📦 Cassonetti
+                                        </button>
+                                    ` : ''}
+                                    
+                                    ${!hasInfissi && !hasPersiane && !hasTapparelle && !hasZanzariere && !hasCassonetti ? `
+                                        <div class="px-4 py-2 text-gray-500 text-sm italic">
+                                            Nessun prodotto selezionato
+                                        </div>
+                                    ` : ''}
+                                    
+                                </div>
+                            </div>
+                            
+                            <!-- Pulsante Posizioni -->
+                            <button 
+                                onclick="navigateToPositions()"
+                                ${!canGoToPositions ? 'disabled' : ''}
+                                class="px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${!canGoToPositions 
+                                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed opacity-50' 
+                                    : isStep9Active 
+                                        ? 'bg-white text-blue-700 shadow-md' 
+                                        : 'bg-blue-500 text-white hover:bg-blue-400'}">
+                                📍 Posizioni
+                            </button>
+                            
+                        </div>
+                        
+                        <!-- SEZIONE DESTRA: Export -->
+                        <div class="flex gap-2">
+                            
+                            <!-- Pulsante PDF -->
+                            <button 
+                                onclick="printCurrentProjectPDF()"
+                                class="px-4 py-2 rounded-lg font-semibold transition-all duration-200
+                                       bg-green-500 text-white hover:bg-green-400">
+                                🖨️ PDF
+                            </button>
+                            
+                            <!-- Pulsante JSON -->
+                            <button 
+                                onclick="exportCurrentProjectJSON()"
+                                class="px-4 py-2 rounded-lg font-semibold transition-all duration-200
+                                       bg-purple-500 text-white hover:bg-purple-400">
+                                💾 JSON
+                            </button>
+                            
+                        </div>
+                        
+                    </div>
+                </div>
+            `;
+        }
+
+        // Apre/chiude il dropdown Config
+        function toggleConfigDropdown(event) {
+            // Previeni propagazione per evitare chiusura immediata
+            if (event) {
+                event.stopPropagation();
+            }
+            
+            const dropdown = document.getElementById('configDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+            }
+        }
+
+        // Chiude dropdown Config quando si clicca fuori
+        function hideConfigDropdown(event) {
+            const dropdown = document.getElementById('configDropdown');
+            const container = document.getElementById('configDropdownContainer');
+            
+            // Verifica se il click è fuori dal dropdown
+            if (dropdown && container && !dropdown.classList.contains('hidden')) {
+                if (!container.contains(event.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            }
+        }
+
+        // Naviga a step specifico con validazione prerequisiti
+        function navigateToStep(stepNumber) {
+            // Chiudi dropdown se aperto
+            const dropdown = document.getElementById('configDropdown');
+            if (dropdown) {
+                dropdown.classList.add('hidden');
+            }
+            
+            // Verifica se può navigare
+            if (!canNavigateToStep(stepNumber)) {
+                showNotification('⚠️ Completa prima i passaggi precedenti', 'warning');
+                return;
+            }
+            
+            // Cambia step e renderizza
+            state.setupStep = stepNumber;
+            saveState();
+            render();
+        }
+
+        // Naviga direttamente a Step 9 (Posizioni)
+        function navigateToPositions() {
+            // Chiudi dropdown se aperto
+            const dropdown = document.getElementById('configDropdown');
+            if (dropdown) {
+                dropdown.classList.add('hidden');
+            }
+            
+            const project = state.projects[state.currentProject];
+            if (!project) return;
+            
+            // Verifica che ci sia almeno un prodotto selezionato
+            const hasProducts = project.prodotti?.infissi || 
+                                project.prodotti?.persiane || 
+                                project.prodotti?.tapparelle || 
+                                project.prodotti?.zanzariere || 
+                                project.prodotti?.cassonetti;
+            
+            if (!hasProducts) {
+                showNotification('⚠️ Seleziona almeno un prodotto nello Setup', 'warning');
+                return;
+            }
+            
+            // Salta direttamente a step 9
+            state.setupStep = 9;
+            saveState();
+            render();
+        }
+
+        // Verifica se è possibile navigare a uno step specifico
+        function canNavigateToStep(stepNumber) {
+            const project = state.projects[state.currentProject];
+            if (!project) return false;
+            
+            // Step 1-2 sempre accessibili
+            if (stepNumber <= 2) {
+                return true;
+            }
+            
+            // Step 3-7: Config prodotti - verificare se prodotto selezionato
+            if (stepNumber === 3) {
+                return project.prodotti?.infissi || false;
+            }
+            if (stepNumber === 4) {
+                return project.prodotti?.persiane || false;
+            }
+            if (stepNumber === 5) {
+                return project.prodotti?.tapparelle || false;
+            }
+            if (stepNumber === 6) {
+                return project.prodotti?.zanzariere || false;
+            }
+            if (stepNumber === 7) {
+                return project.prodotti?.cassonetti || false;
+            }
+            
+            // Step 9: Posizioni - almeno un prodotto selezionato
+            if (stepNumber === 9) {
+                return project.prodotti?.infissi || 
+                       project.prodotti?.persiane || 
+                       project.prodotti?.tapparelle || 
+                       project.prodotti?.zanzariere || 
+                       project.prodotti?.cassonetti;
+            }
+            
+            return false;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        
         // 🎯 FASE 28: Navigazione intelligente tra step dinamici
         function getValidSteps(project) {
             const steps = [1, 2]; // Sempre presenti: Dati Cliente, Prodotti (include Muro)
@@ -976,10 +1355,24 @@
                 });
             }
             
-            return { errors, warnings, isValid: errors.length === 0 };
+            // 🛡️ Filtra gli errori che hanno un override manuale confermato
+            const filteredErrors = errors.filter(error => {
+                return !(pos.validationOverrides && pos.validationOverrides[error.field]);
+            });
+            
+            return { 
+                errors: filteredErrors, 
+                warnings, 
+                isValid: filteredErrors.length === 0 
+            };
         }
 
         function getFieldValidationClass(project, pos, fieldName) {
+            // 🛡️ Controlla se c'è un override manuale per questo campo
+            if (pos.validationOverrides && pos.validationOverrides[fieldName]) {
+                return 'input-overridden'; // Verde con badge confermato
+            }
+            
             const validation = validateMisure(project, pos);
             
             const hasError = validation.errors.some(e => e.field === fieldName);
@@ -996,11 +1389,36 @@
         }
 
         function getFieldValidationMessage(project, pos, fieldName) {
+            // 🛡️ Se c'è un override manuale, mostra il badge CONFERMATO
+            if (pos.validationOverrides && pos.validationOverrides[fieldName]) {
+                return `
+                    <div class="validation-message success">
+                        ✅ CONFERMATO (manuale)
+                        <button 
+                            class="btn-override-cancel" 
+                            onclick="cancelValidationOverride('${project.id}', '${pos.id}', '${fieldName}')"
+                            title="Annulla conferma manuale">
+                            ✕ Annulla
+                        </button>
+                    </div>
+                `;
+            }
+            
             const validation = validateMisure(project, pos);
             
             const error = validation.errors.find(e => e.field === fieldName);
             if (error) {
-                return `<div class="validation-message error">🔴 ${error.message}</div>`;
+                return `
+                    <div class="validation-message error">
+                        🔴 ${error.message}
+                        <button 
+                            class="btn-override-confirm" 
+                            onclick="confirmValidationOverride('${project.id}', '${pos.id}', '${fieldName}')"
+                            title="Ho verificato, la misura è corretta">
+                            ✓ Conferma OK
+                        </button>
+                    </div>
+                `;
             }
             
             const warning = validation.warnings.find(w => w.field === fieldName);
@@ -1015,6 +1433,52 @@
             }
             
             return '';
+        }
+
+        // 🛡️ OVERRIDE VALIDAZIONE MANUALE - Conferma che una misura è corretta
+        function confirmValidationOverride(projectId, posId, fieldName) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            const pos = project.positions.find(p => p.id === posId);
+            if (!pos) return;
+            
+            // Inizializza l'oggetto validationOverrides se non esiste
+            if (!pos.validationOverrides) {
+                pos.validationOverrides = {};
+            }
+            
+            // Salva la conferma per questo campo
+            pos.validationOverrides[fieldName] = {
+                confirmed: true,
+                timestamp: new Date().toISOString(),
+                value: pos.misure ? pos.misure[fieldName] : null
+            };
+            
+            saveState();
+            render();
+        }
+
+        // 🛡️ OVERRIDE VALIDAZIONE MANUALE - Annulla la conferma manuale
+        function cancelValidationOverride(projectId, posId, fieldName) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            const pos = project.positions.find(p => p.id === posId);
+            if (!pos) return;
+            
+            // Rimuovi l'override per questo campo
+            if (pos.validationOverrides && pos.validationOverrides[fieldName]) {
+                delete pos.validationOverrides[fieldName];
+                
+                // Se non ci sono più override, rimuovi l'oggetto intero
+                if (Object.keys(pos.validationOverrides).length === 0) {
+                    delete pos.validationOverrides;
+                }
+            }
+            
+            saveState();
+            render();
         }
 
         // 📋 RILIEVO PREESISTENTE - Gestione e Validazione
@@ -1733,6 +2197,14 @@
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
+                    // Prendi caratteristiche muro (override o globali)
+                    const cm = pos.overrideCaratteristiche && pos.caratteristicheMuroOverride 
+                        ? pos.caratteristicheMuroOverride 
+                        : project.caratteristicheMuro || {};
+                    
+                    // 🔧 BSuperiore: Pre-compila con Battuta Superiore con Tapparella
+                    const bSuperioreDefault = cm.battutaSuperioreTapparella || '0';
+                    
                     // UN SOLO CASSONETTO per posizione
                     pos.cassonetto = {
                         id: generateId(),
@@ -1749,7 +2221,7 @@
                         HCASS: '0',
                         B: '0',
                         C: '0',
-                        BSuperiore: '0',
+                        BSuperiore: bSuperioreDefault, // ✅ Pre-compilato con battutaSuperioreTapparella
                         BRM_L: null,
                         BRM_H: null,
                         BRM_C: null,
@@ -2140,6 +2612,14 @@
                 if (pos && pos.cassonetto) {
                     const cas = pos.cassonetto;
                     
+                    // Prendi caratteristiche muro (override o globali)
+                    const cm = pos.overrideCaratteristiche && pos.caratteristicheMuroOverride 
+                        ? pos.caratteristicheMuroOverride 
+                        : project.caratteristicheMuro || {};
+                    
+                    // 🔧 BSuperiore: Pre-compila con Battuta Superiore con Tapparella
+                    const bSuperioreDefault = cm.battutaSuperioreTapparella || '0';
+                    
                     // Assicurati che tutte le misure esistano
                     if (!cas.LS) cas.LS = '0';
                     if (!cas.SRSX) cas.SRSX = '0';
@@ -2149,7 +2629,10 @@
                     if (!cas.HCASS) cas.HCASS = '0';
                     if (!cas.B) cas.B = '0';
                     if (!cas.C) cas.C = '0';
-                    if (!cas.BSuperiore) cas.BSuperiore = '0';
+                    if (!cas.BSuperiore || cas.BSuperiore === '0') {
+                        // ✅ Pre-compila con battutaSuperioreTapparella se mancante o zero
+                        cas.BSuperiore = bSuperioreDefault;
+                    }
                     
                     // Ricalcola BRM (solo con formula globale, non personalizzata)
                     if (!cas.brmPersonalizzato) {
@@ -2401,6 +2884,8 @@
             if (!project) return '';
 
             return `
+                ${renderTopNavbar()}
+                
                 <div class="max-w-7xl mx-auto p-4">
                     <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
                         <button onclick="state.currentProject = null; state.screen = 'list'; render()" 
@@ -7633,6 +8118,25 @@
             if (project) {
                 if (!project.caratteristicheMuro) project.caratteristicheMuro = {};
                 project.caratteristicheMuro[field] = value;
+                
+                // 🔧 CORREZIONE: Se modifichi "Battuta Superiore con Tapparella", 
+                // aggiorna automaticamente BSuperiore nei cassonetti che usano le caratteristiche globali
+                if (field === 'battutaSuperioreTapparella') {
+                    let cassUpdated = 0;
+                    project.positions.forEach(pos => {
+                        // Aggiorna solo se la posizione usa caratteristiche globali (non ha override)
+                        if (pos.cassonetto && !pos.overrideCaratteristiche) {
+                            pos.cassonetto.BSuperiore = value || '0';
+                            cassUpdated++;
+                        }
+                    });
+                    
+                    if (cassUpdated > 0) {
+                        render();
+                        showNotification(`✅ Aggiornati ${cassUpdated} cassonetti con nuovo BSuperiore: ${value}mm`, 'success');
+                    }
+                }
+                
                 saveState();
             }
         };
@@ -7645,6 +8149,15 @@
                 if (pos && pos.overrideCaratteristiche) {
                     if (!pos.caratteristicheMuroOverride) pos.caratteristicheMuroOverride = {};
                     pos.caratteristicheMuroOverride[field] = value;
+                    
+                    // 🔧 CORREZIONE: Se modifichi "Battuta Superiore con Tapparella" nell'override,
+                    // aggiorna automaticamente BSuperiore nel cassonetto di questa posizione
+                    if (field === 'battutaSuperioreTapparella' && pos.cassonetto) {
+                        pos.cassonetto.BSuperiore = value || '0';
+                        render();
+                        showNotification(`✅ Aggiornato BSuperiore cassonetto: ${value}mm`, 'success');
+                    }
+                    
                     saveState();
                 }
             }
@@ -7749,10 +8262,26 @@
         };
 
         window.updateMisuraWithValidation = (projectId, posId, field, value) => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                const pos = project.positions.find(p => p.id === posId);
+                if (pos) {
+                    // 🛡️ Se l'utente modifica una misura che aveva un override, rimuovi l'override
+                    // perché il valore è cambiato e deve essere rivalidato
+                    if (pos.validationOverrides && pos.validationOverrides[field]) {
+                        delete pos.validationOverrides[field];
+                        
+                        // Se non ci sono più override, rimuovi l'oggetto intero
+                        if (Object.keys(pos.validationOverrides).length === 0) {
+                            delete pos.validationOverrides;
+                        }
+                    }
+                }
+            }
+            
             updateMisura(projectId, posId, field, value);
             
             // ✅ NUOVO: Ricalcola automaticamente tutti i BRM di questa posizione quando cambiano le misure
-            const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 const pos = project.positions.find(p => p.id === posId);
                 if (pos) {
@@ -7783,6 +8312,14 @@
                 if (pos) {
                     pos.overrideCaratteristiche = false;
                     pos.caratteristicheMuroOverride = null;
+                    
+                    // 🔧 CORREZIONE: Quando disabiliti l'override, aggiorna BSuperiore con il valore globale
+                    if (pos.cassonetto) {
+                        const bSuperioreGlobale = project.caratteristicheMuro?.battutaSuperioreTapparella || '0';
+                        pos.cassonetto.BSuperiore = bSuperioreGlobale;
+                        showNotification(`✅ Cassonetto aggiornato con valore globale BSuperiore: ${bSuperioreGlobale}mm`, 'success');
+                    }
+                    
                     saveState();
                     render();
                 }
@@ -8070,8 +8607,10 @@
                 
                 const data = {
                     commessa_id: project.id,
-                    versione: "1.0-FASE006",
+                    versione: "1.0-FASE007",
                     data_rilievo: new Date().toISOString(),
+                    // 🔍 RICERCA: Campo per ricerca facile nel JSON
+                    nome_ricerca: `${project.client || ''} ${project.name || ''}`.trim(),
                     cliente: {
                         nome: project.client || '',
                         progetto: project.name || '',
@@ -8080,6 +8619,23 @@
                         telefono: project.clientData?.telefono || ''
                     },
                     note_progetto: project.clientData?.note || '',
+                    // 🧱 CARATTERISTICHE MURO GLOBALI
+                    caratteristiche_muro_globali: {
+                        telaio_larghezza: project.caratteristicheMuro?.telaioLarghezza || 0,
+                        telaio_altezza: project.caratteristicheMuro?.telaioAltezza || 0,
+                        falso_esistente: project.caratteristicheMuro?.falsoEsistente || 'no',
+                        spessore_falso: project.caratteristicheMuro?.spessoreFalso || 0,
+                        distanza_falso_infisso: project.caratteristicheMuro?.distanzaFalsoInfisso || 0,
+                        distanza_muro_infisso: project.caratteristicheMuro?.distanzaMuroInfisso || 0,
+                        guida_tipo: project.caratteristicheMuro?.guidaTipo || '',
+                        guida_larghezza: project.caratteristicheMuro?.guidaLarghezza || 0,
+                        guida_altezza: project.caratteristicheMuro?.guidaAltezza || 0,
+                        guida_profondita: project.caratteristicheMuro?.guidaProfondita || 0,
+                        coprifilo_larghezza: project.caratteristicheMuro?.coprifiloLarghezza || 0,
+                        prof_muro_int: project.caratteristicheMuro?.profMuroInt || 0,
+                        prof_muro_est: project.caratteristicheMuro?.profMuroEst || 0,
+                        battuta_superiore_tapparella: project.caratteristicheMuro?.battutaSuperioreTapparella || 0
+                    },
                     posizioni: project.positions.map(pos => {
                         // 📊 TEMPLATE COMPLETO MISURE - Include tutti i campi anche se = 0
                         const misureComplete = {
@@ -8110,6 +8666,26 @@
                             quantita: pos.quantita || 1,
                             misure: misureComplete
                         };
+                        
+                        // 🧱 CARATTERISTICHE MURO OVERRIDE (se presenti per questa posizione)
+                        if (pos.overrideCaratteristiche && pos.caratteristicheMuroOverride) {
+                            posData.caratteristiche_muro_override = {
+                                telaio_larghezza: pos.caratteristicheMuroOverride.telaioLarghezza || 0,
+                                telaio_altezza: pos.caratteristicheMuroOverride.telaioAltezza || 0,
+                                falso_esistente: pos.caratteristicheMuroOverride.falsoEsistente || 'no',
+                                spessore_falso: pos.caratteristicheMuroOverride.spessoreFalso || 0,
+                                distanza_falso_infisso: pos.caratteristicheMuroOverride.distanzaFalsoInfisso || 0,
+                                distanza_muro_infisso: pos.caratteristicheMuroOverride.distanzaMuroInfisso || 0,
+                                guida_tipo: pos.caratteristicheMuroOverride.guidaTipo || '',
+                                guida_larghezza: pos.caratteristicheMuroOverride.guidaLarghezza || 0,
+                                guida_altezza: pos.caratteristicheMuroOverride.guidaAltezza || 0,
+                                guida_profondita: pos.caratteristicheMuroOverride.guidaProfondita || 0,
+                                coprifilo_larghezza: pos.caratteristicheMuroOverride.coprifiloLarghezza || 0,
+                                prof_muro_int: pos.caratteristicheMuroOverride.profMuroInt || 0,
+                                prof_muro_est: pos.caratteristicheMuroOverride.profMuroEst || 0,
+                                battuta_superiore_tapparella: pos.caratteristicheMuroOverride.battutaSuperioreTapparella || 0
+                            };
+                        }
                         
                         // Aggiungi infisso se presente
                         if (pos.infisso) {
@@ -8227,6 +8803,18 @@
                                     C: pos.cassonetto.brm?.C ?? null,
                                     B: pos.cassonetto.brm?.B ?? null
                                 }
+                            };
+                        }
+                        
+                        // 📋 RILIEVO PREESISTENTE (se presente)
+                        if (pos.rilievo) {
+                            posData.rilievo_preesistente = {
+                                da_togliere: pos.rilievo.togliere || false,
+                                smaltimento: pos.rilievo.smaltimento || false,
+                                materiale: pos.rilievo.materiale || '',
+                                coprifili_int: pos.rilievo.coprifiliInt || false,
+                                coprifili_est: pos.rilievo.coprifiliEst || false,
+                                note: pos.rilievo.note || ''
                             };
                         }
                         
@@ -8452,10 +9040,15 @@ ${idx < total - 1 ? '<div class="page-break"></div>' : ''}
                 
                 // Mantieni SOLO input, select, textarea navigabili con TAB
                 // (Questi elementi hanno già tabindex=0 di default, non serve modificarli)
+                
+                // 🎯 FASE 02: Event listener per chiudere dropdown Config al click esterno
+                document.removeEventListener('click', hideConfigDropdown);
+                document.addEventListener('click', hideConfigDropdown);
             }, 10);
         };
         
         console.log('✅ Navigazione TAB ottimizzata: Ora TAB passa solo tra i campi dati!');
+        console.log('✅ FASE 02: Navbar menu con dropdown Config attivato!');
     </script>
 </body>
 </html>

@@ -3416,6 +3416,10 @@
                 if (!project.configInfissi) {
                     project.configInfissi = {};
                 }
+                
+                // 🆕 Salva il vecchio valore PRIMA di aggiornare
+                const oldValue = project.configInfissi[field];
+                
                 project.configInfissi[field] = value;
                 
                 // Se cambia tagliTelaio, RESET immediato dei codTagli per forzare aggiornamento
@@ -3433,7 +3437,13 @@
                     };
                     // RESET esplicito per forzare il render a mostrare i nuovi campi
                     project.configInfissi.codTagli = [...(tagliMap[value] || [])];
+                    
+                    // 🆕 Sincronizza codTagli con le posizioni
+                    syncConfigToPositions(project, 'infisso', 'codTagli', project.configInfissi.codTagli, null);
                 }
+                
+                // 🆕 AUTO-SYNC: Aggiorna automaticamente le posizioni dove non è stato modificato manualmente
+                syncConfigToPositions(project, 'infisso', field, value, oldValue);
                 
                 saveState();
                 render();
@@ -5642,7 +5652,7 @@
                             <select onchange="updatePosition('${project.id}', '${pos.id}', 'ambiente', this.value)"
                                     class="w-full compact-input border rounded mt-1">
                                 <option value="">Seleziona...</option>
-                                ${['soggiorno', 'cucina', 'camera', 'bagno', 'corridoio'].map(amb => `
+                                ${['Sala', 'Soggiorno', 'Cucina', 'Camera', 'Stanza', 'Cameretta', 'Matrimoniale', 'Disimpegno', 'Studio', 'Ufficio', 'Bagno1', 'Bagno2', 'Ripostiglio', 'Lavanderia', 'Scala', 'Cantina', 'Garage'].map(amb => `
                                     <option value="${amb}" ${pos.ambiente === amb ? 'selected' : ''}>${amb}</option>
                                 `).join('')}
                             </select>
@@ -8602,7 +8612,15 @@
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 if (!project.configPersiane) project.configPersiane = {};
+                
+                // 🆕 Salva il vecchio valore PRIMA di aggiornare
+                const oldValue = project.configPersiane[field];
+                
                 project.configPersiane[field] = value;
+                
+                // 🆕 AUTO-SYNC: Aggiorna automaticamente le posizioni dove non è stato modificato manualmente
+                syncConfigToPositions(project, 'persiana', field, value, oldValue);
+                
                 saveState();
             }
         };
@@ -8612,7 +8630,15 @@
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 if (!project.configPersiane) project.configPersiane = {};
+                
+                // 🆕 Salva il vecchio valore PRIMA di aggiornare
+                const oldValue = project.configPersiane[field];
+                
                 project.configPersiane[field] = value;
+                
+                // 🆕 AUTO-SYNC: Aggiorna automaticamente le posizioni dove non è stato modificato manualmente
+                syncConfigToPositions(project, 'persiana', field, value, oldValue);
+                
                 saveState();
                 
                 // Gestione visibilità campi condizionali
@@ -8635,7 +8661,15 @@
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 if (!project.configPersiane) project.configPersiane = {};
+                
+                // 🆕 Salva il vecchio valore PRIMA di aggiornare
+                const oldValue = project.configPersiane.fissaggio;
+                
                 project.configPersiane.fissaggio = value;
+                
+                // 🆕 AUTO-SYNC: Aggiorna automaticamente le posizioni dove non è stato modificato manualmente
+                syncConfigToPositions(project, 'persiana', 'fissaggio', value, oldValue);
+                
                 saveState();
                 
                 const tipoTelaioContainer = document.getElementById(`tipo-telaio-persiane-container-${projectId}`);
@@ -8654,7 +8688,15 @@
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 if (!project.configTapparelle) project.configTapparelle = {};
+                
+                // 🆕 Salva il vecchio valore PRIMA di aggiornare
+                const oldValue = project.configTapparelle[field];
+                
                 project.configTapparelle[field] = value;
+                
+                // 🆕 AUTO-SYNC: Aggiorna automaticamente le posizioni dove non è stato modificato manualmente
+                syncConfigToPositions(project, 'tapparella', field, value, oldValue);
+                
                 saveState();
             }
         };
@@ -8663,7 +8705,15 @@
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 if (!project.configZanzariere) project.configZanzariere = {};
+                
+                // 🆕 Salva il vecchio valore PRIMA di aggiornare
+                const oldValue = project.configZanzariere[field];
+                
                 project.configZanzariere[field] = value;
+                
+                // 🆕 AUTO-SYNC: Aggiorna automaticamente le posizioni dove non è stato modificato manualmente
+                syncConfigToPositions(project, 'zanzariera', field, value, oldValue);
+                
                 saveState();
             }
         };
@@ -8672,10 +8722,58 @@
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
                 if (!project.configCassonetti) project.configCassonetti = {};
+                
+                // 🆕 Salva il vecchio valore PRIMA di aggiornare
+                const oldValue = project.configCassonetti[field];
+                
                 project.configCassonetti[field] = value;
+                
+                // 🆕 AUTO-SYNC: Aggiorna automaticamente le posizioni dove non è stato modificato manualmente
+                syncConfigToPositions(project, 'cassonetto', field, value, oldValue);
+                
                 saveState();
             }
         };
+
+        // 🆕 FUNZIONE AUTO-SYNC: Sincronizza config globale → posizioni
+        // Aggiorna automaticamente SOLO i campi che non sono stati modificati manualmente
+        function syncConfigToPositions(project, productType, field, newValue, oldValue) {
+            if (!project || !project.positions) return;
+            
+            // Per ogni posizione del progetto
+            project.positions.forEach(pos => {
+                const product = pos[productType];
+                
+                // Se la posizione ha questo prodotto
+                if (product) {
+                    const currentValue = product[field];
+                    
+                    // 🎯 LOGICA AUTO-SYNC:
+                    // Aggiorna se:
+                    // 1. Il campo è vuoto/undefined (mai impostato)
+                    // 2. Il campo ha lo stesso valore della vecchia config (non modificato manualmente)
+                    const shouldSync = (
+                        currentValue === undefined || 
+                        currentValue === '' || 
+                        currentValue === null ||
+                        currentValue === oldValue ||
+                        (Array.isArray(currentValue) && Array.isArray(oldValue) && 
+                         JSON.stringify(currentValue) === JSON.stringify(oldValue))
+                    );
+                    
+                    if (shouldSync) {
+                        // Aggiorna con il nuovo valore globale
+                        if (Array.isArray(newValue)) {
+                            // Per array (es. codTagli), crea una copia
+                            product[field] = [...newValue];
+                        } else {
+                            product[field] = newValue;
+                        }
+                    }
+                    // ALTRIMENTI: L'utente ha modificato manualmente → NON aggiornare
+                }
+            });
+        }
 
         // ✅ NUOVO: Funzione per ricalcolare tutti i BRM globali quando cambia la configurazione
         function ricalcolaTuttiiBRMGlobali(project, configKey) {

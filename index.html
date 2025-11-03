@@ -1220,6 +1220,191 @@
                 padding: 10px 16px;
             }
         }
+
+        /* ☁️ FASE 022a: OneDrive Sync UI */
+        .sync-badge {
+            display: inline-block;
+            margin-left: auto;
+        }
+
+        .sync-settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        .sync-settings-dialog {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .sync-settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .sync-settings-header h3 {
+            margin: 0;
+            font-size: 20px;
+            color: #1e293b;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .sync-account {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            margin: 20px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 8px;
+            border: 1px solid #bae6fd;
+        }
+
+        .sync-options {
+            padding: 0 20px;
+            margin: 20px 0;
+        }
+
+        .sync-options label {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            cursor: pointer;
+            color: #1e293b;
+            transition: color 0.2s;
+        }
+
+        .sync-options label:hover {
+            color: #2563eb;
+        }
+
+        .sync-options input[type="checkbox"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .sync-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 0 20px;
+            margin: 20px 0;
+        }
+
+        .btn-sync {
+            padding: 10px 16px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-sync:hover {
+            background: #f8fafc;
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+        .btn-sync:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #1e40af;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .sync-info {
+            padding: 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .sync-info p {
+            margin: 0 0 8px 0;
+        }
+
+        .sync-info strong {
+            color: #1e293b;
+        }
+
+        .sync-info ul {
+            margin: 8px 0;
+        }
+
+        .sync-info li {
+            margin: 6px 0;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -1238,8 +1423,37 @@
             showRiepilogoRilievi: false,  // Per mostrare il riepilogo rilievi
             sincronizzazioneVerificata: false,  // Flag per verifica sincronizzazione (1 volta per sessione)
             projectMenuOpen: false,  // ✅ FASE 021: Menu laterale aperto/chiuso
-            configMenuExpanded: false  // ✅ FASE 021: Submenu Config espanso/collassato
+            configMenuExpanded: false,  // ✅ FASE 021: Submenu Config espanso/collassato
+            // ☁️ FASE 022a: OneDrive Sync
+            onedrive: {
+                connected: false,
+                userEmail: null,
+                accessToken: null,
+                refreshToken: null,
+                tokenExpiry: null,
+                lastSyncTime: null,
+                syncStatus: 'disconnected', // disconnected|synced|syncing|error
+                autoSyncEnabled: true,
+                autoBackupEnabled: true,
+                syncNotifications: true
+            }
         };
+
+        // ☁️ FASE 022a: Configurazione OneDrive
+        const ONEDRIVE_CONFIG = {
+            // ✅ CLIENT_ID configurato da Azure Portal
+            // App: Open Porte | Registrata: 03/11/2025
+            clientId: '2b988db8-efa0-455c-9af7-cddbf1552c71',
+            authority: 'https://login.microsoftonline.com/common/oauth2/v2.0',
+            redirectUri: window.location.origin,
+            scopes: ['Files.ReadWrite', 'offline_access'],
+            apiEndpoint: 'https://graph.microsoft.com/v1.0',
+            folderPath: '/OpenPorte',
+            fileName: 'data.json',
+            autoSyncInterval: 5 * 60 * 1000  // 5 minuti
+        };
+
+        let syncInterval = null;  // Timer per sync automatica
 
         // Load/Save Functions
         function loadState() {
@@ -1361,7 +1575,27 @@
         }
 
         function saveState() {
+            // ☁️ FASE 022a: Aggiorna metadata modifiche
+            if (!state.metadata) {
+                state.metadata = {};
+            }
+            state.metadata.lastModified = Date.now();
+            state.metadata.appVersion = '3.5.022a';
+            
             localStorage.setItem('openPorteData', JSON.stringify(state));
+            
+            // ☁️ FASE 022a: Auto-backup su OneDrive (debounced)
+            // Solo se connesso, auto-backup abilitato e non già in sync
+            if (state.onedrive.connected && 
+                state.onedrive.autoBackupEnabled && 
+                state.onedrive.syncStatus !== 'syncing') {
+                
+                // Debounce: aspetta 2 secondi di inattività prima di sync
+                clearTimeout(window.onedriveSyncDebounce);
+                window.onedriveSyncDebounce = setTimeout(() => {
+                    uploadToOneDrive();
+                }, 2000);
+            }
         }
 
         function generateId() {
@@ -2129,6 +2363,661 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
+        // ☁️ FASE 022a: ONEDRIVE SYNC MODULE
+        // ═══════════════════════════════════════════════════════════════
+        
+        // ─── UTILITY FUNCTIONS ───
+        
+        function renderSyncBadge() {
+            if (!state.onedrive.connected) {
+                return '<span style="font-size: 14px; color: #94a3b8;">⚪</span>'; // Disconnesso
+            }
+            
+            switch(state.onedrive.syncStatus) {
+                case 'synced':
+                    return '<span style="font-size: 14px; color: #22c55e;">🟢</span>'; // Verde
+                case 'syncing':
+                    return '<span style="font-size: 14px; color: #eab308;">🟡</span>'; // Giallo
+                case 'error':
+                    return '<span style="font-size: 14px; color: #ef4444;">🔴</span>'; // Rosso
+                default:
+                    return '<span style="font-size: 14px; color: #3b82f6;">🔵</span>'; // Blu
+            }
+        }
+        
+        function getTimeSince(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'Ora';
+            if (minutes < 60) return `${minutes} min fa`;
+            if (hours < 24) return `${hours} ore fa`;
+            return `${days} giorni fa`;
+        }
+        
+        // ─── AUTHENTICATION ───
+        
+        async function connectOneDrive() {
+            try {
+                // Verifica configurazione CLIENT_ID
+                if (ONEDRIVE_CONFIG.clientId === 'YOUR_CLIENT_ID_HERE') {
+                    showNotification('⚠️ Configurare CLIENT_ID in Azure Portal prima!', 'error', 8000);
+                    showOneDriveSetupInstructions();
+                    return;
+                }
+                
+                showNotification('🔗 Connessione a OneDrive...', 'info');
+                
+                // Genera PKCE challenge
+                const codeVerifier = generateRandomString(128);
+                const codeChallenge = await generateCodeChallenge(codeVerifier);
+                
+                // Salva verifier per dopo
+                sessionStorage.setItem('onedrive_code_verifier', codeVerifier);
+                
+                // Costruisci URL autorizzazione
+                const authUrl = `${ONEDRIVE_CONFIG.authority}/authorize?` +
+                    `client_id=${ONEDRIVE_CONFIG.clientId}` +
+                    `&response_type=code` +
+                    `&redirect_uri=${encodeURIComponent(ONEDRIVE_CONFIG.redirectUri)}` +
+                    `&scope=${encodeURIComponent(ONEDRIVE_CONFIG.scopes.join(' '))}` +
+                    `&code_challenge=${codeChallenge}` +
+                    `&code_challenge_method=S256` +
+                    `&prompt=select_account`;
+                
+                // Reindirizza a pagina auth Microsoft
+                window.location.href = authUrl;
+                
+            } catch (error) {
+                console.error('Error connecting to OneDrive:', error);
+                showNotification('❌ Errore connessione OneDrive', 'error');
+            }
+        }
+        
+        async function handleAuthCallback() {
+            // Gestisce il callback dopo l'autenticazione
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+            
+            if (error) {
+                showNotification('❌ Autenticazione annullata', 'error');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return;
+            }
+            
+            if (code) {
+                try {
+                    showNotification('🔐 Ottenimento token...', 'info');
+                    
+                    const codeVerifier = sessionStorage.getItem('onedrive_code_verifier');
+                    sessionStorage.removeItem('onedrive_code_verifier');
+                    
+                    // Scambia code con access token
+                    const tokenResponse = await fetch(`${ONEDRIVE_CONFIG.authority}/token`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            client_id: ONEDRIVE_CONFIG.clientId,
+                            scope: ONEDRIVE_CONFIG.scopes.join(' '),
+                            code: code,
+                            redirect_uri: ONEDRIVE_CONFIG.redirectUri,
+                            grant_type: 'authorization_code',
+                            code_verifier: codeVerifier
+                        })
+                    });
+                    
+                    if (!tokenResponse.ok) {
+                        throw new Error('Token exchange failed');
+                    }
+                    
+                    const tokens = await tokenResponse.json();
+                    
+                    // Salva token
+                    state.onedrive.connected = true;
+                    state.onedrive.accessToken = tokens.access_token;
+                    state.onedrive.refreshToken = tokens.refresh_token;
+                    state.onedrive.tokenExpiry = Date.now() + (tokens.expires_in * 1000);
+                    
+                    // Ottieni info utente
+                    const userInfo = await fetch(`${ONEDRIVE_CONFIG.apiEndpoint}/me`, {
+                        headers: { 'Authorization': `Bearer ${tokens.access_token}` }
+                    });
+                    
+                    if (userInfo.ok) {
+                        const user = await userInfo.json();
+                        state.onedrive.userEmail = user.userPrincipalName || user.mail;
+                    }
+                    
+                    state.onedrive.syncStatus = 'synced';
+                    saveState();
+                    
+                    // Pulisci URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    showNotification('✅ Connesso a OneDrive!', 'success');
+                    
+                    // Avvia sync automatica
+                    if (state.onedrive.autoSyncEnabled) {
+                        startAutoSync();
+                    }
+                    
+                    render();
+                    
+                } catch (error) {
+                    console.error('Token exchange error:', error);
+                    showNotification('❌ Errore ottenimento token', 'error');
+                    state.onedrive.connected = false;
+                    saveState();
+                }
+            }
+        }
+        
+        async function disconnectOneDrive() {
+            if (confirm('Disconnettere OneDrive? I dati locali NON verranno eliminati.')) {
+                stopAutoSync();
+                
+                state.onedrive = {
+                    connected: false,
+                    userEmail: null,
+                    accessToken: null,
+                    refreshToken: null,
+                    tokenExpiry: null,
+                    lastSyncTime: null,
+                    syncStatus: 'disconnected',
+                    autoSyncEnabled: true,
+                    autoBackupEnabled: true,
+                    syncNotifications: true
+                };
+                
+                saveState();
+                render();
+                showNotification('👋 OneDrive disconnesso', 'info');
+            }
+        }
+        
+        async function refreshAccessToken() {
+            try {
+                if (!state.onedrive.refreshToken) {
+                    throw new Error('No refresh token');
+                }
+                
+                const response = await fetch(`${ONEDRIVE_CONFIG.authority}/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        client_id: ONEDRIVE_CONFIG.clientId,
+                        scope: ONEDRIVE_CONFIG.scopes.join(' '),
+                        refresh_token: state.onedrive.refreshToken,
+                        grant_type: 'refresh_token'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Token refresh failed');
+                }
+                
+                const tokens = await response.json();
+                
+                state.onedrive.accessToken = tokens.access_token;
+                if (tokens.refresh_token) {
+                    state.onedrive.refreshToken = tokens.refresh_token;
+                }
+                state.onedrive.tokenExpiry = Date.now() + (tokens.expires_in * 1000);
+                
+                saveState();
+                return true;
+                
+            } catch (error) {
+                console.error('Token refresh error:', error);
+                showNotification('⚠️ Riconnetti OneDrive', 'error');
+                state.onedrive.connected = false;
+                stopAutoSync();
+                saveState();
+                return false;
+            }
+        }
+        
+        async function ensureValidToken() {
+            // Verifica e rinnova token se necessario
+            if (!state.onedrive.connected) {
+                return false;
+            }
+            
+            // Se token scade tra meno di 5 minuti, rinnova
+            if (state.onedrive.tokenExpiry && (Date.now() + 300000) >= state.onedrive.tokenExpiry) {
+                return await refreshAccessToken();
+            }
+            
+            return true;
+        }
+        
+        // ─── PKCE HELPERS ───
+        
+        function generateRandomString(length) {
+            const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            let result = '';
+            const values = crypto.getRandomValues(new Uint8Array(length));
+            for (let i = 0; i < length; i++) {
+                result += charset[values[i] % charset.length];
+            }
+            return result;
+        }
+        
+        async function generateCodeChallenge(codeVerifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(codeVerifier);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            const base64 = btoa(String.fromCharCode(...new Uint8Array(hash)));
+            return base64.replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+        }
+        
+        // ─── SYNC OPERATIONS ───
+        
+        async function uploadToOneDrive() {
+            if (!await ensureValidToken()) {
+                showNotification('⚠️ Riconnetti OneDrive', 'error');
+                return false;
+            }
+            
+            try {
+                state.onedrive.syncStatus = 'syncing';
+                render();
+                
+                // Prepara dati per upload
+                const dataToUpload = {
+                    ...state,
+                    onedrive: {
+                        ...state.onedrive,
+                        accessToken: null,  // Non salvare token nel cloud!
+                        refreshToken: null
+                    },
+                    metadata: {
+                        lastModified: Date.now(),
+                        appVersion: '3.5.022a',
+                        deviceId: getDeviceId()
+                    }
+                };
+                
+                const filePath = `${ONEDRIVE_CONFIG.folderPath}/${ONEDRIVE_CONFIG.fileName}`;
+                const url = `${ONEDRIVE_CONFIG.apiEndpoint}/me/drive/root:${filePath}:/content`;
+                
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${state.onedrive.accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dataToUpload, null, 2)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Upload failed: ${response.status}`);
+                }
+                
+                state.onedrive.lastSyncTime = Date.now();
+                state.onedrive.syncStatus = 'synced';
+                saveState();
+                render();
+                
+                if (state.onedrive.syncNotifications) {
+                    showNotification('☁️ Caricato su OneDrive', 'success', 2000);
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                state.onedrive.syncStatus = 'error';
+                render();
+                showNotification('❌ Errore upload OneDrive', 'error');
+                return false;
+            }
+        }
+        
+        async function downloadFromOneDrive() {
+            if (!await ensureValidToken()) {
+                showNotification('⚠️ Riconnetti OneDrive', 'error');
+                return false;
+            }
+            
+            try {
+                state.onedrive.syncStatus = 'syncing';
+                render();
+                
+                const filePath = `${ONEDRIVE_CONFIG.folderPath}/${ONEDRIVE_CONFIG.fileName}`;
+                const url = `${ONEDRIVE_CONFIG.apiEndpoint}/me/drive/root:${filePath}:/content`;
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${state.onedrive.accessToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        // File non esiste, crea primo upload
+                        showNotification('📤 Primo upload su OneDrive...', 'info');
+                        return await uploadToOneDrive();
+                    }
+                    throw new Error(`Download failed: ${response.status}`);
+                }
+                
+                const cloudData = await response.json();
+                
+                // Backup locale prima del merge
+                if (state.onedrive.autoBackupEnabled) {
+                    createBackup('Pre-sync OneDrive');
+                }
+                
+                // Merge dati preservando token
+                const currentTokens = {
+                    accessToken: state.onedrive.accessToken,
+                    refreshToken: state.onedrive.refreshToken,
+                    tokenExpiry: state.onedrive.tokenExpiry
+                };
+                
+                state = {
+                    ...cloudData,
+                    onedrive: {
+                        ...cloudData.onedrive,
+                        ...currentTokens,
+                        connected: true
+                    }
+                };
+                
+                state.onedrive.lastSyncTime = Date.now();
+                state.onedrive.syncStatus = 'synced';
+                
+                saveState();
+                render();
+                
+                if (state.onedrive.syncNotifications) {
+                    showNotification('☁️ Scaricato da OneDrive', 'success', 2000);
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                state.onedrive.syncStatus = 'error';
+                render();
+                showNotification('❌ Errore download OneDrive', 'error');
+                return false;
+            }
+        }
+        
+        async function performSync() {
+            if (!state.onedrive.connected) {
+                showNotification('⚠️ Connetti OneDrive prima', 'info');
+                openSyncSettings();
+                return;
+            }
+            
+            try {
+                // Controlla quale versione è più recente
+                const cloudMeta = await getCloudFileMetadata();
+                
+                if (!cloudMeta) {
+                    // File non esiste, upload
+                    return await uploadToOneDrive();
+                }
+                
+                const localModified = state.metadata?.lastModified || 0;
+                const cloudModified = new Date(cloudMeta.lastModifiedDateTime).getTime();
+                
+                if (cloudModified > localModified + 60000) { // Cloud più recente di 1 minuto
+                    // Scarica da cloud
+                    return await downloadFromOneDrive();
+                } else if (localModified > cloudModified) {
+                    // Carica su cloud
+                    return await uploadToOneDrive();
+                } else {
+                    // Sincronizzati
+                    state.onedrive.syncStatus = 'synced';
+                    state.onedrive.lastSyncTime = Date.now();
+                    saveState();
+                    if (state.onedrive.syncNotifications) {
+                        showNotification('✅ Già sincronizzato', 'success', 1500);
+                    }
+                    return true;
+                }
+                
+            } catch (error) {
+                console.error('Sync error:', error);
+                state.onedrive.syncStatus = 'error';
+                showNotification('❌ Errore sincronizzazione', 'error');
+                return false;
+            }
+        }
+        
+        async function getCloudFileMetadata() {
+            try {
+                if (!await ensureValidToken()) {
+                    return null;
+                }
+                
+                const filePath = `${ONEDRIVE_CONFIG.folderPath}/${ONEDRIVE_CONFIG.fileName}`;
+                const url = `${ONEDRIVE_CONFIG.apiEndpoint}/me/drive/root:${filePath}`;
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${state.onedrive.accessToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        return null; // File non esiste
+                    }
+                    throw new Error(`Metadata fetch failed: ${response.status}`);
+                }
+                
+                return await response.json();
+                
+            } catch (error) {
+                console.error('Metadata fetch error:', error);
+                return null;
+            }
+        }
+        
+        // ─── AUTO SYNC ───
+        
+        function startAutoSync() {
+            if (!state.onedrive.connected || !state.onedrive.autoSyncEnabled) {
+                return;
+            }
+            
+            stopAutoSync(); // Pulisci timer esistente
+            
+            syncInterval = setInterval(async () => {
+                if (state.onedrive.connected && state.onedrive.autoSyncEnabled) {
+                    await performSync();
+                }
+            }, ONEDRIVE_CONFIG.autoSyncInterval);
+            
+            console.log('Auto-sync attivata (ogni 5 min)');
+        }
+        
+        function stopAutoSync() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+                console.log('Auto-sync disattivata');
+            }
+        }
+        
+        // ─── UI FUNCTIONS ───
+        
+        function openSyncSettings() {
+            const modal = document.createElement('div');
+            modal.className = 'sync-settings-modal';
+            modal.innerHTML = `
+                <div class="sync-settings-dialog">
+                    <div class="sync-settings-header">
+                        <h3>☁️ Impostazioni OneDrive</h3>
+                        <button onclick="this.closest('.sync-settings-modal').remove()" class="close-btn">✕</button>
+                    </div>
+                    
+                    <div class="sync-account">
+                        ${state.onedrive.connected ? `
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">
+                                    🟢 ${state.onedrive.userEmail || 'Connesso'}
+                                </div>
+                                <div style="font-size: 12px; color: #64748b;">
+                                    ${state.onedrive.lastSyncTime ? 
+                                        'Ultima sync: ' + getTimeSince(state.onedrive.lastSyncTime) : 
+                                        'Mai sincronizzato'}
+                                </div>
+                            </div>
+                            <button onclick="disconnectOneDrive(); this.closest('.sync-settings-modal').remove();" class="btn-secondary">
+                                Disconnetti
+                            </button>
+                        ` : `
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">
+                                    ⚪ Non connesso
+                                </div>
+                                <div style="font-size: 12px; color: #64748b;">
+                                    Connetti per backup automatico
+                                </div>
+                            </div>
+                            <button onclick="connectOneDrive(); this.closest('.sync-settings-modal').remove();" class="btn-primary">
+                                🔗 Connetti
+                            </button>
+                        `}
+                    </div>
+                    
+                    ${state.onedrive.connected ? `
+                        <div class="sync-options">
+                            <label>
+                                <input type="checkbox" ${state.onedrive.autoSyncEnabled ? 'checked' : ''} 
+                                       onchange="state.onedrive.autoSyncEnabled = this.checked; saveState(); this.checked ? startAutoSync() : stopAutoSync();">
+                                <span>Sincronizzazione automatica (ogni 5 min)</span>
+                            </label>
+                            
+                            <label>
+                                <input type="checkbox" ${state.onedrive.autoBackupEnabled ? 'checked' : ''} 
+                                       onchange="state.onedrive.autoBackupEnabled = this.checked; saveState();">
+                                <span>Backup automatico prima di sync</span>
+                            </label>
+                            
+                            <label>
+                                <input type="checkbox" ${state.onedrive.syncNotifications ? 'checked' : ''} 
+                                       onchange="state.onedrive.syncNotifications = this.checked; saveState();">
+                                <span>Notifiche sincronizzazione</span>
+                            </label>
+                        </div>
+                        
+                        <div class="sync-actions">
+                            <button onclick="performSync()" class="btn-sync">
+                                🔄 Sincronizza Ora
+                            </button>
+                            <button onclick="downloadFromOneDrive()" class="btn-sync">
+                                ⬇️ Scarica
+                            </button>
+                            <button onclick="uploadToOneDrive()" class="btn-sync">
+                                ⬆️ Carica
+                            </button>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="sync-info">
+                        <p><strong>ℹ️ Come funziona:</strong></p>
+                        <ul style="margin: 8px 0; padding-left: 20px; font-size: 13px; color: #64748b;">
+                            <li>Backup automatico in OneDrive ogni 5 minuti</li>
+                            <li>Sincronizzazione tra dispositivi</li>
+                            <li>I dati locali sono sempre disponibili offline</li>
+                            <li>Gestione automatica conflitti</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Chiudi con click fuori
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        function showOneDriveSetupInstructions() {
+            const modal = document.createElement('div');
+            modal.className = 'sync-settings-modal';
+            modal.innerHTML = `
+                <div class="sync-settings-dialog" style="max-width: 600px;">
+                    <div class="sync-settings-header">
+                        <h3>⚙️ Setup OneDrive</h3>
+                        <button onclick="this.closest('.sync-settings-modal').remove()" class="close-btn">✕</button>
+                    </div>
+                    
+                    <div style="padding: 20px; line-height: 1.6;">
+                        <p><strong>Per abilitare OneDrive sync:</strong></p>
+                        
+                        <ol style="margin: 16px 0; padding-left: 20px;">
+                            <li style="margin: 12px 0;">
+                                Vai su <a href="https://portal.azure.com" target="_blank" style="color: #2563eb;">
+                                    Azure Portal
+                                </a>
+                            </li>
+                            <li style="margin: 12px 0;">
+                                Vai su "App registrations" → "New registration"
+                            </li>
+                            <li style="margin: 12px 0;">
+                                Nome app: <strong>Open Porte</strong>
+                            </li>
+                            <li style="margin: 12px 0;">
+                                Supported account types: <strong>Accounts in any organizational directory and personal Microsoft accounts</strong>
+                            </li>
+                            <li style="margin: 12px 0;">
+                                Redirect URI: <strong>${window.location.origin}</strong>
+                            </li>
+                            <li style="margin: 12px 0;">
+                                Copia il <strong>Client ID</strong> generato
+                            </li>
+                            <li style="margin: 12px 0;">
+                                Modifica il file HTML sostituendo <code>YOUR_CLIENT_ID_HERE</code> con il tuo Client ID
+                            </li>
+                        </ol>
+                        
+                        <p style="margin-top: 20px; padding: 12px; background: #fef3c7; border-left: 3px solid #f59e0b; font-size: 13px;">
+                            <strong>⚠️ Nota:</strong> Questo setup è necessario solo una volta. Il Client ID può essere condiviso tra dispositivi.
+                        </p>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 20px;">
+                        <button onclick="this.closest('.sync-settings-modal').remove()" class="btn-primary">
+                            Ho capito
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // 🎯 FASE 021: MENU LATERALE HAMBURGER
         // ═══════════════════════════════════════════════════════════════
         
@@ -2297,6 +3186,30 @@
                                 <span>Riepilogo</span>
                             </div>
                         </div>
+                        
+                        <!-- ☁️ FASE 022a: OneDrive Sync -->
+                        <div style="border-top: 1px solid var(--menu-border); margin: 12px 0;"></div>
+                        
+                        <div class="nav-item" onclick="openSyncSettings(); closeProjectMenu();">
+                            <div class="nav-label">
+                                <span class="nav-icon">☁️</span>
+                                <span>OneDrive</span>
+                            </div>
+                            <span class="sync-badge" id="syncBadge">
+                                ${renderSyncBadge()}
+                            </span>
+                        </div>
+                        
+                        ${state.onedrive.connected ? `
+                            <div style="padding: 8px 20px; font-size: 12px; color: var(--menu-text-sec);">
+                                <div>🟢 ${state.onedrive.userEmail || 'Connesso'}</div>
+                                ${state.onedrive.lastSyncTime ? `
+                                    <div style="margin-top: 4px;">
+                                        🔄 ${getTimeSince(state.onedrive.lastSyncTime)}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
                     </div>
                     
                     <!-- Azioni Rapide -->
@@ -11772,6 +12685,16 @@ ${generateBRMExplanation(pos, pos.cassonetto, 'cassonetto', project)}</table>` :
                 closeMenu();
             }
         });
+
+        // ☁️ FASE 022a: Inizializzazione OneDrive Sync
+        // Gestisci callback OAuth se presente nell'URL
+        handleAuthCallback();
+        
+        // Avvia auto-sync se connesso
+        if (state.onedrive.connected && state.onedrive.autoSyncEnabled) {
+            startAutoSync();
+            console.log('✅ OneDrive auto-sync attivata');
+        }
     </script>
 </body>
 </html>

@@ -1445,7 +1445,7 @@
             // App: Open Porte | Registrata: 03/11/2025
             clientId: '2b988db8-efa0-455c-9af7-cddbf1552c71',
             authority: 'https://login.microsoftonline.com/common/oauth2/v2.0',
-            redirectUri: window.location.origin,
+            redirectUri: 'https://openporte2025.github.io/openporte-v15/',
             scopes: ['Files.ReadWrite', 'offline_access'],
             apiEndpoint: 'https://graph.microsoft.com/v1.0',
             folderPath: '/OpenPorte',
@@ -1464,9 +1464,32 @@
                     migrateOldData(); // Migra dati vecchi formato array -> singolo oggetto
                     cleanNegativeValues(); // ✅ NUOVO: Pulisce valori negativi nei BRM
                     migrateOldProjectsMetadata(); // ✅ SOLUZIONE C: Migra progetti senza metadata
+                    migrateOneDriveStructure(); // ☁️ FASE 022a: Migra struttura OneDrive se mancante
                 } catch (e) {
                     console.error('Error loading state:', e);
                 }
+            }
+        }
+
+        // ☁️ FASE 022a: Migrazione struttura OneDrive per backward compatibility
+        function migrateOneDriveStructure() {
+            // Se state.onedrive non esiste, crealo con valori default
+            if (!state.onedrive) {
+                console.log('🔄 Migrazione: Aggiunta struttura OneDrive');
+                state.onedrive = {
+                    connected: false,
+                    userEmail: null,
+                    accessToken: null,
+                    refreshToken: null,
+                    tokenExpiry: null,
+                    lastSyncTime: null,
+                    syncStatus: 'disconnected',
+                    autoSyncEnabled: true,
+                    autoBackupEnabled: true,
+                    syncNotifications: true
+                };
+                // Salva lo state migrato
+                saveState();
             }
         }
 
@@ -1580,13 +1603,29 @@
                 state.metadata = {};
             }
             state.metadata.lastModified = Date.now();
-            state.metadata.appVersion = '3.5.022a';
+            state.metadata.appVersion = '3.5.022af';
+            
+            // ☁️ FASE 022a: Assicurati che onedrive structure esista
+            if (!state.onedrive) {
+                state.onedrive = {
+                    connected: false,
+                    userEmail: null,
+                    accessToken: null,
+                    refreshToken: null,
+                    tokenExpiry: null,
+                    lastSyncTime: null,
+                    syncStatus: 'disconnected',
+                    autoSyncEnabled: true,
+                    autoBackupEnabled: true,
+                    syncNotifications: true
+                };
+            }
             
             localStorage.setItem('openPorteData', JSON.stringify(state));
             
             // ☁️ FASE 022a: Auto-backup su OneDrive (debounced)
             // Solo se connesso, auto-backup abilitato e non già in sync
-            if (state.onedrive.connected && 
+            if (state.onedrive && state.onedrive.connected && 
                 state.onedrive.autoBackupEnabled && 
                 state.onedrive.syncStatus !== 'syncing') {
                 
@@ -2369,7 +2408,8 @@
         // ─── UTILITY FUNCTIONS ───
         
         function renderSyncBadge() {
-            if (!state.onedrive.connected) {
+            // ☁️ Controllo sicurezza: se onedrive non esiste, ritorna disconnesso
+            if (!state.onedrive || !state.onedrive.connected) {
                 return '<span style="font-size: 14px; color: #94a3b8;">⚪</span>'; // Disconnesso
             }
             
@@ -2858,6 +2898,22 @@
         // ─── UI FUNCTIONS ───
         
         function openSyncSettings() {
+            // ☁️ Controllo sicurezza: assicura che onedrive structure esista
+            if (!state.onedrive) {
+                state.onedrive = {
+                    connected: false,
+                    userEmail: null,
+                    accessToken: null,
+                    refreshToken: null,
+                    tokenExpiry: null,
+                    lastSyncTime: null,
+                    syncStatus: 'disconnected',
+                    autoSyncEnabled: true,
+                    autoBackupEnabled: true,
+                    syncNotifications: true
+                };
+            }
+            
             const modal = document.createElement('div');
             modal.className = 'sync-settings-modal';
             modal.innerHTML = `

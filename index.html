@@ -1195,6 +1195,209 @@
             opacity: 1;
             pointer-events: all;
         }
+        
+        /* ===== MENU PRINCIPALE APPLICAZIONE ===== */
+        .main-menu {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100vh;
+            background: var(--menu-bg, #ffffff);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1100;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-menu.open {
+            left: 0;
+        }
+        
+        .main-menu-header {
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .main-menu-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            margin-right: 12px;
+            transition: transform 0.2s;
+        }
+        
+        .main-menu-close:hover {
+            transform: scale(1.1);
+        }
+        
+        .main-menu-title {
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Search Bar */
+        .main-menu-search {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Main Navigation Section */
+        .main-nav-section {
+            flex: 1;
+            padding: 8px 0;
+        }
+        
+        .main-nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .main-nav-item:hover {
+            background: #f5f5f5;
+            transform: translateX(5px);
+        }
+        
+        .main-nav-item.expandable .main-nav-arrow {
+            transition: transform 0.3s;
+        }
+        
+        .main-nav-item.expanded .main-nav-arrow {
+            transform: rotate(90deg);
+        }
+        
+        .main-nav-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+        
+        .main-nav-icon {
+            font-size: 20px;
+        }
+        
+        .main-nav-arrow {
+            margin-left: auto;
+            color: #999;
+            font-size: 12px;
+        }
+        
+        /* Submenu */
+        .main-submenu {
+            max-height: 0;
+            overflow: hidden;
+            background: #f8f8f8;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .main-submenu.open {
+            max-height: 300px;
+        }
+        
+        .main-submenu-item {
+            padding: 12px 20px 12px 52px;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .main-submenu-item:hover {
+            background: #e8e8e8;
+            border-left-color: #667eea;
+            color: #333;
+        }
+        
+        /* Main Menu Overlay */
+        .main-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1050;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .main-menu-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* Quick Actions Bottom */
+        .main-menu-bottom {
+            padding: 16px;
+            border-top: 2px solid #e5e5e5;
+            background: white;
+        }
+        
+        .quick-actions-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        
+        .quick-actions-grid {
+            display: flex;
+            gap: 8px;
+            justify-content: space-around;
+        }
+        
+        .quick-action-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            border: 2px solid #e5e5e5;
+            background: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-action-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
 
         /* Main content */
         .main-content {
@@ -1424,6 +1627,7 @@
             sincronizzazioneVerificata: false,  // Flag per verifica sincronizzazione (1 volta per sessione)
             projectMenuOpen: false,  // ✅ FASE 021: Menu laterale aperto/chiuso
             configMenuExpanded: false,  // ✅ FASE 021: Submenu Config espanso/collassato
+            mainMenuOpen: false,  // ✅ FASE 023: Menu principale applicazione
             // ☁️ FASE 022a: OneDrive Sync
             onedrive: {
                 connected: false,
@@ -5741,6 +5945,13 @@
                     <div class="max-w-7xl mx-auto px-4 py-3">
                         <div class="flex justify-between items-center">
                             <div class="flex items-center gap-3">
+                                <!-- Hamburger Menu Button -->
+                                <button onclick="toggleMainMenu()" class="p-2 hover:bg-gray-100 rounded-lg" title="Menu principale">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                    </svg>
+                                </button>
+                                
                                 ${state.screen !== 'list' ? `
                                     <button onclick="goBack()" class="p-2 hover:bg-gray-100 rounded-lg">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -5749,7 +5960,7 @@
                                     </button>
                                 ` : ''}
                                 <h1 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                                    Open Porte v3.0 - Fase 21: UI Completa 🎯✨📋
+                                    Open Porte v3.0 - Fase 023
                                 </h1>
                             </div>
                             <div class="flex items-center gap-2">
@@ -5774,6 +5985,368 @@
                     </div>
                 </header>
             `;
+        }
+
+        // Main Menu laterale dell'applicazione
+        function MainMenu() {
+            return `
+                <!-- Main Menu Laterale -->
+                <aside class="main-menu ${state.mainMenuOpen ? 'open' : ''}" id="mainSideMenu">
+                    <!-- Header menu -->
+                    <div class="main-menu-header">
+                        <button class="main-menu-close" onclick="toggleMainMenu()">✕</button>
+                        <span class="main-menu-title">MENU PRINCIPALE</span>
+                    </div>
+                    
+                    <!-- Search Bar -->
+                    <div class="main-menu-search">
+                        <input type="text" id="mainSearch" placeholder="🔍 Cerca progetto..." 
+                               onkeyup="searchProjects(this.value)" 
+                               class="search-input">
+                    </div>
+                    
+                    <!-- Menu Items con Submenu -->
+                    <div class="main-nav-section">
+                        <!-- Progetti -->
+                        <div class="main-nav-item expandable" onclick="toggleMainSubmenu('progetti')">
+                            <div class="main-nav-label">
+                                <span class="main-nav-icon">📝</span>
+                                <span>Progetti</span>
+                                <span class="main-nav-arrow">▶</span>
+                            </div>
+                        </div>
+                        <div id="main-submenu-progetti" class="main-submenu">
+                            <div class="main-submenu-item" onclick="showNewProjectModal(); closeMainMenu();">
+                                <span>➕ Nuovo Progetto</span>
+                            </div>
+                            <div class="main-submenu-item" onclick="showProjectsList(); closeMainMenu();">
+                                <span>📂 Lista Progetti</span>
+                            </div>
+                            <div class="main-submenu-item" onclick="showRecentProjects(); closeMainMenu();">
+                                <span>🕐 Recenti</span>
+                            </div>
+                            <div class="main-submenu-item" onclick="showArchivedProjects(); closeMainMenu();">
+                                <span>📦 Archiviati</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Strumenti -->
+                        <div class="main-nav-item expandable" onclick="toggleMainSubmenu('strumenti')">
+                            <div class="main-nav-label">
+                                <span class="main-nav-icon">🛠️</span>
+                                <span>Strumenti</span>
+                                <span class="main-nav-arrow">▶</span>
+                            </div>
+                        </div>
+                        <div id="main-submenu-strumenti" class="main-submenu">
+                            <div class="main-submenu-item" onclick="openBRMCalculator(); closeMainMenu();">
+                                <span>🧮 Calcolatore BRM</span>
+                            </div>
+                            <div class="main-submenu-item" onclick="openConversions(); closeMainMenu();">
+                                <span>🔄 Conversioni</span>
+                            </div>
+                            <div class="main-submenu-item" onclick="openNormative(); closeMainMenu();">
+                                <span>📋 Normative</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Impostazioni -->
+                        <div class="main-nav-item expandable" onclick="toggleMainSubmenu('impostazioni')">
+                            <div class="main-nav-label">
+                                <span class="main-nav-icon">⚙️</span>
+                                <span>Impostazioni</span>
+                                <span class="main-nav-arrow">▶</span>
+                            </div>
+                        </div>
+                        <div id="main-submenu-impostazioni" class="main-submenu">
+                            <div class="main-submenu-item" onclick="openGeneralSettings(); closeMainMenu();">
+                                <span>🎨 Generali</span>
+                            </div>
+                            <div class="main-submenu-item" onclick="openProductSettings(); closeMainMenu();">
+                                <span>📦 Config Prodotti</span>
+                            </div>
+                            <div class="main-submenu-item" onclick="openExportImport(); closeMainMenu();">
+                                <span>💾 Export/Import</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Backup & Sync -->
+                        <div class="main-nav-item" onclick="openBackupSettings(); closeMainMenu();">
+                            <div class="main-nav-label">
+                                <span class="main-nav-icon">🔒</span>
+                                <span>Backup</span>
+                            </div>
+                        </div>
+                        
+                        <!-- OneDrive -->
+                        <div class="main-nav-item" onclick="openSyncSettings(); closeMainMenu();">
+                            <div class="main-nav-label">
+                                <span class="main-nav-icon">☁️</span>
+                                <span>OneDrive</span>
+                            </div>
+                            <span class="sync-badge" id="mainSyncBadge">
+                                ${renderSyncBadge()}
+                            </span>
+                        </div>
+                        
+                        <!-- Statistiche -->
+                        <div class="main-nav-item" onclick="openStatistics(); closeMainMenu();">
+                            <div class="main-nav-label">
+                                <span class="main-nav-icon">📊</span>
+                                <span>Statistiche</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Info -->
+                        <div class="main-nav-item" onclick="openAppInfo(); closeMainMenu();">
+                            <div class="main-nav-label">
+                                <span class="main-nav-icon">ℹ️</span>
+                                <span>Info</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions Bottom -->
+                    <div class="main-menu-bottom">
+                        <div class="quick-actions-title">Azioni Rapide</div>
+                        <div class="quick-actions-grid">
+                            <button onclick="quickNewProject()" title="Nuovo (Ctrl+N)" class="quick-action-btn">
+                                ➕
+                            </button>
+                            <button onclick="quickSave()" title="Salva (Ctrl+S)" class="quick-action-btn">
+                                💾
+                            </button>
+                            <button onclick="quickExport()" title="Export (Ctrl+E)" class="quick-action-btn">
+                                📄
+                            </button>
+                            <button onclick="quickSync()" title="Sync (Ctrl+U)" class="quick-action-btn">
+                                ☁️
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+                
+                <!-- Overlay -->
+                <div class="main-menu-overlay ${state.mainMenuOpen ? 'active' : ''}" 
+                     id="mainMenuOverlay" 
+                     onclick="closeMainMenu()"></div>
+            `;
+        }
+
+        // Funzioni gestione menu principale
+        function toggleMainMenu() {
+            state.mainMenuOpen = !state.mainMenuOpen;
+            render();
+        }
+        
+        function closeMainMenu() {
+            state.mainMenuOpen = false;
+            render();
+        }
+        
+        function toggleMainSubmenu(menuId) {
+            const submenu = document.getElementById(`main-submenu-${menuId}`);
+            if (submenu) {
+                const menuItem = submenu.previousElementSibling;
+                const isOpen = submenu.classList.contains('open');
+                
+                // Chiudi altri submenu
+                document.querySelectorAll('.main-submenu.open').forEach(s => {
+                    s.classList.remove('open');
+                    const prevItem = s.previousElementSibling;
+                    if (prevItem) prevItem.classList.remove('expanded');
+                });
+                
+                // Toggle corrente
+                if (!isOpen) {
+                    submenu.classList.add('open');
+                    menuItem.classList.add('expanded');
+                }
+            }
+        }
+        
+        // Funzioni per le voci del menu
+        function showProjectsList() {
+            state.screen = 'list';
+            render();
+        }
+        
+        function showRecentProjects() {
+            const recentProjects = state.projects.slice(-5).reverse();
+            console.log('Progetti recenti:', recentProjects);
+            // TODO: Implementare vista progetti recenti
+        }
+        
+        function showArchivedProjects() {
+            const archivedProjects = state.projects.filter(p => p.archived === true);
+            console.log('Progetti archiviati:', archivedProjects);
+            // TODO: Implementare vista progetti archiviati
+        }
+        
+        // Quick Actions
+        function quickNewProject() {
+            closeMainMenu();
+            showNewProjectModal();
+        }
+        
+        function quickSave() {
+            closeMainMenu();
+            saveState();
+            showNotification('💾 Salvato', 'success');
+        }
+        
+        function quickExport() {
+            closeMainMenu();
+            if (state.currentProject) {
+                exportCurrentProjectJSON();
+            } else {
+                exportAllProjects();
+            }
+        }
+        
+        function quickSync() {
+            closeMainMenu();
+            if (state.onedrive.connected) {
+                syncWithOneDrive();
+            } else {
+                openSyncSettings();
+            }
+        }
+        
+        // Funzioni placeholder per menu items
+        function openBRMCalculator() {
+            showNotification('🧮 Calcolatore BRM in sviluppo', 'info');
+        }
+        
+        function openConversions() {
+            showNotification('🔄 Conversioni in sviluppo', 'info');
+        }
+        
+        function openNormative() {
+            showNotification('📋 Normative in sviluppo', 'info');
+        }
+        
+        function openGeneralSettings() {
+            showNotification('🎨 Impostazioni generali in sviluppo', 'info');
+        }
+        
+        function openProductSettings() {
+            showNotification('📦 Configurazione prodotti in sviluppo', 'info');
+        }
+        
+        function openExportImport() {
+            // Usa le funzioni esistenti
+            if (state.screen === 'list') {
+                exportAllProjects();
+            } else {
+                exportCurrentProjectJSON();
+            }
+        }
+        
+        function openBackupSettings() {
+            showNotification('🔒 Sistema backup in sviluppo', 'info');
+        }
+        
+        function openStatistics() {
+            const totalProjects = state.projects.length;
+            const totalPositions = state.projects.reduce((sum, p) => sum + p.positions.length, 0);
+            showNotification(`📊 Statistiche: ${totalProjects} progetti, ${totalPositions} posizioni`, 'success');
+        }
+        
+        function openAppInfo() {
+            showNotification('ℹ️ Open Porte v3.0 - Fase 023', 'info');
+        }
+        
+        // Sistema notifiche migliorato
+        function showNotification(message, type = 'info', duration = 3000) {
+            // Rimuovi notifiche esistenti
+            const existingNotifications = document.querySelectorAll('.notification-toast');
+            existingNotifications.forEach(n => n.remove());
+            
+            // Crea nuova notifica
+            const notification = document.createElement('div');
+            notification.className = `notification-toast notification-${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            notification.innerHTML = `
+                <span class="notification-icon">${icons[type]}</span>
+                <span class="notification-message">${message}</span>
+            `;
+            
+            // Aggiungi stili inline
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#10b981' : 
+                            type === 'error' ? '#ef4444' :
+                            type === 'warning' ? '#f59e0b' : '#3b82f6'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                z-index: 10000;
+                animation: slideUp 0.3s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Rimuovi dopo duration
+            if (duration > 0) {
+                setTimeout(() => {
+                    notification.style.animation = 'slideDown 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }, duration);
+            }
+        }
+        
+        // Funzione ricerca progetti
+        function searchProjects(query) {
+            if (!query || query.length < 2) {
+                // Reset vista se query vuota
+                return;
+            }
+            
+            const results = [];
+            const lowerQuery = query.toLowerCase();
+            
+            state.projects.forEach(project => {
+                // Cerca nel nome progetto
+                if (project.name && project.name.toLowerCase().includes(lowerQuery)) {
+                    results.push({ type: 'project', data: project });
+                }
+                
+                // Cerca nel nome cliente
+                if (project.client && project.client.toLowerCase().includes(lowerQuery)) {
+                    results.push({ type: 'project', data: project });
+                }
+                
+                // Cerca nelle posizioni
+                if (project.positions) {
+                    project.positions.forEach(pos => {
+                        if (pos.name && pos.name.toLowerCase().includes(lowerQuery)) {
+                            results.push({ 
+                                type: 'position', 
+                                data: pos,
+                                projectName: project.name 
+                            });
+                        }
+                    });
+                }
+            });
+            
+            console.log(`Trovati ${results.length} risultati per "${query}"`);
+            // TODO: Mostrare risultati in overlay dedicato
         }
 
         function ProjectsList() {
@@ -12574,6 +13147,7 @@ ${generateBRMExplanation(pos, pos.cassonetto, 'cassonetto', project)}</table>` :
         function render() {
             const app = document.getElementById('app');
             app.innerHTML = `
+                ${MainMenu()}
                 <main class="min-h-screen">
                     ${state.screen === 'list' ? ProjectsList() :
                       state.screen === 'position' ? PositionDetail() :
@@ -12751,6 +13325,73 @@ ${generateBRMExplanation(pos, pos.cassonetto, 'cassonetto', project)}</table>` :
             startAutoSync();
             console.log('✅ OneDrive auto-sync attivata');
         }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + K per ricerca
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                toggleMainMenu();
+                setTimeout(() => {
+                    const searchInput = document.getElementById('mainSearch');
+                    if (searchInput) searchInput.focus();
+                }, 300);
+            }
+            
+            // Ctrl/Cmd + N per nuovo progetto
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                showNewProjectModal();
+            }
+            
+            // Ctrl/Cmd + S per salvare
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveState();
+                showNotification('💾 Salvato', 'success');
+            }
+            
+            // Ctrl/Cmd + E per export
+            if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                e.preventDefault();
+                if (state.currentProject) {
+                    exportCurrentProjectJSON();
+                } else {
+                    exportAllProjects();
+                }
+            }
+            
+            // Esc per chiudere menu/modal
+            if (e.key === 'Escape') {
+                if (state.mainMenuOpen) {
+                    closeMainMenu();
+                }
+                if (state.projectMenuOpen) {
+                    closeProjectMenu();
+                }
+                // Chiudi anche eventuali modal
+                const modals = document.querySelectorAll('.modal-overlay');
+                modals.forEach(modal => {
+                    if (modal.style.display === 'flex') {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+        });
+        
+        // Aggiungi animazioni CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideUp {
+                from { transform: translate(-50%, 100%); opacity: 0; }
+                to { transform: translate(-50%, 0); opacity: 1; }
+            }
+            @keyframes slideDown {
+                from { transform: translate(-50%, 0); opacity: 1; }
+                to { transform: translate(-50%, 100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

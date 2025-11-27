@@ -12127,6 +12127,10 @@ if (typeof module !== 'undefined' && module.exports) {
         function switchVistaUfficio(vistaName, evt) {
             console.log(`🔄 Switching to vista: ${vistaName}`);
             
+            // 🆕 v7.82 FIX: Usa window.currentData e window.projectData per sicurezza
+            const currentData = window.currentData;
+            const projectData = window.projectData;
+            
             // ✅ v7.20 FIX: RESET tutte le viste prima di cambiare
             // Ripristina stato iniziale (placeholder visibile, content nascosto)
             const allContentIds = ['ufficioContent', 'posizioniContent', 'aziendeContent', 'preventivoContent'];
@@ -21409,7 +21413,7 @@ if (typeof module !== 'undefined' && module.exports) {
                                             const isClickable = isTapparella;
                                             const clickStyle = isClickable ? 'cursor: pointer;' : '';
                                             // Estrai numero posizione (es: "Pos. 1" → 1)
-                                            const posNum = parseInt(String(voce.posizione).replace(/\\D/g, '')) || (index + 1);
+                                            const posNum = parseInt(String(voce.posizione).replace(/\D/g, '')) || (index + 1);
                                             // 🆕 v7.82 FIX: Semplificato - passa solo posizione
                                             const clickHandler = isClickable ? `onclick="window.mostraDettaglioCostiTapparella(${posNum})" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background=''"` : '';
                                             const clickIcon = isClickable ? ' 🔍' : '';

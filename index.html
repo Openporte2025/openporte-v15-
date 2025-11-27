@@ -6,7 +6,22 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.82 - CHANGELOG
+    DASHBOARD RILIEVI v7.83 - CHANGELOG
+    
+    🔧 VERSIONE 7.83 (27 NOV 2025):
+    
+    🔩 ACCESSORI PERSIANE
+    - ✅ Nuova sezione Cardini + Fermapersiane in visualizzazione persiana
+    - 📍 Mostra quantità e modello cardini da pos.persiana.accessoriPersiana
+    - 🔒 Mostra quantità e modello fermapersiane
+    - 🔗 Allineamento con OpenPorte v4.94
+    
+    💰 CALCOLO PREZZI ACCESSORI PERSIANE
+    - 🆕 LISTINO_PUNTO_PERSIANE: Database cardini e fermapersiane
+    - 💵 K.EASY €56/cad, F.INC €45/cad, CHA.1 €18/cad
+    - 📊 calcolaPrezzoAccessoriPersiana(): Calcola totale accessori
+    - 📋 Righe separate nel preventivo per ogni accessorio con prezzo > 0
+    - 🎨 Badge "accessorio" (indaco) nella tabella preventivo
     
     🔧 VERSIONE 7.82 (26 NOV 2025):
     
@@ -965,7 +980,7 @@
     - Esempi: 6010+07 = €19.6, 6020+56 = €64.4, 1901+M01 = €31.3
     
     ✅ MODIFICHE TECNICHE
-    - Riga ~3900: Database MANIGLIE_FINSTRAL incluso (dopo <script>)
+    - Riga ~3900: Database MANIGLIE_FINSTRAL incluso (dopo tag script)
     - Riga ~8560: Funzioni parsing maniglie/colori
     - Riga ~8818: Lettura infisso.maniglia + infisso.coloreManiglia
     - Riga ~8730: Vecchia funzione calcolaSupplementoManiglia() deprecata
@@ -985,12 +1000,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.82 - Calcolo Completo</title>
+    <title>Dashboard Rilievi v7.83 - Accessori Persiane</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.82";
+        const DASHBOARD_VERSION = "7.83";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -3178,6 +3193,7 @@
         .product-type-badge.infisso { background: #dbeafe; color: #1e40af; }
         .product-type-badge.tapparella { background: #fef3c7; color: #92400e; }
         .product-type-badge.persiana { background: #f3e8ff; color: #6b21a8; }
+        .product-type-badge.accessorio { background: #e0e7ff; color: #4338ca; }
         .product-type-badge.cassonetto { background: #fce7f3; color: #9f1239; }
         .product-type-badge.zanzariera { background: #ecfccb; color: #3f6212; }
 
@@ -7435,6 +7451,39 @@ if (typeof module !== 'undefined' && module.exports) {
                                     });
                                 }
                             }
+                            
+                            // 🔩 ACCESSORI PERSIANA (Cardini + Fermapersiane)
+                            if (pos.persiana.accessoriPersiana) {
+                                const accessoriCalc = calcolaPrezzoAccessoriPersiana(pos.persiana.accessoriPersiana);
+                                
+                                if (accessoriCalc.totale > 0) {
+                                    accessoriCalc.dettaglio.forEach(acc => {
+                                        risultati.prodotti.push({
+                                            posizione: pos.nome || `Posizione ${idx + 1}`,
+                                            successo: true,
+                                            prodotto: `Accessorio Persiana`,
+                                            modello: `${acc.modello} - ${acc.nome}`,
+                                            tipologia: acc.tipo,
+                                            misure: {
+                                                quantita: acc.qta
+                                            },
+                                            dettaglio: {
+                                                prezzo_unitario: acc.prezzo_unitario.toFixed(2),
+                                                quantita: acc.qta
+                                            },
+                                            prezzi: {
+                                                totale: acc.prezzo_totale.toFixed(2),
+                                                iva: (acc.prezzo_totale * 0.22).toFixed(2),
+                                                totale_iva: (acc.prezzo_totale * 1.22).toFixed(2)
+                                            }
+                                        });
+                                    });
+                                    
+                                    risultati.totale += accessoriCalc.totale;
+                                    risultati.totale_iva += accessoriCalc.totale * 1.22;
+                                    console.log(`✅ Accessori Persiana ${idx + 1}: €${accessoriCalc.totale.toFixed(2)}`);
+                                }
+                            }
                         }
                     });
                 }
@@ -9245,6 +9294,22 @@ if (typeof module !== 'undefined' && module.exports) {
             }
             
             html += `<p><strong>Quantità:</strong> ${persiana.quantita}</p>`;
+            
+            // 🔩 ACCESSORI PERSIANA (Cardini + Fermapersiane)
+            if (persiana.accessoriPersiana) {
+                const acc = persiana.accessoriPersiana;
+                
+                // Cardini
+                if (acc.cardini && acc.cardini.qta > 0) {
+                    html += `<p><strong>📍 Cardini:</strong> ${acc.cardini.qta} pz - ${acc.cardini.modello || 'N/D'}</p>`;
+                }
+                
+                // Fermapersiane
+                if (acc.fermapersiane && acc.fermapersiane.qta > 0) {
+                    html += `<p><strong>🔒 Fermapersiane:</strong> ${acc.fermapersiane.qta} pz - ${acc.fermapersiane.modello || 'N/D'}</p>`;
+                }
+            }
+            
             html += '</div>';
             
             return html;
@@ -10068,7 +10133,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.82</span>
+                <span class="logo-version" id="version-badge">v7.83</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -10872,7 +10937,13 @@ if (typeof module !== 'undefined' && module.exports) {
                             } : null,
                             
                             persiana: pos.persiana && pos.persiana.qta ? {
-                                quantita: pos.persiana.qta || 1
+                                quantita: pos.persiana.qta || 1,
+                                azienda: pos.persiana.azienda || '',
+                                tipo: pos.persiana.tipo || '',
+                                modello: pos.persiana.modello || '',
+                                colore: pos.persiana.colorePersiana || pos.persiana.colore || '',
+                                fissaggio: pos.persiana.fissaggio || '',
+                                accessoriPersiana: pos.persiana.accessoriPersiana || null
                             } : null,
                             
                             zanzariera: pos.zanzariera && pos.zanzariera.qta ? {
@@ -13964,6 +14035,88 @@ if (typeof module !== 'undefined' && module.exports) {
             // Aziende che usano questo listino
             aziende: ['plasticino', 'new solar', 'estella']
         };
+        
+        // ============================================================================
+        // LISTINO ACCESSORI PERSIANE - Cardini + Fermapersiane (Punto Persiane)
+        // ============================================================================
+        
+        const LISTINO_ACCESSORI_PERSIANE = {
+            // Cardini a muro (pag. 190)
+            cardini: {
+                'C.SAF90': { nome: 'Cardine SAF 90mm (facciata)', prezzo: 0 },
+                'C.SAF150': { nome: 'Cardine SAF 150mm (cappotto)', prezzo: 0 },
+                'C.SAF240': { nome: 'Cardine SAF 240mm (cappotto spesso)', prezzo: 0 },
+                'C.SAF320': { nome: 'Cardine SAF 320mm (cappotto XL)', prezzo: 0 },
+                'C.REG.SAF90': { nome: 'Cardine Regolabile 90mm', prezzo: 0 },
+                'C.REG.SAF150': { nome: 'Cardine Regolabile 150mm', prezzo: 0 },
+                'CHA.1': { nome: 'Cardine mensola lama stretta', prezzo: 18.00 },
+                'CHA.SP': { nome: 'Spessore 3mm per CHA.1', prezzo: 6.00 }
+            },
+            
+            // Fermapersiane (pag. 182)
+            fermapersiane: {
+                'K.EASY': { nome: 'Ferma KOMFORT a scomparsa', prezzo: 56.00 },
+                'F.INC': { nome: 'Fermo Piemontese incassato', prezzo: 45.00 },
+                'GRILLO': { nome: 'Ferma tipo Grillo', prezzo: 0 },
+                'SALTARELLO': { nome: 'Ferma tipo Saltarello', prezzo: 0 },
+                'PIEMONTESE': { nome: 'Ferma tipo Piemontese', prezzo: 0 },
+                'OMETTO': { nome: 'Ferma tipo Ometto (pavimento)', prezzo: 0 }
+            },
+            
+            // Verniciatura accessori (pag. 191)
+            verniciatura: {
+                cardini: { prezzo_unitario: 22.00, minimo_fatturabile: 60.00, contributo_fisso: 100.00 },
+                bandelle: { prezzo_unitario: 7.00, minimo_fatturabile: 84.00, contributo_fisso: 100.00 }
+            }
+        };
+        
+        /**
+         * Calcola prezzo accessori persiana (Cardini + Fermapersiane)
+         * @param {object} accessoriPersiana - Oggetto con cardini e fermapersiane
+         * @returns {object} Dettaglio calcolo con prezzi
+         */
+        function calcolaPrezzoAccessoriPersiana(accessoriPersiana) {
+            if (!accessoriPersiana) return { totale: 0, dettaglio: [] };
+            
+            let totale = 0;
+            const dettaglio = [];
+            
+            // Cardini
+            if (accessoriPersiana.cardini && accessoriPersiana.cardini.qta > 0) {
+                const cardine = LISTINO_ACCESSORI_PERSIANE.cardini[accessoriPersiana.cardini.modello] || { prezzo: 0 };
+                const prezzoCardini = accessoriPersiana.cardini.qta * cardine.prezzo;
+                totale += prezzoCardini;
+                if (cardine.prezzo > 0) {
+                    dettaglio.push({
+                        tipo: 'Cardini',
+                        modello: accessoriPersiana.cardini.modello,
+                        nome: cardine.nome,
+                        qta: accessoriPersiana.cardini.qta,
+                        prezzo_unitario: cardine.prezzo,
+                        prezzo_totale: prezzoCardini
+                    });
+                }
+            }
+            
+            // Fermapersiane
+            if (accessoriPersiana.fermapersiane && accessoriPersiana.fermapersiane.qta > 0) {
+                const ferma = LISTINO_ACCESSORI_PERSIANE.fermapersiane[accessoriPersiana.fermapersiane.modello] || { prezzo: 0 };
+                const prezzoFerma = accessoriPersiana.fermapersiane.qta * ferma.prezzo;
+                totale += prezzoFerma;
+                if (ferma.prezzo > 0) {
+                    dettaglio.push({
+                        tipo: 'Fermapersiane',
+                        modello: accessoriPersiana.fermapersiane.modello,
+                        nome: ferma.nome,
+                        qta: accessoriPersiana.fermapersiane.qta,
+                        prezzo_unitario: ferma.prezzo,
+                        prezzo_totale: prezzoFerma
+                    });
+                }
+            }
+            
+            return { totale, dettaglio };
+        }
         
         /**
          * Calcola prezzo tapparella Plasticino completo

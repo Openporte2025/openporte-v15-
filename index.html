@@ -10832,14 +10832,31 @@ if (typeof module !== 'undefined' && module.exports) {
                             } : null,
                             
                             tapparella: pos.tapparella ? {
-                                quantita: pos.tapparella.qta || 1,
+                                quantita: parseInt(pos.tapparella.qta) || parseInt(pos.tapparella.quantita) || 1,
                                 azienda: pos.tapparella.azienda || '',
                                 modello: pos.tapparella.modello || '',
                                 tipologia: pos.tapparella.tipologia || '',
+                                colore: pos.tapparella.colore || '',
+                                colore_tipo: pos.tapparella.colore_tipo || 'tinta_unita',
+                                guida: pos.tapparella.guida || '',
+                                coloreGuida: pos.tapparella.coloreGuida || 'Argento',
+                                manualeMot: pos.tapparella.manualeMot || 'Manuale',
+                                motorizzazione: pos.tapparella.motorizzazione || (pos.tapparella.manualeMot === 'Motorizzata' ? 'si' : 'no'),
+                                comando: pos.tapparella.comando || '',
+                                motoreAzienda: pos.tapparella.motoreAzienda || '',
+                                motoreModello: pos.tapparella.motoreModello || '',
+                                sostEsistente: pos.tapparella.sostEsistente || '',
+                                sostTipo: pos.tapparella.sostTipo || '',
+                                accessoriDaSostituire: pos.tapparella.accessoriDaSostituire || {},
+                                note: pos.tapparella.note || '',
                                 brm: {
-                                    L: pos.tapparella.BRM_L || 0,
-                                    H: pos.tapparella.BRM_H || 0
-                                }
+                                    L: parseInt(pos.tapparella.BRM_L) || parseInt(pos.tapparella.brm?.L) || 0,
+                                    H: parseInt(pos.tapparella.BRM_H) || parseInt(pos.tapparella.brm?.H) || 0
+                                },
+                                // 🆕 v7.82: Mantieni riferimenti originali per compatibilità
+                                BRM_L: parseInt(pos.tapparella.BRM_L) || parseInt(pos.tapparella.brm?.L) || null,
+                                BRM_H: parseInt(pos.tapparella.BRM_H) || parseInt(pos.tapparella.brm?.H) || null,
+                                qta: pos.tapparella.qta || pos.tapparella.quantita || '1'
                             } : null,
                             
                             cassonetto: pos.cassonetto ? {
@@ -17565,8 +17582,12 @@ if (typeof module !== 'undefined' && module.exports) {
                 { key: 'zanzariera', label: '🦟 Zanzariera', data: pos.zanzariera }
             ];
             
-            // Filtra solo quelli con quantita > 0
-            const prodottiDisponibili = prodotti.filter(p => p.data && p.data.quantita > 0);
+            // 🆕 v7.82: Filtra solo quelli con quantita > 0 (supporta sia qta che quantita)
+            const prodottiDisponibili = prodotti.filter(p => {
+                if (!p.data) return false;
+                const qty = parseInt(p.data.quantita) || parseInt(p.data.qta) || 0;
+                return qty > 0;
+            });
             
             // Il primo è active
             const primoProdottoKey = prodottiDisponibili.length > 0 ? prodottiDisponibili[0].key : 'infisso';
@@ -17598,7 +17619,9 @@ if (typeof module !== 'undefined' && module.exports) {
         }
 
         function renderProductContent(tipo, prodotto, isActive) {
-            if (!prodotto || prodotto.quantita === 0) return '';
+            // 🆕 v7.82: Supporta sia qta che quantita
+            const qty = parseInt(prodotto?.quantita) || parseInt(prodotto?.qta) || 0;
+            if (!prodotto || qty === 0) return '';
             
             const brm = prodotto.brm || {};
             
@@ -20800,8 +20823,10 @@ if (typeof module !== 'undefined' && module.exports) {
                 const posizioni = datiProgetto.posizioni || [];
                 
                 posizioni.forEach((pos, idx) => {
-                    // INFISSI
-                    if (pos.infisso && pos.infisso.quantita > 0) {
+                    // INFISSI - 🆕 v7.82: Supporta sia qta che quantita
+                    const infQta = parseInt(pos.infisso?.quantita) || parseInt(pos.infisso?.qta) || 0;
+                    if (pos.infisso && infQta > 0) {
+                        pos.infisso.quantita = infQta;
                         const voce = this.calcolaVoceInfisso(pos, idx + 1);
                         if (voce.successo) {
                             risultato.voci.push(voce);
@@ -20812,8 +20837,10 @@ if (typeof module !== 'undefined' && module.exports) {
                         }
                     }
                     
-                    // ZANZARIERE
-                    if (pos.zanzariera && pos.zanzariera.quantita > 0) {
+                    // ZANZARIERE - 🆕 v7.82: Supporta sia qta che quantita
+                    const zanzQta = parseInt(pos.zanzariera?.quantita) || parseInt(pos.zanzariera?.qta) || 0;
+                    if (pos.zanzariera && zanzQta > 0) {
+                        pos.zanzariera.quantita = zanzQta;
                         const voce = this.calcolaVoceZanzariera(pos, idx + 1);
                         if (voce.successo) {
                             risultato.voci.push(voce);
@@ -20823,8 +20850,10 @@ if (typeof module !== 'undefined' && module.exports) {
                         }
                     }
                     
-                    // PERSIANE
-                    if (pos.persiana && pos.persiana.quantita > 0) {
+                    // PERSIANE - 🆕 v7.82: Supporta sia qta che quantita
+                    const persQta = parseInt(pos.persiana?.quantita) || parseInt(pos.persiana?.qta) || 0;
+                    if (pos.persiana && persQta > 0) {
+                        pos.persiana.quantita = persQta;
                         const voce = this.calcolaVocePersiana(pos, idx + 1);
                         if (voce.successo) {
                             risultato.voci.push(voce);
@@ -20835,8 +20864,11 @@ if (typeof module !== 'undefined' && module.exports) {
                         }
                     }
                     
-                    // TAPPARELLE
-                    if (pos.tapparella && pos.tapparella.quantita > 0) {
+                    // TAPPARELLE - 🆕 v7.82: Supporta sia qta che quantita
+                    const tappQta = parseInt(pos.tapparella?.quantita) || parseInt(pos.tapparella?.qta) || 0;
+                    if (pos.tapparella && tappQta > 0) {
+                        // Assicura che quantita sia valorizzato
+                        pos.tapparella.quantita = tappQta;
                         const voce = this.calcolaVoceTapparella(pos, idx + 1);
                         if (voce.successo) {
                             risultato.voci.push(voce);
@@ -20846,8 +20878,10 @@ if (typeof module !== 'undefined' && module.exports) {
                         }
                     }
                     
-                    // CASSONETTI
-                    if (pos.cassonetto && pos.cassonetto.quantita > 0) {
+                    // CASSONETTI - 🆕 v7.82: Supporta sia qta che quantita
+                    const cassQta = parseInt(pos.cassonetto?.quantita) || parseInt(pos.cassonetto?.qta) || 0;
+                    if (pos.cassonetto && cassQta > 0) {
+                        pos.cassonetto.quantita = cassQta;
                         const voce = this.calcolaVoceCassonetto(pos, idx + 1);
                         if (voce.successo) {
                             risultato.voci.push(voce);

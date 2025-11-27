@@ -16055,18 +16055,20 @@ if (typeof module !== 'undefined' && module.exports) {
         /**
          * Mostra dettaglio costi per TAPPARELLA
          * @param {number} posIndex - Indice posizione (1-based)
-         * @param {object} rigaPreventivo - Dati riga dal preventivo
+         * @param {object} rigaPreventivo - Dati riga dal preventivo (opzionale)
          */
-        function mostraDettaglioCostiTapparella(posIndex, rigaPreventivo) {
+        function mostraDettaglioCostiTapparella(posIndex, rigaPreventivo = {}) {
             console.log(`📊 v7.82 Dettaglio Costi Tapparella Pos ${posIndex}`, rigaPreventivo);
             
             // Trova i dati originali della posizione
-            // Supporta sia posizioni (convertito) che positions (originale)
-            const posizioni = currentData?.posizioni || currentData?.positions || projectData?.posizioni || projectData?.positions || [];
+            // 🆕 v7.82 FIX: Usa window.currentData per sicurezza
+            const data = window.currentData || window.projectData || {};
+            const posizioni = data.posizioni || data.positions || [];
             const pos = posizioni[posIndex - 1];
             
             if (!pos || !pos.tapparella) {
-                alert('❌ Dati tapparella non trovati per questa posizione');
+                console.error('❌ Dati tapparella non trovati:', { posIndex, posizioni: posizioni.length, pos });
+                alert(`❌ Dati tapparella non trovati per posizione ${posIndex}`);
                 return;
             }
             
@@ -16108,6 +16110,14 @@ if (typeof module !== 'undefined' && module.exports) {
             const teloInfo = LISTINO_PLASTICINO.teli[modelloTelo] || { nome: modelloCompleto, tipo: 'N/D' };
             const prezzoMq = calcolo.prezzoTeloMq || 60.00;
             
+            // 🆕 v7.82: Calcola totale se non passato
+            let totaleCalcolato = calcolo.totale || 0;
+            if (guidaDettaglio && guidaDettaglio.prezzo) {
+                totaleCalcolato += guidaDettaglio.prezzo;
+            }
+            const totaleFinale = rigaPreventivo.totale ? parseFloat(rigaPreventivo.totale) : totaleCalcolato;
+            const ambienteDisplay = rigaPreventivo.ambiente || pos.ambiente || 'N/D';
+            
             let dettaglioHTML = `
                 <div style="padding: 1.5rem;">
                     <!-- HEADER -->
@@ -16115,10 +16125,10 @@ if (typeof module !== 'undefined' && module.exports) {
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <h3 style="margin: 0; font-size: 1.25rem;">🎚️ Tapparella - Posizione ${posIndex}</h3>
-                                <p style="margin: 0.25rem 0 0 0; opacity: 0.9;">${rigaPreventivo.ambiente || pos.ambiente || 'N/D'}</p>
+                                <p style="margin: 0.25rem 0 0 0; opacity: 0.9;">${ambienteDisplay}</p>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-size: 1.5rem; font-weight: 700;">€ ${parseFloat(rigaPreventivo.totale).toFixed(2)}</div>
+                                <div style="font-size: 1.5rem; font-weight: 700;">€ ${totaleFinale.toFixed(2)}</div>
                                 <div style="font-size: 0.875rem; opacity: 0.9;">Totale</div>
                             </div>
                         </div>
@@ -21399,15 +21409,14 @@ if (typeof module !== 'undefined' && module.exports) {
                                             const isClickable = isTapparella;
                                             const clickStyle = isClickable ? 'cursor: pointer;' : '';
                                             // Estrai numero posizione (es: "Pos. 1" → 1)
-                                            const posNum = parseInt(String(voce.posizione).replace(/\D/g, '')) || (index + 1);
-                                            // 🆕 v7.82 FIX: Usa data attributes per evitare problemi di escape
-                                            const dataAttrs = isClickable ? `data-pos="${posNum}" data-ambiente="${(voce.descrizione || '').replace(/"/g, '&quot;')}" data-totale="${voce.importo}"` : '';
-                                            const clickHandler = isClickable ? `onclick="mostraDettaglioCostiTapparella(parseInt(this.dataset.pos), {posizione: parseInt(this.dataset.pos), ambiente: this.dataset.ambiente, totale: this.dataset.totale})" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background=''"` : '';
+                                            const posNum = parseInt(String(voce.posizione).replace(/\\D/g, '')) || (index + 1);
+                                            // 🆕 v7.82 FIX: Semplificato - passa solo posizione
+                                            const clickHandler = isClickable ? `onclick="window.mostraDettaglioCostiTapparella(${posNum})" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background=''"` : '';
                                             const clickIcon = isClickable ? ' 🔍' : '';
                                             const clickTitle = isClickable ? 'title="Clicca per vedere il dettaglio costi"' : '';
                                             
                                             return `
-                                            <tr style="${clickStyle}" ${dataAttrs} ${clickHandler} ${clickTitle}>
+                                            <tr style="${clickStyle}" ${clickHandler} ${clickTitle}>
                                                 <td>${voce.posizione}</td>
                                                 <td><span class="voce-tipo-badge ${voce.tipo.toLowerCase()}">${voce.tipo}${clickIcon}</span></td>
                                                 <td>${voce.descrizione}</td>

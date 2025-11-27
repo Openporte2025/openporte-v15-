@@ -15988,11 +15988,12 @@ if (typeof module !== 'undefined' && module.exports) {
                     tr.onmouseover = function() { this.style.background = '#fef3c7'; };
                     tr.onmouseout = function() { this.style.background = ''; };
                     
-                    // 🆕 v7.82: Click handler per dettaglio
+                    // 🆕 v7.82 FIX: Usa window. e salva posizione in variabile locale
+                    const posIdx = riga.posizione;
+                    const rigaCopia = Object.assign({}, riga); // Copia per closure
                     tr.onclick = function() {
-                        if (isTapparella) {
-                            mostraDettaglioCostiTapparella(riga.posizione, riga);
-                        }
+                        console.log('🖱️ Click su tapparella pos', posIdx);
+                        window.mostraDettaglioCostiTapparella(posIdx, rigaCopia);
                     };
                 }
                 
@@ -16062,13 +16063,22 @@ if (typeof module !== 'undefined' && module.exports) {
          * @param {object} rigaPreventivo - Dati riga dal preventivo (opzionale)
          */
         function mostraDettaglioCostiTapparella(posIndex, rigaPreventivo = {}) {
+            try {
             console.log(`📊 v7.82 Dettaglio Costi Tapparella Pos ${posIndex}`, rigaPreventivo);
+            console.log('📊 window.currentData:', window.currentData ? 'presente' : 'MANCANTE');
+            console.log('📊 window.projectData:', window.projectData ? 'presente' : 'MANCANTE');
             
             // Trova i dati originali della posizione
             // 🆕 v7.82 FIX: Usa window.currentData per sicurezza
             const data = window.currentData || window.projectData || {};
+            console.log('📊 data.posizioni:', data.posizioni?.length || 'N/A');
+            console.log('📊 data.positions:', data.positions?.length || 'N/A');
+            
             const posizioni = data.posizioni || data.positions || [];
             const pos = posizioni[posIndex - 1];
+            
+            console.log('📊 pos trovata:', pos ? 'SI' : 'NO');
+            console.log('📊 pos.tapparella:', pos?.tapparella ? 'SI' : 'NO');
             
             if (!pos || !pos.tapparella) {
                 console.error('❌ Dati tapparella non trovati:', { posIndex, posizioni: posizioni.length, pos });
@@ -16287,6 +16297,10 @@ if (typeof module !== 'undefined' && module.exports) {
             
             // Mostra modal
             mostraModalDettaglioCosti('Tapparella', dettaglioHTML);
+            } catch (e) {
+                console.error('❌ Errore in mostraDettaglioCostiTapparella:', e);
+                alert('Errore dettaglio costi: ' + e.message);
+            }
         }
         
         /**
@@ -16341,7 +16355,7 @@ if (typeof module !== 'undefined' && module.exports) {
                         <h2 style="margin: 0; font-size: 1.25rem; color: #1f2937;">
                             💰 Dettaglio Costi - ${tipo}
                         </h2>
-                        <button onclick="chiudiModalDettaglioCosti()" style="
+                        <button onclick="window.chiudiModalDettaglioCosti()" style="
                             background: none;
                             border: none;
                             font-size: 1.5rem;
@@ -16357,7 +16371,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             // Click esterno chiude
             modal.addEventListener('click', (e) => {
-                if (e.target === modal) chiudiModalDettaglioCosti();
+                if (e.target === modal) window.chiudiModalDettaglioCosti();
             });
             
             document.body.appendChild(modal);
@@ -16397,6 +16411,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
         // Funzione: Ricalcola preventivo (chiamata da select IVA)
         function ricalcolaPreventivo() {
+            const currentData = window.currentData;
             if (currentData && currentData.posizioni) {
                 renderVistaPreventivo(currentData);
                 console.log('🔄 Preventivo ricalcolato');

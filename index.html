@@ -990,8 +990,8 @@
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.81";
-        const DASHBOARD_DATE = "26 NOV 2025";
+        const DASHBOARD_VERSION = "7.82";
+        const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
         // 🔄 FUNZIONE AGGIORNAMENTO VERSIONE AUTOMATICO
@@ -16373,6 +16373,11 @@ if (typeof module !== 'undefined' && module.exports) {
             }
         }
         
+        // 🆕 v7.82: Esporta funzioni su window per accessibilità dai popup
+        window.mostraDettaglioCostiTapparella = mostraDettaglioCostiTapparella;
+        window.mostraModalDettaglioCosti = mostraModalDettaglioCosti;
+        window.chiudiModalDettaglioCosti = chiudiModalDettaglioCosti;
+        
         // Variabile globale per memorizzare le righe del preventivo per il click
         let righePreventivo = [];
 
@@ -21277,7 +21282,7 @@ if (typeof module !== 'undefined' && module.exports) {
                     <div class="preventivo-modal-overlay" id="preventivo-modal" onclick="if(event.target===this) PreventivoUI.chiudiModal()">
                         <div class="preventivo-modal">
                             <div class="preventivo-modal-header">
-                                <h2 class="preventivo-modal-title">💰 Preventivo Commessa</h2>
+                                <h2 class="preventivo-modal-title">💰 Dettaglio Costi</h2>
                                 <button class="preventivo-modal-close" onclick="PreventivoUI.chiudiModal()">✕</button>
                             </div>
                             
@@ -21315,7 +21320,7 @@ if (typeof module !== 'undefined' && module.exports) {
                         <div class="preventivo-modal-overlay" id="preventivo-modal" onclick="if(event.target===this) PreventivoUI.chiudiModal()">
                             <div class="preventivo-modal">
                                 <div class="preventivo-modal-header">
-                                    <h2 class="preventivo-modal-title">💰 Preventivo Commessa</h2>
+                                    <h2 class="preventivo-modal-title">💰 Dettaglio Costi</h2>
                                     <button class="preventivo-modal-close" onclick="PreventivoUI.chiudiModal()">✕</button>
                                 </div>
                                 
@@ -21344,7 +21349,7 @@ if (typeof module !== 'undefined' && module.exports) {
                         <div class="preventivo-modal preventivo-modal-large">
                             <div class="preventivo-modal-header">
                                 <div>
-                                    <h2 class="preventivo-modal-title">💰 Preventivo Commessa</h2>
+                                    <h2 class="preventivo-modal-title">💰 Dettaglio Costi</h2>
                                     <p class="preventivo-modal-subtitle">${preventivo.progetto}</p>
                                 </div>
                                 <button class="preventivo-modal-close" onclick="PreventivoUI.chiudiModal()">✕</button>
@@ -21395,14 +21400,14 @@ if (typeof module !== 'undefined' && module.exports) {
                                             const clickStyle = isClickable ? 'cursor: pointer;' : '';
                                             // Estrai numero posizione (es: "Pos. 1" → 1)
                                             const posNum = parseInt(String(voce.posizione).replace(/\D/g, '')) || (index + 1);
-                                            // Escape apostrofi nella descrizione
-                                            const descEscaped = String(voce.descrizione || '').replace(/'/g, "\\'");
-                                            const clickAttr = isClickable ? `onclick="mostraDettaglioCostiTapparella(${posNum}, {posizione: ${posNum}, ambiente: '${descEscaped}', totale: '${voce.importo}'})" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background=''"` : '';
+                                            // 🆕 v7.82 FIX: Usa data attributes per evitare problemi di escape
+                                            const dataAttrs = isClickable ? `data-pos="${posNum}" data-ambiente="${(voce.descrizione || '').replace(/"/g, '&quot;')}" data-totale="${voce.importo}"` : '';
+                                            const clickHandler = isClickable ? `onclick="mostraDettaglioCostiTapparella(parseInt(this.dataset.pos), {posizione: parseInt(this.dataset.pos), ambiente: this.dataset.ambiente, totale: this.dataset.totale})" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background=''"` : '';
                                             const clickIcon = isClickable ? ' 🔍' : '';
                                             const clickTitle = isClickable ? 'title="Clicca per vedere il dettaglio costi"' : '';
                                             
                                             return `
-                                            <tr style="${clickStyle}" ${clickAttr} ${clickTitle}>
+                                            <tr style="${clickStyle}" ${dataAttrs} ${clickHandler} ${clickTitle}>
                                                 <td>${voce.posizione}</td>
                                                 <td><span class="voce-tipo-badge ${voce.tipo.toLowerCase()}">${voce.tipo}${clickIcon}</span></td>
                                                 <td>${voce.descrizione}</td>

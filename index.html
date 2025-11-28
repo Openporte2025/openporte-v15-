@@ -16019,6 +16019,9 @@ if (typeof module !== 'undefined' && module.exports) {
             
             // Processa ogni posizione
             posizioni.forEach((pos, index) => {
+                // 🔐 DEBUG BLINDATA
+                console.log(`🔐 Pos ${index + 1} blindata:`, pos.blindata);
+                
                 // Processa INFISSI
                 if (pos.infisso && pos.infisso.qta > 0) {
                     const infisso = pos.infisso;

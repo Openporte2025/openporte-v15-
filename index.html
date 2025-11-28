@@ -6,7 +6,16 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.91 - CHANGELOG
+    DASHBOARD RILIEVI v7.92 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.92 (28 NOV 2025):
+    - 🆕 CALCOLO PERSIANE COMPLETO da listino Punto Persiane:
+      * Maggiorazione modello Alto Adige +33%
+      * Cardini (4 × €3.50 = €14.00)
+      * Imballo 3%
+      * Contributo gestione €97.00
+    - Popup persiana mostra TUTTE le voci come PDF Punto Persiane
+    - Allineamento prezzi con preventivo ufficiale
     
     🔧 AGGIORNAMENTI v7.91 (28 NOV 2025):
     - FIX: Popup persiana ora mostra COLORE correttamente
@@ -1053,12 +1062,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.91 - Fix Colore Persiana</title>
+    <title>Dashboard Rilievi v7.92 - Calcolo Persiane Completo</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.91";
+        const DASHBOARD_VERSION = "7.92";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -10299,7 +10308,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.91</span>
+                <span class="logo-version" id="version-badge">v7.92</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -13828,6 +13837,27 @@ if (typeof module !== 'undefined' && module.exports) {
         // LISTINO PUNTO PERSIANE - STECCHE FISSE TONDE - 2025
         // ============================================================================
         
+        // 🆕 v7.92: MAGGIORAZIONI MODELLI PERSIANE (da listino pag. 88)
+        const MAGGIORAZIONI_MODELLI_PERSIANE = {
+            'Alto Adige': 0.33,      // +33% (verificato da preventivo Punto Persiane)
+            'Alto Adige [R]': 0.17,  // +17%
+            'Alto Adige [TT]': 0.225, // +22.5%
+            'Cortina': 0.04,          // +4%
+            'Cortina [R]': 0.04,      // +4%
+            'Nerina': 0.04,           // +4%
+            'Nerina [R]': 0.04,       // +4%
+            'Canazei': 0.04,          // +4%
+            'Diamante': 0.04          // +4%
+        };
+        
+        // VOCI FISSE PERSIANE (da PDF Punto Persiane)
+        const VOCI_FISSE_PERSIANE = {
+            contributoGestione: 97.00,  // €97 fisso
+            imballoPercent: 3.00,       // 3% sul totale
+            cardiniBase: 3.50,          // €3.50 cad (C.SAF90)
+            cardiniQuantita: 4          // 4 pezzi per F2
+        };
+        
         const LISTINO_PUNTO_PERSIANE = {
             // Tipologia F1: Finestra 1 anta
             // Larghezze: 500-1200mm | Altezze: 700-2000mm
@@ -14106,6 +14136,69 @@ if (typeof module !== 'undefined' && module.exports) {
                     altezza_ref: H_ref,
                     tipologia: tipologia
                 }
+            };
+        }
+        
+        /**
+         * 🆕 v7.92: Calcolo COMPLETO prezzo persiana con tutte le voci
+         * Include: base + maggiorazione modello + colore + cardini + imballo + contributo
+         */
+        function calcolaPrezzoPersianaCOMPLETO(L_mm, H_mm, tipologia, modello, colore, numAnte = 2) {
+            // 1. Prezzo base da griglia
+            const calcBase = calcolaPrezzoPUNTOPERSIANE(L_mm, H_mm, tipologia);
+            let prezzoBase = calcBase.prezzo_base;
+            
+            // 2. Maggiorazione modello
+            const maggiorazioneModello = MAGGIORAZIONI_MODELLI_PERSIANE[modello] || 0;
+            const supplementoModello = prezzoBase * maggiorazioneModello;
+            prezzoBase += supplementoModello;
+            
+            console.log(`🏠 Modello ${modello}: Base €${calcBase.prezzo_base} + ${(maggiorazioneModello*100).toFixed(1)}% = €${prezzoBase.toFixed(2)}`);
+            
+            // 3. Maggiorazione colore
+            let supplementoColore = 0;
+            let categoriaColore = 'CAT01';
+            if (colore) {
+                const infoColore = trovaMaggiorazioneColorePersiana(colore);
+                supplementoColore = prezzoBase * (infoColore.maggiorazione / 100);
+                categoriaColore = infoColore.categoria;
+                console.log(`🎨 Colore ${colore} (${categoriaColore}): +${infoColore.maggiorazione}% = €${supplementoColore.toFixed(2)}`);
+            }
+            
+            // 4. Spagnolette per 2+ ante
+            const supplementoSpagnolette = numAnte >= 2 ? 45 : 0;
+            
+            // Subtotale persiana
+            const subtotalePersiana = prezzoBase + supplementoColore + supplementoSpagnolette;
+            
+            // 5. Cardini (4 pz × €3.50 = €14.00 per F2)
+            const cardini = VOCI_FISSE_PERSIANE.cardiniBase * VOCI_FISSE_PERSIANE.cardiniQuantita;
+            
+            // 6. Imballo 3%
+            const baseImballo = subtotalePersiana + cardini;
+            const imballo = baseImballo * (VOCI_FISSE_PERSIANE.imballoPercent / 100);
+            
+            // 7. Contributo gestione
+            const contributoGestione = VOCI_FISSE_PERSIANE.contributoGestione;
+            
+            // TOTALE FINALE
+            const totaleFinale = subtotalePersiana + cardini + imballo + contributoGestione;
+            
+            console.log(`💰 Persiana COMPLETO: Base €${prezzoBase.toFixed(2)} + Colore €${supplementoColore.toFixed(2)} + Spagn €${supplementoSpagnolette} + Cardini €${cardini.toFixed(2)} + Imb €${imballo.toFixed(2)} + Contrib €${contributoGestione} = €${totaleFinale.toFixed(2)}`);
+            
+            return {
+                prezzo_base_griglia: calcBase.prezzo_base,
+                maggiorazione_modello: supplementoModello,
+                prezzo_base_con_modello: prezzoBase,
+                supplemento_colore: supplementoColore,
+                categoria_colore: categoriaColore,
+                supplemento_spagnolette: supplementoSpagnolette,
+                subtotale_persiana: subtotalePersiana,
+                cardini: cardini,
+                imballo: imballo,
+                contributo_gestione: contributoGestione,
+                totale: totaleFinale,
+                dettaglio: calcBase.dettaglio
             };
         }
 
@@ -16048,6 +16141,9 @@ if (typeof module !== 'undefined' && module.exports) {
                         let supplementoSpagnolette = 0;
                         let categoriaColore = 'CAT01';
                         let tipologia = 'F1';
+                        let cardini = 0;
+                        let imballo = 0;
+                        let contributoGestione = 0;
                         
                         if (usaListinoPuntoPersiane) {
                             // ✅ v7.55: Estrai numero ante dal campo tipo (F1, F2, PF2, ecc.)
@@ -16066,28 +16162,28 @@ if (typeof module !== 'undefined' && module.exports) {
                             console.log(`📐 Persiana tipo="${pers.tipo}" → ${numAnte} ante, H=${H_mm}mm → ${isPortaFinestra ? 'Porta Finestra' : 'Finestra'} → Tipologia ${tipologia}`);
                             console.log(`📋 Modello persiana: "${pers.modello || 'N/D'}"`);
                             
-                            // Calcola prezzo usando listino Punto Persiane
-                            const calcolo = calcolaPrezzoPUNTOPERSIANE(L_mm, H_mm, tipologia);
-                            prezzoBase = calcolo.prezzo_base;
+                            // 🆕 v7.92: Usa calcolo COMPLETO con tutte le voci
+                            const calcolo = calcolaPrezzoPersianaCOMPLETO(
+                                L_mm, 
+                                H_mm, 
+                                tipologia, 
+                                pers.modello || 'Alto Adige',  // Modello per maggiorazione
+                                pers.colorePersiana,            // Colore
+                                numAnte                         // Numero ante
+                            );
                             
-                            // ✅ v7.56: Applica maggiorazione colore
-                            if (pers.colorePersiana) {
-                                const infoColore = trovaMaggiorazioneColorePersiana(pers.colorePersiana);
-                                supplementoColore = (prezzoBase * infoColore.maggiorazione) / 100;
-                                categoriaColore = infoColore.categoria;
-                                console.log(`🎨 Maggiorazione colore ${categoriaColore}: +${infoColore.maggiorazione}% = +€${supplementoColore.toFixed(2)}`);
-                            }
+                            prezzoBase = calcolo.prezzo_base_con_modello;
+                            supplementoColore = calcolo.supplemento_colore;
+                            categoriaColore = calcolo.categoria_colore;
+                            supplementoSpagnolette = calcolo.supplemento_spagnolette;
+                            cardini = calcolo.cardini;
+                            imballo = calcolo.imballo;
+                            contributoGestione = calcolo.contributo_gestione;
                             
-                            // ✅ v7.56: Supplemento spagnolette per 2+ ante
-                            if (numAnte >= 2) {
-                                supplementoSpagnolette = 45; // €45 per persiane 2+ ante
-                                console.log(`🔧 Supplemento spagnolette (${numAnte} ante): +€${supplementoSpagnolette}`);
-                            }
+                            // Prezzo unitario finale CON TUTTE LE VOCI
+                            prezzoUnitario = calcolo.totale;
                             
-                            // Prezzo unitario finale con supplementi
-                            prezzoUnitario = prezzoBase + supplementoColore + supplementoSpagnolette;
-                            
-                            console.log(`✅ Persiana Pos ${index + 1}: Base €${prezzoBase} + Colore €${supplementoColore.toFixed(2)} + Spagnolette €${supplementoSpagnolette} = €${prezzoUnitario.toFixed(2)}`);
+                            console.log(`✅ Persiana Pos ${index + 1}: TOTALE COMPLETO €${prezzoUnitario.toFixed(2)}`);
                         } else {
                             console.warn(`⚠️ Pos ${index + 1}: Azienda persiane "${pers.azienda}" non ha listino prezzi`);
                         }
@@ -16105,10 +16201,12 @@ if (typeof module !== 'undefined' && module.exports) {
                             superficie: '-',
                             perimetro: '-',
                             prezzoBase: prezzoBase.toFixed(2),
-                            supplementoTelaio: supplementoColore.toFixed(2),      // Riuso per colore
-                            supplementoAnta: supplementoSpagnolette.toFixed(2),   // Riuso per spagnolette
-                            supplementoVetro: '0.00',
-                            supplementoManiglia: '0.00',
+                            supplementoTelaio: supplementoColore.toFixed(2),      // Colore
+                            supplementoAnta: supplementoSpagnolette.toFixed(2),   // Spagnolette
+                            supplementoVetro: cardini.toFixed(2),                 // 🆕 Cardini
+                            supplementoManiglia: imballo.toFixed(2),              // 🆕 Imballo
+                            supplementoColore: contributoGestione.toFixed(2),     // 🆕 Contributo gestione
+                            supplementoMontante: '0.00',
                             prezzoUnitario: prezzoUnitario.toFixed(2),
                             quantita: quantita,
                             totale: totaleRiga.toFixed(2),
@@ -16815,29 +16913,29 @@ if (typeof module !== 'undefined' && module.exports) {
          */
         function mostraDettaglioCostiPersiana(posIndex, rigaPreventivo = {}) {
             try {
-                console.log(`📊 v7.90 Dettaglio Persiana Pos ${posIndex} - DATI DA PREVENTIVO:`, rigaPreventivo);
+                console.log(`📊 v7.92 Dettaglio Persiana Pos ${posIndex} - DATI DA PREVENTIVO:`, rigaPreventivo);
                 
                 // Dati dal preventivo
                 const L_mm = rigaPreventivo.larghezza || 0;
                 const H_mm = rigaPreventivo.altezza || 0;
                 const superficie = rigaPreventivo.superficie || '-';
-                const modello = rigaPreventivo.telaio || 'N/D';  // Modello persiana
+                const modello = rigaPreventivo.telaio || 'N/D';
                 const azienda = rigaPreventivo.azienda || 'P. Persiane';
                 const ambiente = rigaPreventivo.ambiente || `Pos ${posIndex}`;
                 const tipo = rigaPreventivo.tipo || 'Persiana';
                 
-                // Prezzi dal preventivo - MAPPING CORRETTO:
-                // prezzoBase = prezzo base griglia
-                // supplementoTelaio = maggiorazione COLORE (riusato)
-                // supplementoAnta = spagnolette (riusato)
+                // Prezzi dal preventivo - MAPPING v7.92:
                 const prezzoBase = parseFloat(rigaPreventivo.prezzoBase) || 0;
-                const suppColore = parseFloat(rigaPreventivo.supplementoTelaio) || 0;  // Colore!
-                const suppSpagnolette = parseFloat(rigaPreventivo.supplementoAnta) || 0;  // Spagnolette
+                const suppColore = parseFloat(rigaPreventivo.supplementoTelaio) || 0;
+                const suppSpagnolette = parseFloat(rigaPreventivo.supplementoAnta) || 0;
+                const cardini = parseFloat(rigaPreventivo.supplementoVetro) || 0;
+                const imballo = parseFloat(rigaPreventivo.supplementoManiglia) || 0;
+                const contributoGestione = parseFloat(rigaPreventivo.supplementoColore) || 0;
                 const prezzoUnitario = parseFloat(rigaPreventivo.prezzoUnitario) || 0;
                 const quantita = parseInt(rigaPreventivo.quantita) || 1;
                 const totale = parseFloat(rigaPreventivo.totale) || 0;
                 
-                // Info extra per debug
+                // Info extra
                 const coloreInfo = rigaPreventivo._colore || 'N/D';
                 const categoriaColore = rigaPreventivo._categoriaColore || 'N/D';
                 
@@ -16914,10 +17012,50 @@ if (typeof module !== 'undefined' && module.exports) {
                                 <!-- SPAGNOLETTE -->
                                 <tr>
                                     <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
-                                        <strong>🔧 Spagnolette</strong>
+                                        <strong>🔧 Spagnolette</strong><br>
+                                        <span style="font-size: 0.8rem; color: #6b7280;">Per 2+ ante</span>
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #059669;">
                                         € ${suppSpagnolette.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${cardini > 0 ? `
+                                <!-- CARDINI -->
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>🔩 Cardini</strong><br>
+                                        <span style="font-size: 0.8rem; color: #6b7280;">C.SAF90 × 4 pz</span>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #6b7280;">
+                                        € ${cardini.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${imballo > 0 ? `
+                                <!-- IMBALLO -->
+                                <tr>
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>📦 Imballo</strong><br>
+                                        <span style="font-size: 0.8rem; color: #6b7280;">3% standard</span>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #6b7280;">
+                                        € ${imballo.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${contributoGestione > 0 ? `
+                                <!-- CONTRIBUTO GESTIONE -->
+                                <tr style="background: #fef3c7;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>📋 Contributo Gestione</strong><br>
+                                        <span style="font-size: 0.8rem; color: #6b7280;">Fisso per ordine</span>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #d97706;">
+                                        € ${contributoGestione.toFixed(2)}
                                     </td>
                                 </tr>
                                 ` : ''}

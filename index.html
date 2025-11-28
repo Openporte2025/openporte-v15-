@@ -6,7 +6,16 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.97 - CHANGELOG
+    DASHBOARD RILIEVI v7.97_04 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.97_04 (28 NOV 2025):
+    - 🔐 FIX IMPORTAZIONE BLINDATE: Supporta struttura pos.ingresso.blindata
+    - ✅ Conversione automatica da formato export OpenPorte v5.14+
+    - ✅ Retrocompatibilità: pos.blindata accessibile come alias
+    - ✅ Supporto pos.ingresso.portoncino per portoncini Finstral
+    - ✅ Conteggio n_ingressi, n_blindate, n_portoncini nei totali
+    - ✅ Campi imbotte (imbotteEst, imbotteEstAltezza, imbotteEstLargh, imbotteEstEssenza)
+    - ✅ Campi cornici (corniciInt, corniciFermaPannello)
     
     🔧 AGGIORNAMENTI v7.97 (28 NOV 2025):
     - 🔐 PORTE BLINDATE OIKOS: Integrazione completa nel dashboard
@@ -1096,12 +1105,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.97 - Porte Blindate Oikos</title>
+    <title>Dashboard Rilievi v7.97_04 - Porte Blindate Import Fix</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.97_02";
+        const DASHBOARD_VERSION = "7.97_04";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -11236,29 +11245,80 @@ if (typeof module !== 'undefined' && module.exports) {
                                 quantita: pos.zanzariera.qta || 1
                             } : null,
                             
-                            // 🔐 v7.97: BLINDATA (Porte Blindate Oikos)
-                            // Blindata esiste se l'oggetto è presente (non usa campo attivo)
-                            blindata: pos.blindata ? {
-                                LNP_L: pos.blindata.LNP_L || 0,
-                                LNP_H: pos.blindata.LNP_H || 0,
-                                luceCalcolata: pos.blindata.luceCalcolata || '',
-                                azienda: pos.blindata.azienda || 'Oikos',
-                                versione: pos.blindata.versione || 'E3',
-                                tipoAnta: pos.blindata.tipoAnta || 'singola',
-                                sensoApertura: pos.blindata.sensoApertura || '',
-                                versoApertura: pos.blindata.versoApertura || '',
-                                controtelaio: pos.blindata.controtelaio || 'si',
-                                cilindro: pos.blindata.cilindro || 'BASIC',
-                                coloreTelaio: pos.blindata.coloreTelaio || 'RAL8022',
-                                acustica: pos.blindata.acustica || 'serie',
-                                termica: pos.blindata.termica || 'serie',
-                                kitAAV: pos.blindata.kitAAV || '',
-                                rivestimentoInt: pos.blindata.rivestimentoInt || null,
-                                rivestimentoEst: pos.blindata.rivestimentoEst || null,
-                                vetro: pos.blindata.vetro || null,
-                                sopraluce: pos.blindata.sopraluce || null,
-                                fiancoluce: pos.blindata.fiancoluce || null
+                            // 🔐 v7.97_04: INGRESSO (Porte Blindate/Portoncini)
+                            // Supporta entrambi i formati: pos.ingresso.blindata (nuovo) e pos.blindata (legacy)
+                            ingresso: (pos.ingresso || pos.blindata || pos.portoncino) ? {
+                                tipo: pos.ingresso?.tipo || (pos.blindata ? 'blindata' : (pos.portoncino ? 'portoncino' : null)),
+                                // BLINDATA OIKOS
+                                blindata: (pos.ingresso?.blindata || pos.blindata) ? (() => {
+                                    const bld = pos.ingresso?.blindata || pos.blindata;
+                                    return {
+                                        LNP_L: bld.LNP_L || 0,
+                                        LNP_H: bld.LNP_H || 0,
+                                        luceCalcolata: bld.luceCalcolata || '',
+                                        azienda: bld.azienda || 'Oikos',
+                                        versione: bld.versione || 'E3',
+                                        tipoAnta: bld.tipoAnta || 'singola',
+                                        sensoApertura: bld.sensoApertura || '',
+                                        versoApertura: bld.versoApertura || '',
+                                        controtelaio: bld.controtelaio || 'si',
+                                        cilindro: bld.cilindro || 'BASIC',
+                                        coloreTelaio: bld.coloreTelaio || 'RAL8022',
+                                        acustica: bld.acustica || 'serie',
+                                        termica: bld.termica || 'serie',
+                                        kitAAV: bld.kitAAV || '',
+                                        rivestimentoInt: bld.rivestimentoInt || null,
+                                        rivestimentoEst: bld.rivestimentoEst || null,
+                                        imbotteEst: bld.imbotteEst || null,
+                                        imbotteEstAltezza: bld.imbotteEstAltezza || null,
+                                        imbotteEstLargh: bld.imbotteEstLargh || null,
+                                        imbotteEstEssenza: bld.imbotteEstEssenza || null,
+                                        corniciInt: bld.corniciInt || false,
+                                        corniciFermaPannello: bld.corniciFermaPannello || false,
+                                        vetro: bld.vetro || null,
+                                        sopraluce: bld.sopraluce || null,
+                                        fiancoluce: bld.fiancoluce || null
+                                    };
+                                })() : null,
+                                // PORTONCINO FINSTRAL
+                                portoncino: (pos.ingresso?.portoncino || pos.portoncino) ? (pos.ingresso?.portoncino || pos.portoncino) : null
                             } : null,
+                            
+                            // 🔐 v7.97_04: ALIAS DI PRIMO LIVELLO per retrocompatibilità
+                            // Il resto del codice accede a pos.blindata direttamente
+                            blindata: (() => {
+                                const bld = pos.ingresso?.blindata || pos.blindata;
+                                if (!bld) return null;
+                                return {
+                                    LNP_L: bld.LNP_L || 0,
+                                    LNP_H: bld.LNP_H || 0,
+                                    luceCalcolata: bld.luceCalcolata || '',
+                                    azienda: bld.azienda || 'Oikos',
+                                    versione: bld.versione || 'E3',
+                                    tipoAnta: bld.tipoAnta || 'singola',
+                                    sensoApertura: bld.sensoApertura || '',
+                                    versoApertura: bld.versoApertura || '',
+                                    controtelaio: bld.controtelaio || 'si',
+                                    cilindro: bld.cilindro || 'BASIC',
+                                    coloreTelaio: bld.coloreTelaio || 'RAL8022',
+                                    acustica: bld.acustica || 'serie',
+                                    termica: bld.termica || 'serie',
+                                    kitAAV: bld.kitAAV || '',
+                                    rivestimentoInt: bld.rivestimentoInt || null,
+                                    rivestimentoEst: bld.rivestimentoEst || null,
+                                    imbotteEst: bld.imbotteEst || null,
+                                    imbotteEstAltezza: bld.imbotteEstAltezza || null,
+                                    imbotteEstLargh: bld.imbotteEstLargh || null,
+                                    imbotteEstEssenza: bld.imbotteEstEssenza || null,
+                                    corniciInt: bld.corniciInt || false,
+                                    corniciFermaPannello: bld.corniciFermaPannello || false,
+                                    vetro: bld.vetro || null,
+                                    sopraluce: bld.sopraluce || null,
+                                    fiancoluce: bld.fiancoluce || null
+                                };
+                            })(),
+                            
+                            portoncino: (pos.ingresso?.portoncino || pos.portoncino) || null,
                             
                             // NOTE E RILIEVI - TUTTI I PRODOTTI
                             note: pos.note || '',
@@ -11280,7 +11340,10 @@ if (typeof module !== 'undefined' && module.exports) {
                         n_cassonetti: (project.positions || []).filter(p => p.cassonetto && p.cassonetto.qta).length,
                         n_persiane: (project.positions || []).filter(p => p.persiana && p.persiana.qta).length,
                         n_zanzariere: (project.positions || []).filter(p => p.zanzariera && p.zanzariera.qta).length,
-                        n_blindate: (project.positions || []).filter(p => p.blindata).length
+                        // 🔐 v7.97_04: Conta ingressi da entrambi i formati
+                        n_ingressi: (project.positions || []).filter(p => p.ingresso || p.blindata || p.portoncino).length,
+                        n_blindate: (project.positions || []).filter(p => p.ingresso?.tipo === 'blindata' || p.ingresso?.blindata || p.blindata).length,
+                        n_portoncini: (project.positions || []).filter(p => p.ingresso?.tipo === 'portoncino' || p.ingresso?.portoncino || p.portoncino).length
                     }
                 };
                 
@@ -11295,6 +11358,22 @@ if (typeof module !== 'undefined' && module.exports) {
             // FORMATO 2: JSON già nel formato corretto (con "posizioni")
             if (data.posizioni) {
                 console.log('✅ Detected: STANDARD format (already compatible)');
+                
+                // 🔐 v7.97_04: Normalizza posizioni per estrarre blindata da ingresso
+                data.posizioni = data.posizioni.map(pos => {
+                    // Se ha ingresso.blindata, copia in pos.blindata per retrocompatibilità
+                    if (pos.ingresso?.blindata && !pos.blindata) {
+                        console.log(`   🔐 Normalizing pos ${pos.id}: ingresso.blindata → blindata`);
+                        pos.blindata = pos.ingresso.blindata;
+                    }
+                    // Se ha ingresso.portoncino, copia in pos.portoncino
+                    if (pos.ingresso?.portoncino && !pos.portoncino) {
+                        console.log(`   🚪 Normalizing pos ${pos.id}: ingresso.portoncino → portoncino`);
+                        pos.portoncino = pos.ingresso.portoncino;
+                    }
+                    return pos;
+                });
+                
                 return data;
             }
             
@@ -16709,11 +16788,18 @@ if (typeof module !== 'undefined' && module.exports) {
                 // ============================================================================
                 // PORTE BLINDATE - OIKOS
                 // ============================================================================
-                if (pos.blindata && (pos.blindata.LNP_L || pos.blindata.LNP_H || pos.blindata.versione)) {
+                // 🔐 v7.97: blindata esiste se ha LNP o versione (LNP può essere stringa)
+                const hasBlindataData = pos.blindata && (
+                    parseInt(pos.blindata.LNP_L) > 0 || 
+                    parseInt(pos.blindata.LNP_H) > 0 || 
+                    pos.blindata.versione
+                );
+                
+                if (hasBlindataData) {
                     const bld = pos.blindata;
                     const quantita = 1; // Porte blindate sempre qta 1
                     
-                    // Leggi misure LNP (Luce Netta Passaggio)
+                    // Leggi misure LNP (Luce Netta Passaggio) - possono essere stringhe
                     const L_mm = parseInt(bld.LNP_L) || 0;
                     const H_mm = parseInt(bld.LNP_H) || 0;
                     
@@ -17736,8 +17822,8 @@ if (typeof module !== 'undefined' && module.exports) {
                     let hasProdotto = false;
                     
                     if (tipoProdotto === 'blindata') {
-                        // Blindata: esiste se l'oggetto è presente (non usa campo attivo)
-                        hasProdotto = prodotto && (prodotto.LNP_L || prodotto.LNP_H || prodotto.versione);
+                        // Blindata: esiste se l'oggetto ha dati validi (LNP può essere stringa)
+                        hasProdotto = prodotto && (parseInt(prodotto.LNP_L) > 0 || parseInt(prodotto.LNP_H) > 0 || prodotto.versione);
                         quantitaProdotto = hasProdotto ? 1 : 0;
                     } else {
                         quantitaProdotto = prodotto ? (parseInt(prodotto.quantita) || 1) : 0;
@@ -18909,7 +18995,7 @@ if (typeof module !== 'undefined' && module.exports) {
                               (pos.cassonetto && pos.cassonetto.quantita > 0) ||
                               (pos.persiana && pos.persiana.quantita > 0) ||
                               (pos.zanzariera && pos.zanzariera.quantita > 0) ||
-                              (pos.blindata && (pos.blindata.LNP_L || pos.blindata.LNP_H || pos.blindata.versione));
+                              (pos.blindata && (parseInt(pos.blindata.LNP_L) > 0 || parseInt(pos.blindata.LNP_H) > 0 || pos.blindata.versione));
             
             if (!hasProdotti) {
                 return `
@@ -18939,8 +19025,8 @@ if (typeof module !== 'undefined' && module.exports) {
             const prodottiDisponibili = prodotti.filter(p => {
                 if (!p.data) return false;
                 if (p.key === 'blindata') {
-                    // Blindata esiste se ha LNP o versione
-                    return p.data.LNP_L || p.data.LNP_H || p.data.versione;
+                    // Blindata esiste se ha LNP (possono essere stringhe) o versione
+                    return parseInt(p.data.LNP_L) > 0 || parseInt(p.data.LNP_H) > 0 || p.data.versione;
                 }
                 const qty = parseInt(p.data.quantita) || parseInt(p.data.qta) || 0;
                 return qty > 0;

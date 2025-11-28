@@ -6,7 +6,17 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.96 - CHANGELOG
+    DASHBOARD RILIEVI v7.97 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.97 (28 NOV 2025):
+    - 🔐 PORTE BLINDATE OIKOS: Integrazione completa nel dashboard
+    - ✅ LISTINO_OIKOS_BLINDATE: Prezzi base, controtelaio, cilindri, colori
+    - ✅ calcolaLuceOikos(): Determina luce da dimensioni LNP
+    - ✅ calcolaPrezzoBlindataOikos(): Calcolo completo con optional
+    - ✅ calcolaPreventivo(): Sezione blindate dopo cassonetti
+    - ✅ groupProductsByAzienda(): Blindate raggruppate per Oikos
+    - ✅ Vista Aziende: Tab Oikos con porte blindate
+    - ✅ Vista Preventivo: Righe blindate con dettaglio prezzi
     
     🔧 AGGIORNAMENTI v7.96 (28 NOV 2025):
     - ✅ Config Persiana: Colore Telaio mostrato SOLO se presente nel JSON
@@ -1086,12 +1096,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.96 - Fix Telaio Condizionale</title>
+    <title>Dashboard Rilievi v7.97 - Porte Blindate Oikos</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.96";
+        const DASHBOARD_VERSION = "7.97";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -10412,7 +10422,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.96</span>
+                <span class="logo-version" id="version-badge">v7.97</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -13959,6 +13969,228 @@ if (typeof module !== 'undefined' && module.exports) {
             cardiniQuantita: 4          // 4 pezzi per F2
         };
         
+        // ============================================================================
+        // LISTINO OIKOS PORTE BLINDATE - 2025
+        // ============================================================================
+        const LISTINO_OIKOS_BLINDATE = {
+            // Prezzi base per versione e luce
+            prezziBase: {
+                'E3': { 'luce0': 1156, 'luce1': 1206, 'luce2': 1441 },
+                'E4': { 'luce0': 1436, 'luce1': 1486, 'luce2': 1721 },
+                'E3D': { 'luce3': 2217, 'luce4': 2532 },
+                'E3EI30': { 'luce0': 1731 },
+                'E3EI45': { 'luce0': 1731 },
+                'E3EI60': { 'luce0': 1891 },
+                'E3TT086': { 'luce0': 2254, 'luce1': 2442, 'luce2': 2766 },
+                'E3TT1': { 'luce0': 1958, 'luce1': 2131, 'luce2': 2386 },
+                'P3': { 'luce0': 1173, 'luce1': 1293, 'luce2': 1480 }
+            },
+            // Controtelaio
+            controtelaio: {
+                'luce0': 177, 'luce1': 202, 'luce2': 240,
+                'luce3': 318, 'luce4': 350
+            },
+            // Cilindro
+            cilindri: { 'BASIC': 123, 'SEKUR': 238 },
+            // Colori telaio
+            colori: {
+                'RAL8022': 0,
+                'OIKOS_Polveri': 246,
+                'OIKOS_Evergreen': 320,
+                'OIKOS_Future': 384,
+                'OIKOS_Liquido': 492
+            },
+            // Termica upgrade
+            termica: {
+                'singola': {
+                    '1.2': { 'luce0': 272, 'luce1': 308, 'luce2': 354 },
+                    '1.0': { 'luce0': 496, 'luce1': 544, 'luce2': 624 }
+                }
+            },
+            // Kit Aria-Acqua-Vento
+            kitAAV: {
+                'MOSE': { 'luce0': 405, 'luce1': 464, 'luce2': 499, 'luce3': 499, 'luce4': 499 },
+                'DAM': { 'luce0': 459, 'luce1': 489, 'luce2': 514, 'luce3': 514, 'luce4': 514 }
+            },
+            // Rivestimenti (prezzi medi per linea)
+            rivestimenti: {
+                'Piano': { 'luce0': 120, 'luce1': 140, 'luce2': 160 },
+                'Fugato': { 'luce0': 180, 'luce1': 210, 'luce2': 240 },
+                'Pantografato': { 'luce0': 250, 'luce1': 290, 'luce2': 330 },
+                'LegnoVivo': { 'luce0': 350, 'luce1': 400, 'luce2': 450 },
+                'Massello': { 'luce0': 450, 'luce1': 520, 'luce2': 590 },
+                'Riflessi': { 'luce0': 200, 'luce1': 230, 'luce2': 260 },
+                'Alluminio': { 'luce0': 280, 'luce1': 320, 'luce2': 360 },
+                'Gres': { 'luce0': 380, 'luce1': 430, 'luce2': 480 }
+            },
+            // Optional vetro blindato
+            vetroBlindato: {
+                'V1': { 'trasparente': 1050, 'sabbiato': 1150 },
+                'V2': { 'trasparente': 1350, 'sabbiato': 1450 },
+                'V3': { 'trasparente': 1650, 'sabbiato': 1750 },
+                'V4': { 'trasparente': 2100, 'sabbiato': 2200 },
+                'V5': { 'trasparente': 2800, 'sabbiato': 2900 }
+            },
+            // Optional vetro termico
+            vetroTermico: {
+                'V1': { 'trasparente': 850, 'sabbiato': 950 },
+                'V2': { 'trasparente': 1100, 'sabbiato': 1200 },
+                'V3': { 'trasparente': 1350, 'sabbiato': 1450 },
+                'V4': { 'trasparente': 1750, 'sabbiato': 1850 },
+                'V5': { 'trasparente': 2350, 'sabbiato': 2450 }
+            },
+            // Sopraluce
+            sopraluce: {
+                'H500': { 'luce0': 380, 'luce1': 420, 'luce2': 480 },
+                'H800': { 'luce0': 520, 'luce1': 580, 'luce2': 650 },
+                'controtelaio': { 'luce0': 95, 'luce1': 110, 'luce2': 130 },
+                'sabbiato_H500': { 'luce0': 85, 'luce1': 95, 'luce2': 110 },
+                'sabbiato_H800': { 'luce0': 110, 'luce1': 125, 'luce2': 145 }
+            },
+            // Fiancoluce
+            fiancoluce: {
+                'conVetro': { 'luce1': 650, 'luce2': 750, 'luce3': 850 },
+                'senzaVetro': { 'luce1': 380, 'luce2': 440, 'luce3': 500 },
+                'sabbiato': { 'luce1': 95, 'luce2': 110, 'luce3': 125 },
+                'colori': {
+                    'OIKOS_Polveri': { 'luce1': 150, 'luce2': 175, 'luce3': 200 },
+                    'OIKOS_Evergreen': { 'luce1': 195, 'luce2': 225, 'luce3': 255 },
+                    'OIKOS_Future': { 'luce1': 235, 'luce2': 270, 'luce3': 305 },
+                    'OIKOS_Liquido': { 'luce1': 300, 'luce2': 345, 'luce3': 390 }
+                }
+            },
+            // Acustica maggiorata
+            acusticaMagg: 120,
+            // Verniciatura esterni
+            verniciaturaEst: 150
+        };
+        
+        // Funzione calcolo luce Oikos
+        function calcolaLuceOikos(L, H) {
+            if (L <= 0 || H <= 0) return '';
+            if (L <= 900 && H <= 2100) return 'luce0';
+            if (L <= 940 && H <= 2210) return 'luce1';
+            if (L <= 1030 && H <= 2400) return 'luce2';
+            if (L <= 1350 && H <= 2210) return 'luce3';
+            if (L <= 1600 && H <= 2400) return 'luce4';
+            if (L <= 1800 && H <= 2210) return 'luce5';
+            if (L <= 2000 && H <= 2400) return 'luce6';
+            return 'fuoriMisura';
+        }
+        
+        // Funzione calcolo prezzo blindata Oikos
+        function calcolaPrezzoBlindataOikos(bld) {
+            const dettaglio = {
+                prezzoBase: 0,
+                controtelaio: 0,
+                cilindro: 0,
+                colore: 0,
+                acustica: 0,
+                termica: 0,
+                kitAAV: 0,
+                rivestimenti: 0,
+                optional: 0
+            };
+            
+            // Calcola luce se non presente
+            const L = parseInt(bld.LNP_L) || 0;
+            const H = parseInt(bld.LNP_H) || 0;
+            const luce = bld.luceCalcolata || calcolaLuceOikos(L, H) || 'luce0';
+            
+            // Prezzo base anta
+            dettaglio.prezzoBase = LISTINO_OIKOS_BLINDATE.prezziBase[bld.versione]?.[luce] || 
+                                   LISTINO_OIKOS_BLINDATE.prezziBase['E3']?.[luce] || 0;
+            
+            // Controtelaio
+            if (bld.controtelaio === 'si' || bld.controtelaio === true) {
+                dettaglio.controtelaio = LISTINO_OIKOS_BLINDATE.controtelaio[luce] || 0;
+            }
+            
+            // Cilindro
+            dettaglio.cilindro = LISTINO_OIKOS_BLINDATE.cilindri[bld.cilindro] || 
+                                 LISTINO_OIKOS_BLINDATE.cilindri['BASIC'] || 0;
+            
+            // Colore telaio
+            dettaglio.colore = LISTINO_OIKOS_BLINDATE.colori[bld.coloreTelaio] || 0;
+            
+            // Acustica maggiorata
+            if (bld.acustica === 'maggiorata') {
+                dettaglio.acustica = LISTINO_OIKOS_BLINDATE.acusticaMagg || 0;
+            }
+            
+            // Termica
+            if (bld.termica && bld.termica !== 'serie') {
+                dettaglio.termica = LISTINO_OIKOS_BLINDATE.termica?.['singola']?.[bld.termica]?.[luce] || 0;
+            }
+            
+            // Kit AAV (MOSE/DAM)
+            if (bld.kitAAV) {
+                dettaglio.kitAAV = LISTINO_OIKOS_BLINDATE.kitAAV[bld.kitAAV]?.[luce] || 0;
+            }
+            
+            // Rivestimento INTERNO
+            if (bld.rivestimentoInt?.linea) {
+                dettaglio.rivestimenti += LISTINO_OIKOS_BLINDATE.rivestimenti[bld.rivestimentoInt.linea]?.[luce] || 0;
+            }
+            
+            // Rivestimento ESTERNO
+            if (bld.rivestimentoEst?.linea) {
+                dettaglio.rivestimenti += LISTINO_OIKOS_BLINDATE.rivestimenti[bld.rivestimentoEst.linea]?.[luce] || 0;
+                // Verniciatura esterni
+                if (bld.rivestimentoEst.verniciatura) {
+                    dettaglio.rivestimenti += LISTINO_OIKOS_BLINDATE.verniciaturaEst || 0;
+                }
+            }
+            
+            // Optional: VETRO
+            if (bld.vetro?.attivo && bld.vetro?.tipo) {
+                const tipoVetro = bld.vetro.termico ? 
+                    LISTINO_OIKOS_BLINDATE.vetroTermico : 
+                    LISTINO_OIKOS_BLINDATE.vetroBlindato;
+                const finitura = bld.vetro.finitura || 'trasparente';
+                dettaglio.optional += tipoVetro[bld.vetro.tipo]?.[finitura] || 0;
+            }
+            
+            // Optional: SOPRALUCE
+            if (bld.sopraluce?.attivo && bld.sopraluce?.altezza) {
+                dettaglio.optional += LISTINO_OIKOS_BLINDATE.sopraluce[bld.sopraluce.altezza]?.[luce] || 0;
+                dettaglio.optional += LISTINO_OIKOS_BLINDATE.sopraluce.controtelaio[luce] || 0;
+                if (bld.sopraluce.sabbiato) {
+                    const sabKey = 'sabbiato_' + bld.sopraluce.altezza;
+                    dettaglio.optional += LISTINO_OIKOS_BLINDATE.sopraluce[sabKey]?.[luce] || 0;
+                }
+            }
+            
+            // Optional: FIANCOLUCE
+            if (bld.fiancoluce?.attivo) {
+                const luceFL = luce === 'luce0' ? 'luce1' : luce;
+                if (bld.fiancoluce.conVetro) {
+                    dettaglio.optional += LISTINO_OIKOS_BLINDATE.fiancoluce.conVetro[luceFL] || 0;
+                } else {
+                    dettaglio.optional += LISTINO_OIKOS_BLINDATE.fiancoluce.senzaVetro[luceFL] || 0;
+                }
+                if (bld.fiancoluce.sabbiato) {
+                    dettaglio.optional += LISTINO_OIKOS_BLINDATE.fiancoluce.sabbiato[luceFL] || 0;
+                }
+                if (bld.fiancoluce.colore && bld.fiancoluce.colore !== 'RAL8022') {
+                    dettaglio.optional += LISTINO_OIKOS_BLINDATE.fiancoluce.colori[bld.fiancoluce.colore]?.[luceFL] || 0;
+                }
+            }
+            
+            // Totale
+            const totale = dettaglio.prezzoBase + dettaglio.controtelaio + dettaglio.cilindro +
+                          dettaglio.colore + dettaglio.acustica + dettaglio.termica +
+                          dettaglio.kitAAV + dettaglio.rivestimenti + dettaglio.optional;
+            
+            console.log(`🔐 Calcolo Oikos: Base €${dettaglio.prezzoBase} + CT €${dettaglio.controtelaio} + Cil €${dettaglio.cilindro} + Col €${dettaglio.colore} + Riv €${dettaglio.rivestimenti} + Opt €${dettaglio.optional} = €${totale}`);
+            
+            return {
+                totale: totale,
+                dettaglio: dettaglio,
+                luce: luce
+            };
+        }
+        
         const LISTINO_PUNTO_PERSIANE = {
             // Tipologia F1: Finestra 1 anta
             // Larghezze: 500-1200mm | Altezze: 700-2000mm
@@ -16445,6 +16677,66 @@ if (typeof module !== 'undefined' && module.exports) {
                         console.log(`✅ Cassonetto Pos ${index + 1}: ${L_mm}×${H_mm} - Prezzo da implementare`);
                     }
                 }
+                
+                // ============================================================================
+                // PORTE BLINDATE - OIKOS
+                // ============================================================================
+                if (pos.blindata && pos.blindata.attivo) {
+                    const bld = pos.blindata;
+                    const quantita = 1; // Porte blindate sempre qta 1
+                    
+                    // Leggi misure LNP (Luce Netta Passaggio)
+                    const L_mm = parseInt(bld.LNP_L) || 0;
+                    const H_mm = parseInt(bld.LNP_H) || 0;
+                    
+                    console.log(`🔐 Blindata Pos ${index + 1}: LNP=${L_mm}×${H_mm}mm, versione=${bld.versione}`);
+                    
+                    if (L_mm > 0 && H_mm > 0) {
+                        // Calcola prezzo con funzione Oikos
+                        const prezzoCalcolato = calcolaPrezzoBlindataOikos(bld);
+                        const prezzoUnitario = prezzoCalcolato.totale || 0;
+                        const totaleRiga = prezzoUnitario * quantita;
+                        
+                        // Descrizione configurazione
+                        const configDesc = [
+                            bld.versione || 'E3',
+                            bld.tipoAnta === 'doppia' ? '2 Ante' : '1 Anta',
+                            bld.sensoApertura || '',
+                            bld.controtelaio === 'si' ? 'Con CT' : 'Senza CT'
+                        ].filter(x => x).join(' | ');
+                        
+                        righe.push({
+                            posizione: index + 1,
+                            ambiente: pos.ambiente || pos.nome || pos.stanza || `Pos ${index + 1}`,
+                            tipo: `🔐 Blindata ${bld.versione || 'E3'}`,
+                            azienda: bld.azienda || 'Oikos',
+                            telaio: configDesc,
+                            larghezza: L_mm,
+                            altezza: H_mm,
+                            superficie: ((L_mm * H_mm) / 1000000).toFixed(2),
+                            perimetro: '-',
+                            prezzoBase: (prezzoCalcolato.dettaglio?.prezzoBase || 0).toFixed(2),
+                            supplementoTelaio: (prezzoCalcolato.dettaglio?.controtelaio || 0).toFixed(2),
+                            supplementoAnta: (prezzoCalcolato.dettaglio?.cilindro || 0).toFixed(2),
+                            supplementoVetro: (prezzoCalcolato.dettaglio?.rivestimenti || 0).toFixed(2),
+                            supplementoColore: (prezzoCalcolato.dettaglio?.colore || 0).toFixed(2),
+                            supplementoManiglia: (prezzoCalcolato.dettaglio?.optional || 0).toFixed(2),
+                            supplementoMontante: (prezzoCalcolato.dettaglio?.kitAAV || 0).toFixed(2),
+                            prezzoUnitario: prezzoUnitario.toFixed(2),
+                            quantita: quantita,
+                            totale: totaleRiga.toFixed(2),
+                            _tipoBlindato: true,
+                            _luceCalcolata: bld.luceCalcolata || 'luce0'
+                        });
+                        
+                        totaleMateriali += totaleRiga;
+                        numeroPezzi += quantita;
+                        
+                        console.log(`✅ Blindata Pos ${index + 1}: €${prezzoUnitario.toFixed(2)} (${bld.luceCalcolata})`);
+                    } else {
+                        console.warn(`⚠️ Pos ${index + 1}: Misure blindata non trovate`);
+                    }
+                }
             });
             
             console.log('🔍 Array righe DOPO forEach:', righe.length);
@@ -17389,6 +17681,7 @@ if (typeof module !== 'undefined' && module.exports) {
                             else if (riga.tipo.toLowerCase().includes('persiana')) tipoProdotto = 'persiana';
                             else if (riga.tipo.toLowerCase().includes('zanzariera')) tipoProdotto = 'zanzariera';
                             else if (riga.tipo.toLowerCase().includes('cassonetto')) tipoProdotto = 'cassonetto';
+                            else if (riga.tipo.toLowerCase().includes('blindata')) tipoProdotto = 'blindata';
                             
                             const chiave = `${riga.posizione}-${tipoProdotto}`;
                             prezziMap.set(chiave, {
@@ -17406,15 +17699,28 @@ if (typeof module !== 'undefined' && module.exports) {
             
             posizioni.forEach((pos, posIndex) => {
                 // Processa ogni tipo di prodotto
-                ['infisso', 'tapparella', 'persiana', 'cassonetto', 'zanzariera'].forEach(tipoProdotto => {
-                    const prodotto = pos[tipoProdotto];
+                ['infisso', 'tapparella', 'persiana', 'cassonetto', 'zanzariera', 'blindata'].forEach(tipoProdotto => {
+                    const prodotto = tipoProdotto === 'blindata' ? pos.blindata : pos[tipoProdotto];
                     
                     // ✅ FIX: Accetta anche quantita undefined/null (tratta come 1)
-                    const quantitaProdotto = prodotto ? (parseInt(prodotto.quantita) || 1) : 0;
-                    const hasProdotto = prodotto && (prodotto.quantita === undefined || prodotto.quantita === null || prodotto.quantita > 0 || quantitaProdotto > 0);
+                    // 🔐 v7.97: Per blindata usa campo 'attivo' invece di 'quantita'
+                    let quantitaProdotto = 0;
+                    let hasProdotto = false;
+                    
+                    if (tipoProdotto === 'blindata') {
+                        // Blindata ha campo 'attivo' boolean
+                        hasProdotto = prodotto && prodotto.attivo === true;
+                        quantitaProdotto = hasProdotto ? 1 : 0;
+                    } else {
+                        quantitaProdotto = prodotto ? (parseInt(prodotto.quantita) || 1) : 0;
+                        hasProdotto = prodotto && (prodotto.quantita === undefined || prodotto.quantita === null || prodotto.quantita > 0 || quantitaProdotto > 0);
+                    }
                     
                     if (hasProdotto) {
-                        const aziendaRaw = prodotto.azienda || 'Azienda Non Specificata';
+                        // 🔐 v7.97: Per blindata azienda di default è Oikos
+                        const aziendaRaw = tipoProdotto === 'blindata' ? 
+                            (prodotto.azienda || 'Oikos') : 
+                            (prodotto.azienda || 'Azienda Non Specificata');
                         
                         // ✅ FIX CASE-INSENSITIVE: Normalizza nome azienda
                         const { key: aziendaKey, display: aziendaDisplay } = normalizeAziendaName(aziendaRaw);
@@ -17429,7 +17735,8 @@ if (typeof module !== 'undefined' && module.exports) {
                                     tapparelle: 0,
                                     persiane: 0,
                                     cassonetti: 0,
-                                    zanzariere: 0
+                                    zanzariere: 0,
+                                    blindate: 0
                                 },
                                 posizioniCoinvolte: new Set()
                             });
@@ -17503,48 +17810,60 @@ if (typeof module !== 'undefined' && module.exports) {
                         }
                         
                         // ✅ v7.73: Calcola misure corrette CON FONTE per debug
+                        // 🔐 v7.97: Per blindata usa LNP_L/LNP_H
                         let misureL = 0, misureH = 0;
                         let fonteL = '', fonteH = '';
                         
-                        // Priorità LVT/HVT
-                        if (pos.misure?.LVT) {
-                            misureL = parseInt(pos.misure.LVT);
-                            fonteL = 'LVT';
-                        } else if (prodotto.BRM_L) {
-                            misureL = parseInt(prodotto.BRM_L);
-                            fonteL = 'BRM_L';
-                        } else if (prodotto.brm?.L) {
-                            misureL = parseInt(prodotto.brm.L);
-                            fonteL = 'brm.L';
-                        } else if (prodotto.larghezza) {
-                            misureL = parseInt(prodotto.larghezza);
-                            fonteL = 'larg';
-                        }
-                        
-                        if (pos.misure?.HVT) {
-                            misureH = parseInt(pos.misure.HVT);
-                            fonteH = 'HVT';
-                        } else if (prodotto.BRM_H) {
-                            misureH = parseInt(prodotto.BRM_H);
-                            fonteH = 'BRM_H';
-                        } else if (prodotto.brm?.H) {
-                            misureH = parseInt(prodotto.brm.H);
-                            fonteH = 'brm.H';
-                        } else if (prodotto.altezza) {
-                            misureH = parseInt(prodotto.altezza);
-                            fonteH = 'alt';
+                        if (tipoProdotto === 'blindata') {
+                            // Blindata usa LNP (Luce Netta Passaggio)
+                            misureL = parseInt(prodotto.LNP_L) || 0;
+                            misureH = parseInt(prodotto.LNP_H) || 0;
+                            fonteL = 'LNP_L';
+                            fonteH = 'LNP_H';
+                        } else {
+                            // Priorità LVT/HVT
+                            if (pos.misure?.LVT) {
+                                misureL = parseInt(pos.misure.LVT);
+                                fonteL = 'LVT';
+                            } else if (prodotto.BRM_L) {
+                                misureL = parseInt(prodotto.BRM_L);
+                                fonteL = 'BRM_L';
+                            } else if (prodotto.brm?.L) {
+                                misureL = parseInt(prodotto.brm.L);
+                                fonteL = 'brm.L';
+                            } else if (prodotto.larghezza) {
+                                misureL = parseInt(prodotto.larghezza);
+                                fonteL = 'larg';
+                            }
+                            
+                            if (pos.misure?.HVT) {
+                                misureH = parseInt(pos.misure.HVT);
+                                fonteH = 'HVT';
+                            } else if (prodotto.BRM_H) {
+                                misureH = parseInt(prodotto.BRM_H);
+                                fonteH = 'BRM_H';
+                            } else if (prodotto.brm?.H) {
+                                misureH = parseInt(prodotto.brm.H);
+                                fonteH = 'brm.H';
+                            } else if (prodotto.altezza) {
+                                misureH = parseInt(prodotto.altezza);
+                                fonteH = 'alt';
+                            }
                         }
                         
                         // Aggiungi prodotto
+                        // 🔐 v7.97: Per blindata modello = versione
                         aziendaData.prodotti.push({
                             tipo: tipoProdotto,
                             posizione: pos.ambiente || pos.nome || pos.stanza || pos.id,
                             quantita: quantitaProdotto,
                             brm: { L: misureL, H: misureH },
                             fonteMisure: { L: fonteL, H: fonteH, valL: misureL, valH: misureH },  // ✅ v7.73
-                            modello: prodotto.tipo || 'N/D',
-                            configurazione: getProdottoConfigString(prodotto),
-                            colore: prodotto.finitura_int || prodotto.colore || 'N/D',
+                            modello: tipoProdotto === 'blindata' ? (prodotto.versione || 'E3') : (prodotto.tipo || 'N/D'),
+                            configurazione: tipoProdotto === 'blindata' ? 
+                                `${prodotto.tipoAnta === 'doppia' ? '2 Ante' : '1 Anta'} | ${prodotto.sensoApertura || ''} | ${prodotto.controtelaio === 'si' ? 'Con CT' : 'Senza CT'}` :
+                                getProdottoConfigString(prodotto),
+                            colore: tipoProdotto === 'blindata' ? (prodotto.coloreTelaio || 'RAL8022') : (prodotto.finitura_int || prodotto.colore || 'N/D'),
                             note: prodotto.note || '',
                             prezzoUnitario: prezzoUnitario,
                             prezzoTotale: prezzoTotale,
@@ -17558,6 +17877,7 @@ if (typeof module !== 'undefined' && module.exports) {
                         else if (tipoProdotto === 'persiana') aziendaData.totali.persiane += quantitaProdotto;
                         else if (tipoProdotto === 'cassonetto') aziendaData.totali.cassonetti += quantitaProdotto;
                         else if (tipoProdotto === 'zanzariera') aziendaData.totali.zanzariere += quantitaProdotto;
+                        else if (tipoProdotto === 'blindata') aziendaData.totali.blindate += quantitaProdotto;
                         
                         // Aggiungi posizione coinvolta
                         aziendaData.posizioniCoinvolte.add(pos.id);

@@ -6,7 +6,12 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.94 - CHANGELOG
+    DASHBOARD RILIEVI v7.95 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.95 (28 NOV 2025):
+    - ✅ Config Globale Persiana: Mostra colorePersiana correttamente
+    - ✅ Aggiunti campi: Colore Telaio, Fissaggio, Battuta
+    - ✅ Allineamento con OpenPorte v5.04
     
     🔧 AGGIORNAMENTI v7.94 (28 NOV 2025):
     - 🆕 Config Globale ORA È DENTRO ogni tab prodotto:
@@ -1077,12 +1082,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.94 - Config Globale Dentro Tabs</title>
+    <title>Dashboard Rilievi v7.95 - Fix Colore Persiana Config</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.94";
+        const DASHBOARD_VERSION = "7.95";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -10403,7 +10408,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.94</span>
+                <span class="logo-version" id="version-badge">v7.95</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -18031,9 +18036,12 @@ if (typeof module !== 'undefined' && module.exports) {
                 items = [
                     { label: '🏭 AZIENDA', value: config.azienda || 'N/D' },
                     { label: '📋 MODELLO', value: config.modello || 'N/D' },
-                    { label: '🎨 COLORE', value: config.colorePersiana || config.colore || 'N/D' },
+                    { label: '🎨 COLORE PERSIANA', value: config.colorePersiana || 'N/D' },
+                    { label: '🎨 COLORE TELAIO', value: config.coloreTelaio || 'N/D' },
                     { label: '📐 TIPO', value: config.tipo || 'N/D' },
-                    { label: '🚪 APERTURA', value: config.apertura || 'N/D' }
+                    { label: '🔧 FISSAGGIO', value: config.fissaggio || 'N/D' },
+                    { label: '🚪 APERTURA', value: config.apertura || 'N/D' },
+                    { label: '📏 BATTUTA', value: config.battuta || 'N/D' }
                 ];
             } else if (tipo === 'tapparella') {
                 items = [

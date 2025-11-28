@@ -6,7 +6,19 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.88 - CHANGELOG
+    DASHBOARD RILIEVI v7.90 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.90 (28 NOV 2025):
+    - 🔍 LENTE su TUTTI i tipi: Infissi, Tapparelle, Persiane
+    - Tutte le funzioni dettaglio usano SOLO dati del preventivo
+    - Hover colorato per tipo: blu infissi, giallo tapparelle, viola persiane
+    - Una sola fonte dati = zero discrepanze
+    
+    🔧 AGGIORNAMENTI v7.89 (27 NOV 2025):
+    - 🆕 RISCRITTO popup tapparella: USA SOLO DATI DEL PREVENTIVO
+    - Non ricalcola più nulla, trascrive i valori già calcolati
+    - Misure, prezzi e totali ora 100% coerenti con tabella preventivo
+    - Più semplice e manutenibile: modifiche listino solo in un punto
     
     🔧 AGGIORNAMENTI v7.88 (27 NOV 2025):
     - FIX: Header popup tapparella ora mostra totale calcolato (coerente con breakdown)
@@ -1036,12 +1048,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.88 - Fix Header Tapparella</title>
+    <title>Dashboard Rilievi v7.90 - Lente Tutti Tipi</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.88";
+        const DASHBOARD_VERSION = "7.90";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -10282,7 +10294,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.88</span>
+                <span class="logo-version" id="version-badge">v7.90</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -16280,15 +16292,20 @@ if (typeof module !== 'undefined' && module.exports) {
             preventivo.righe.forEach((riga, index) => {
                 const tr = document.createElement('tr');
                 
-                // 🆕 v7.82: Determina se riga è cliccabile per dettaglio
+                // 🆕 v7.89: TUTTI i tipi sono cliccabili per dettaglio
                 const isTapparella = riga.tipo.toLowerCase().includes('tapparella');
                 const isPersiana = riga.tipo.toLowerCase().includes('persiana');
-                const isClickable = isTapparella || isPersiana;
+                const isInfisso = riga.tipo.toLowerCase().includes('infisso') || 
+                                  riga.tipo.toLowerCase().includes('finestra') ||
+                                  riga.tipo.toLowerCase().includes('porta');
+                const isClickable = isTapparella || isPersiana || isInfisso;
                 
                 if (isClickable) {
                     tr.style.cursor = 'pointer';
                     tr.title = '🔍 Clicca per vedere il dettaglio costi';
-                    tr.onmouseover = function() { this.style.background = isTapparella ? '#fef3c7' : '#f3e8ff'; };
+                    // Colori hover diversi per tipo
+                    const hoverColor = isTapparella ? '#fef3c7' : isPersiana ? '#f3e8ff' : '#dbeafe';
+                    tr.onmouseover = function() { this.style.background = hoverColor; };
                     tr.onmouseout = function() { this.style.background = ''; };
                     
                     // 🆕 v7.82 FIX: Usa window. e salva posizione in variabile locale
@@ -16301,6 +16318,9 @@ if (typeof module !== 'undefined' && module.exports) {
                         } else if (isPersiana) {
                             console.log('🖱️ Click su persiana pos', posIdx);
                             window.mostraDettaglioCostiPersiana(posIdx, rigaCopia);
+                        } else if (isInfisso) {
+                            console.log('🖱️ Click su infisso pos', posIdx);
+                            window.mostraDettaglioCostiInfisso(posIdx, rigaCopia);
                         }
                     };
                 }
@@ -16370,133 +16390,53 @@ if (typeof module !== 'undefined' && module.exports) {
          * @param {number} posIndex - Indice posizione (1-based)
          * @param {object} rigaPreventivo - Dati riga dal preventivo (opzionale)
          */
+        /**
+         * 🆕 v7.89: Mostra dettaglio costi tapparella
+         * USA SOLO I DATI GIÀ CALCOLATI NEL PREVENTIVO - NON RICALCOLA!
+         * @param {number} posIndex - Indice posizione (1-based)
+         * @param {object} rigaPreventivo - Dati riga dal preventivo
+         */
         function mostraDettaglioCostiTapparella(posIndex, rigaPreventivo = {}) {
             try {
-            console.log(`📊 v7.82 Dettaglio Costi Tapparella Pos ${posIndex}`, rigaPreventivo);
-            console.log('📊 window.currentData:', window.currentData ? 'presente' : 'MANCANTE');
-            console.log('📊 window.projectData:', window.projectData ? 'presente' : 'MANCANTE');
-            
-            // Trova i dati originali della posizione
-            // 🆕 v7.82 FIX: Usa window.currentData per sicurezza
-            const data = window.currentData || window.projectData || {};
-            console.log('📊 data.posizioni:', data.posizioni?.length || 'N/A');
-            console.log('📊 data.positions:', data.positions?.length || 'N/A');
-            
-            const posizioni = data.posizioni || data.positions || [];
-            const pos = posizioni[posIndex - 1];
-            
-            console.log('📊 pos trovata:', pos ? 'SI' : 'NO');
-            console.log('📊 pos.tapparella:', pos?.tapparella ? 'SI' : 'NO');
-            
-            if (!pos || !pos.tapparella) {
-                console.error('❌ Dati tapparella non trovati:', { posIndex, posizioni: posizioni.length, pos });
-                alert(`❌ Dati tapparella non trovati per posizione ${posIndex}`);
-                return;
-            }
-            
-            const tapp = pos.tapparella;
-            
-            // 🔍 v7.87 DEBUG: Log completo per capire sorgente misure
-            console.log(`📊 v7.87 DEBUG MISURE TAPPARELLA Pos ${posIndex}:`);
-            console.log(`   tapp.BRM_L = ${tapp.BRM_L}`);
-            console.log(`   tapp.BRM_H = ${tapp.BRM_H}`);
-            console.log(`   tapp.brm?.L = ${tapp.brm?.L}`);
-            console.log(`   tapp.brm?.H = ${tapp.brm?.H}`);
-            console.log(`   pos.misure?.LF = ${pos.misure?.LF}`);
-            console.log(`   pos.misure?.HF = ${pos.misure?.HF}`);
-            console.log(`   pos.misure?.LVT = ${pos.misure?.LVT}`);
-            console.log(`   pos.misure?.HVT = ${pos.misure?.HVT}`);
-            console.log(`   pos.L = ${pos.L}`);
-            console.log(`   pos.H = ${pos.H}`);
-            
-            // Estrai misure - STESSA LOGICA DEL PREVENTIVO (v7.85)
-            // 1° BRM_L/BRM_H (campo diretto)
-            // 2° brm?.L/brm?.H (retrocompatibilità)
-            // 3° LF/HF + maggiorazioni
-            // 4° LVT/HVT (ultimo fallback)
-            let L_mm = parseInt(tapp.BRM_L) || parseInt(tapp.brm?.L) || 0;
-            let H_mm = parseInt(tapp.BRM_H) || parseInt(tapp.brm?.H) || 0;
-            let usaMisureForo = false;
-            
-            // Fallback 1: LF/HF (misure foro)
-            if (!L_mm && pos.misure?.LF) {
-                L_mm = parseInt(pos.misure.LF);
-                usaMisureForo = true;
-            }
-            if (!H_mm && pos.misure?.HF) {
-                H_mm = parseInt(pos.misure.HF);
-                usaMisureForo = true;
-            }
-            
-            // Fallback 2: LVT/HVT
-            if (!L_mm && pos.misure?.LVT) L_mm = parseInt(pos.misure.LVT);
-            if (!H_mm && pos.misure?.HVT) H_mm = parseInt(pos.misure.HVT);
-            
-            // Fallback 3: pos.L/H generico
-            if (!L_mm) L_mm = parseInt(pos.L) || 0;
-            if (!H_mm) H_mm = parseInt(pos.H) || 0;
-            
-            // Maggiorazioni per misure foro
-            let L_telo_mm = L_mm;
-            let H_telo_mm = H_mm;
-            if (usaMisureForo) {
-                L_telo_mm = L_mm + 40;   // +40mm larghezza
-                H_telo_mm = H_mm + 200;  // +200mm altezza
-            }
-            
-            // Per calcolo usa CM con arrotondamento (come preventivo)
-            const L_cm = Math.round(L_telo_mm / 10);
-            const H_cm = Math.round(H_telo_mm / 10);
-            
-            // 🆕 v7.82: Estrai codice modello dalla stringa completa
-            const modelloCompleto = tapp.modello || 'TA01';
-            const modelloTelo = estraiCodiceProdotto(modelloCompleto) || 'TA01';
-            const coloreTelo = tapp.colore_tipo || 'tinta_unita';
-            const calcolo = calcolaPrezzoPLASTICINO(L_cm, H_cm, modelloTelo, coloreTelo);
-            
-            // 🆕 v7.82: Calcola guida se presente (estrai codice)
-            let guidaDettaglio = null;
-            const guidaCompleta = tapp.guida || '';
-            const guidaCodice = estraiCodiceProdotto(guidaCompleta);
-            if (guidaCodice && guidaCodice !== '') {
-                const coloreGuida = tapp.coloreGuida || 'Argento';
-                guidaDettaglio = calcolaPrezzoGuida(guidaCodice, coloreGuida, H_mm);
-                console.log(`📏 v7.82 Guida: ${guidaCodice} (${coloreGuida}) H=${H_mm}mm → €${guidaDettaglio?.prezzo?.toFixed(2) || '0.00'}`);
-            }
-            
-            // Prepara HTML dettaglio
-            const teloInfo = LISTINO_PLASTICINO.teli[modelloTelo] || { nome: modelloCompleto, tipo: 'N/D' };
-            const prezzoMq = calcolo.telo_prezzo_mq || 60.00;
-            
-            // 🆕 v7.87: Calcola totale SEMPRE dal breakdown, non dal preventivo
-            // Così header e breakdown sono sempre coerenti
-            const totaleBreakdown = calcolo.totale + (guidaDettaglio?.prezzo || 0);
-            const ambienteDisplay = rigaPreventivo.ambiente || pos.ambiente || 'N/D';
-            
-            // Se c'è differenza tra preventivo e calcolo, mostra warning
-            const totalePrev = rigaPreventivo.totale ? parseFloat(rigaPreventivo.totale) : 0;
-            const differenza = Math.abs(totalePrev - totaleBreakdown);
-            const hasDifferenza = totalePrev > 0 && differenza > 0.50;  // Tolleranza 0.50€
-            
-            let dettaglioHTML = `
+                console.log(`📊 v7.89 Dettaglio Tapparella Pos ${posIndex} - DATI DA PREVENTIVO:`, rigaPreventivo);
+                
+                // 🆕 v7.89: USA DIRETTAMENTE I DATI DEL PREVENTIVO!
+                // Non ricalcoliamo nulla, trascriviamo solo quello che c'è già
+                const L_mm = rigaPreventivo.larghezza || 0;
+                const H_mm = rigaPreventivo.altezza || 0;
+                const superficie = rigaPreventivo.superficie || '0.00';
+                const modelloTelo = rigaPreventivo.telaio || 'N/D';
+                const azienda = rigaPreventivo.azienda || 'Plasticino';
+                const ambiente = rigaPreventivo.ambiente || `Pos ${posIndex}`;
+                
+                // Prezzi dal preventivo (già calcolati)
+                const prezzoTelo = parseFloat(rigaPreventivo.prezzoBase) || 0;
+                const prezzoRullo = parseFloat(rigaPreventivo.supplementoTelaio) || 0;
+                const prezzoFissi = parseFloat(rigaPreventivo.supplementoAnta) || 0;
+                const prezzoSuppAltezza = parseFloat(rigaPreventivo.supplementoVetro) || 0;
+                const prezzoGuida = parseFloat(rigaPreventivo.supplementoManiglia) || 0;
+                const totale = parseFloat(rigaPreventivo.totale) || 0;
+                const quantita = parseInt(rigaPreventivo.quantita) || 1;
+                const prezzoUnitario = parseFloat(rigaPreventivo.prezzoUnitario) || totale;
+                
+                // Calcola prezzo al mq per visualizzazione
+                const superficieMq = parseFloat(superficie) || 1;
+                const prezzoMq = superficieMq > 0 ? (prezzoTelo / superficieMq) : 60;
+                
+                let dettaglioHTML = `
                 <div style="padding: 1.5rem;">
                     <!-- HEADER -->
                     <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <h3 style="margin: 0; font-size: 1.25rem;">🎚️ Tapparella - Posizione ${posIndex}</h3>
-                                <p style="margin: 0.25rem 0 0 0; opacity: 0.9;">${ambienteDisplay}</p>
+                                <p style="margin: 0.25rem 0 0 0; opacity: 0.9;">${ambiente}</p>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-size: 1.5rem; font-weight: 700;">€ ${totaleBreakdown.toFixed(2)}</div>
-                                <div style="font-size: 0.875rem; opacity: 0.9;">Totale Calcolato</div>
+                                <div style="font-size: 1.5rem; font-weight: 700;">€ ${totale.toFixed(2)}</div>
+                                <div style="font-size: 0.875rem; opacity: 0.9;">Totale${quantita > 1 ? ` (${quantita} pz)` : ''}</div>
                             </div>
                         </div>
-                        ${hasDifferenza ? `
-                        <div style="margin-top: 0.75rem; padding: 0.5rem; background: rgba(255,255,255,0.2); border-radius: 0.25rem; font-size: 0.8rem;">
-                            ⚠️ Preventivo mostra €${totalePrev.toFixed(2)} - Differenza dovuta a misure diverse alla fonte
-                        </div>
-                        ` : ''}
                     </div>
                     
                     <!-- MISURE -->
@@ -16506,22 +16446,16 @@ if (typeof module !== 'undefined' && module.exports) {
                             <div>
                                 <div style="font-size: 0.75rem; color: #6b7280;">Larghezza</div>
                                 <div style="font-size: 1.25rem; font-weight: 600;">${L_mm} mm</div>
-                                ${usaMisureForo ? `<div style="font-size: 0.7rem; color: #059669;">+40mm magg.</div>` : ''}
                             </div>
                             <div>
                                 <div style="font-size: 0.75rem; color: #6b7280;">Altezza</div>
                                 <div style="font-size: 1.25rem; font-weight: 600;">${H_mm} mm</div>
-                                ${usaMisureForo ? `<div style="font-size: 0.7rem; color: #059669;">+200mm magg.</div>` : ''}
                             </div>
                             <div>
                                 <div style="font-size: 0.75rem; color: #6b7280;">Superficie</div>
-                                <div style="font-size: 1.25rem; font-weight: 600;">${calcolo.telo_mq.toFixed(2)} m²</div>
+                                <div style="font-size: 1.25rem; font-weight: 600;">${superficie} m²</div>
                             </div>
                         </div>
-                        ${usaMisureForo ? `
-                        <div style="margin-top: 0.75rem; padding: 0.5rem; background: #dcfce7; border-radius: 0.25rem; font-size: 0.8rem; color: #166534;">
-                            ℹ️ Misure da FORO (LF/HF) → Maggiorazione applicata: +40mm L, +200mm H
-                        </div>` : ''}
                     </div>
                     
                     <!-- BREAKDOWN COSTI -->
@@ -16539,13 +16473,13 @@ if (typeof module !== 'undefined' && module.exports) {
                                 <tr style="background: #fefce8;">
                                     <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
                                         <strong>🎨 Telo Avvolgibile</strong><br>
-                                        <span style="font-size: 0.8rem; color: #6b7280;">${teloInfo.nome} (${teloInfo.tipo})</span>
+                                        <span style="font-size: 0.8rem; color: #6b7280;">${modelloTelo}</span>
                                     </td>
                                     <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb; font-family: monospace;">
-                                        ${calcolo.telo_mq.toFixed(2)} m² × €${prezzoMq.toFixed(2)}/m²
+                                        ${superficie} m² × €${prezzoMq.toFixed(2)}/m²
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #ca8a04;">
-                                        € ${calcolo.telo.toFixed(2)}
+                                        € ${prezzoTelo.toFixed(2)}
                                     </td>
                                 </tr>
                                 
@@ -16556,10 +16490,10 @@ if (typeof module !== 'undefined' && module.exports) {
                                         <span style="font-size: 0.8rem; color: #6b7280;">COMP-01</span>
                                     </td>
                                     <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb; font-family: monospace;">
-                                        ${(L_cm / 100).toFixed(2)} m × €13.20/m
+                                        ${(L_mm / 1000).toFixed(2)} m × €13.20/m
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #2563eb;">
-                                        € ${calcolo.rullo.toFixed(2)}
+                                        € ${prezzoRullo.toFixed(2)}
                                     </td>
                                 </tr>
                                 
@@ -16585,38 +16519,37 @@ if (typeof module !== 'undefined' && module.exports) {
                                         </details>
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #059669;">
-                                        € ${calcolo.fissi.toFixed(2)}
+                                        € ${prezzoFissi.toFixed(2)}
                                     </td>
                                 </tr>
                                 
-                                ${calcolo.supplemento_altezza > 0 ? `
+                                ${prezzoSuppAltezza > 0 ? `
                                 <!-- SUPPLEMENTO ALTEZZA -->
                                 <tr>
                                     <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
-                                        <strong>📏 Supplemento Doppia Altezza</strong><br>
-                                        <span style="font-size: 0.8rem; color: #6b7280;">H > 300cm → COMP-07</span>
+                                        <strong>📏 Supplemento Altezza</strong><br>
+                                        <span style="font-size: 0.8rem; color: #6b7280;">H > 300cm</span>
                                     </td>
-                                    <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb; font-family: monospace;">
-                                        (${H_cm} - 300) / 100 × €0.50
+                                    <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb;">
+                                        -
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #dc2626;">
-                                        € ${calcolo.supplemento_altezza.toFixed(2)}
+                                        € ${prezzoSuppAltezza.toFixed(2)}
                                     </td>
                                 </tr>
                                 ` : ''}
                                 
-                                ${guidaDettaglio ? `
+                                ${prezzoGuida > 0 ? `
                                 <!-- GUIDA -->
                                 <tr style="background: #fef3c7;">
                                     <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
-                                        <strong>📏 Guida ${tapp.guida}</strong><br>
-                                        <span style="font-size: 0.8rem; color: #6b7280;">${guidaDettaglio.codice || ''} - ${guidaDettaglio.colore || 'Standard'}</span>
+                                        <strong>📏 Guida</strong>
                                     </td>
-                                    <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb; font-family: monospace;">
-                                        ${guidaDettaglio.um === 'ML' ? `${(H_mm/1000).toFixed(2)}m × €${guidaDettaglio.prezzoUnitario?.toFixed(2) || '0.00'}/m` : 'Coppia (CP)'}
+                                    <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb;">
+                                        Coppia (CP)
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #d97706;">
-                                        € ${guidaDettaglio.prezzo.toFixed(2)}
+                                        € ${prezzoGuida.toFixed(2)}
                                     </td>
                                 </tr>
                                 ` : ''}
@@ -16627,7 +16560,7 @@ if (typeof module !== 'undefined' && module.exports) {
                                         TOTALE TAPPARELLA
                                     </td>
                                     <td style="padding: 1rem; text-align: right; font-weight: 700; font-size: 1.25rem; color: #059669;">
-                                        € ${(calcolo.totale + (guidaDettaglio?.prezzo || 0)).toFixed(2)}
+                                        € ${totale.toFixed(2)}
                                     </td>
                                 </tr>
                             </tbody>
@@ -16637,10 +16570,10 @@ if (typeof module !== 'undefined' && module.exports) {
                     <!-- INFO AGGIUNTIVE -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem;">
                         <div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.375rem;">
-                            <strong>🏭 Azienda:</strong> ${tapp.azienda || 'Plasticino'}
+                            <strong>🏭 Azienda:</strong> ${azienda}
                         </div>
                         <div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.375rem;">
-                            <strong>🎨 Colore telo:</strong> ${coloreTelo.replace('_', ' ')}
+                            <strong>🎨 Modello:</strong> ${modelloTelo}
                         </div>
                     </div>
                 </div>
@@ -16653,373 +16586,412 @@ if (typeof module !== 'undefined' && module.exports) {
                 alert('Errore dettaglio costi: ' + e.message);
             }
         }
-        
+
         /**
-         * Mostra modal generico per dettaglio costi
-         * @param {string} tipo - Tipo prodotto (Tapparella, Infisso, ecc.)
-         * @param {string} contenutoHTML - HTML del contenuto
+         * 🆕 v7.89: Mostra dettaglio costi INFISSO
+         * USA SOLO I DATI GIÀ CALCOLATI NEL PREVENTIVO - NON RICALCOLA!
          */
-        function mostraModalDettaglioCosti(tipo, contenutoHTML) {
-            // Rimuovi modal esistente se presente
-            let modal = document.getElementById('dettaglio-costi-modal');
-            if (modal) modal.remove();
-            
-            // Crea nuovo modal
-            modal = document.createElement('div');
-            modal.id = 'dettaglio-costi-modal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10001;
-                opacity: 0;
-                transition: opacity 0.2s ease;
-            `;
-            
-            modal.innerHTML = `
-                <div style="
-                    background: white;
-                    border-radius: 0.75rem;
-                    max-width: 700px;
-                    width: 95%;
-                    max-height: 90vh;
-                    overflow-y: auto;
-                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                    transform: scale(0.95);
-                    transition: transform 0.2s ease;
-                " id="dettaglio-costi-content">
-                    <div style="
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        padding: 1rem 1.5rem;
-                        border-bottom: 1px solid #e5e7eb;
-                        background: #f9fafb;
-                        border-radius: 0.75rem 0.75rem 0 0;
-                    ">
-                        <h2 style="margin: 0; font-size: 1.25rem; color: #1f2937;">
-                            💰 Dettaglio Costi - ${tipo}
-                        </h2>
-                        <button onclick="window.chiudiModalDettaglioCosti()" style="
-                            background: none;
-                            border: none;
-                            font-size: 1.5rem;
-                            cursor: pointer;
-                            color: #6b7280;
-                            padding: 0.25rem;
-                            line-height: 1;
-                        ">×</button>
+        function mostraDettaglioCostiInfisso(posIndex, rigaPreventivo = {}) {
+            try {
+                console.log(`📊 v7.89 Dettaglio Infisso Pos ${posIndex} - DATI DA PREVENTIVO:`, rigaPreventivo);
+                
+                // Dati dal preventivo
+                const L_mm = rigaPreventivo.larghezza || 0;
+                const H_mm = rigaPreventivo.altezza || 0;
+                const superficie = rigaPreventivo.superficie || '0.00';
+                const perimetro = rigaPreventivo.perimetro || '-';
+                const telaio = rigaPreventivo.telaio || 'N/D';
+                const azienda = rigaPreventivo.azienda || 'N/D';
+                const ambiente = rigaPreventivo.ambiente || `Pos ${posIndex}`;
+                const tipo = rigaPreventivo.tipo || 'Infisso';
+                
+                // Prezzi dal preventivo
+                const prezzoBase = parseFloat(rigaPreventivo.prezzoBase) || 0;
+                const suppTelaio = parseFloat(rigaPreventivo.supplementoTelaio) || 0;
+                const suppAnta = parseFloat(rigaPreventivo.supplementoAnta) || 0;
+                const suppVetro = parseFloat(rigaPreventivo.supplementoVetro) || 0;
+                const suppColore = parseFloat(rigaPreventivo.supplementoColore) || 0;
+                const suppManiglia = parseFloat(rigaPreventivo.supplementoManiglia) || 0;
+                const suppMontante = parseFloat(rigaPreventivo.supplementoMontante) || 0;
+                const prezzoUnitario = parseFloat(rigaPreventivo.prezzoUnitario) || 0;
+                const quantita = parseInt(rigaPreventivo.quantita) || 1;
+                const totale = parseFloat(rigaPreventivo.totale) || 0;
+                
+                let dettaglioHTML = `
+                <div style="padding: 1.5rem;">
+                    <!-- HEADER -->
+                    <div style="background: linear-gradient(135deg, #065f46 0%, #10b981 100%); color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.25rem;">🪟 ${tipo} - Posizione ${posIndex}</h3>
+                                <p style="margin: 0.25rem 0 0 0; opacity: 0.9;">${ambiente}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.5rem; font-weight: 700;">€ ${totale.toFixed(2)}</div>
+                                <div style="font-size: 0.875rem; opacity: 0.9;">Totale${quantita > 1 ? ` (${quantita} pz)` : ''}</div>
+                            </div>
+                        </div>
                     </div>
-                    ${contenutoHTML}
+                    
+                    <!-- MISURE -->
+                    <div style="background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 0.75rem 0; color: #065f46;">📐 Misure</h4>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center;">
+                            <div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Larghezza</div>
+                                <div style="font-size: 1.25rem; font-weight: 600;">${L_mm} mm</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Altezza</div>
+                                <div style="font-size: 1.25rem; font-weight: 600;">${H_mm} mm</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Superficie</div>
+                                <div style="font-size: 1.25rem; font-weight: 600;">${superficie} m²</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Perimetro</div>
+                                <div style="font-size: 1.25rem; font-weight: 600;">${perimetro} ml</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- BREAKDOWN COSTI -->
+                    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; margin-bottom: 1rem;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="background: #f3f4f6;">
+                                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb;">Componente</th>
+                                    <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb;">Importo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- PREZZO BASE -->
+                                <tr style="background: #ecfdf5;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>📦 Prezzo Base Infisso</strong><br>
+                                        <span style="font-size: 0.8rem; color: #6b7280;">Da listino ${azienda}</span>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #065f46;">
+                                        € ${prezzoBase.toFixed(2)}
+                                    </td>
+                                </tr>
+                                
+                                ${suppTelaio > 0 ? `
+                                <!-- SUPPLEMENTO TELAIO -->
+                                <tr>
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>🔲 Supplemento Telaio</strong><br>
+                                        <span style="font-size: 0.8rem; color: #6b7280;">${telaio}</span>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #2563eb;">
+                                        € ${suppTelaio.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${suppAnta > 0 ? `
+                                <!-- SUPPLEMENTO ANTA -->
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>🚪 Supplemento Anta</strong>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #7c3aed;">
+                                        € ${suppAnta.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${suppVetro > 0 ? `
+                                <!-- SUPPLEMENTO VETRO -->
+                                <tr>
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>🔷 Supplemento Vetro</strong>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #0891b2;">
+                                        € ${suppVetro.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${suppColore > 0 ? `
+                                <!-- SUPPLEMENTO COLORE -->
+                                <tr style="background: #fefce8;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>🎨 Supplemento Colore</strong>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #ca8a04;">
+                                        € ${suppColore.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${suppManiglia > 0 ? `
+                                <!-- SUPPLEMENTO MANIGLIA -->
+                                <tr>
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>🔧 Maniglia/Ferramenta</strong>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #dc2626;">
+                                        € ${suppManiglia.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${suppMontante > 0 ? `
+                                <!-- SUPPLEMENTO MONTANTE -->
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>📏 Montante Centrale</strong>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #9333ea;">
+                                        € ${suppMontante.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                <!-- PREZZO UNITARIO -->
+                                <tr style="background: #f0fdf4;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600;">
+                                        Prezzo Unitario
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600;">
+                                        € ${prezzoUnitario.toFixed(2)}
+                                    </td>
+                                </tr>
+                                
+                                ${quantita > 1 ? `
+                                <!-- QUANTITA -->
+                                <tr>
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        Quantità
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb;">
+                                        × ${quantita}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                <!-- TOTALE -->
+                                <tr style="background: #dcfce7;">
+                                    <td style="padding: 1rem; font-weight: 700; font-size: 1.1rem;">
+                                        TOTALE INFISSO
+                                    </td>
+                                    <td style="padding: 1rem; text-align: right; font-weight: 700; font-size: 1.25rem; color: #059669;">
+                                        € ${totale.toFixed(2)}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- INFO AGGIUNTIVE -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem;">
+                        <div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.375rem;">
+                            <strong>🏭 Azienda:</strong> ${azienda}
+                        </div>
+                        <div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.375rem;">
+                            <strong>🔲 Telaio:</strong> ${telaio}
+                        </div>
+                    </div>
                 </div>
             `;
             
-            // Click esterno chiude
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) window.chiudiModalDettaglioCosti();
-            });
-            
-            document.body.appendChild(modal);
-            document.body.style.overflow = 'hidden';
-            
-            // Animazione apertura
-            requestAnimationFrame(() => {
-                modal.style.opacity = '1';
-                document.getElementById('dettaglio-costi-content').style.transform = 'scale(1)';
-            });
-            
-            console.log(`✅ v7.82 Modal Dettaglio Costi ${tipo} aperto`);
-        }
-        
-        /**
-         * Chiude modal dettaglio costi
-         */
-        function chiudiModalDettaglioCosti() {
-            const modal = document.getElementById('dettaglio-costi-modal');
-            if (modal) {
-                modal.style.opacity = '0';
-                document.getElementById('dettaglio-costi-content').style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    modal.remove();
-                    document.body.style.overflow = '';
-                }, 200);
+            mostraModalDettaglioCosti('Infisso', dettaglioHTML);
+            } catch (e) {
+                console.error('❌ Errore in mostraDettaglioCostiInfisso:', e);
+                alert('Errore dettaglio costi: ' + e.message);
             }
         }
-        
+
         /**
-         * 🆕 v7.84: Mostra dettaglio costi per PERSIANA
-         * @param {number} posIndex - Indice posizione (1-based)
-         * @param {object} rigaPreventivo - Dati riga dal preventivo (opzionale)
+         * 🆕 v7.89: Mostra dettaglio costi PERSIANA
+         * USA SOLO I DATI GIÀ CALCOLATI NEL PREVENTIVO - NON RICALCOLA!
          */
         function mostraDettaglioCostiPersiana(posIndex, rigaPreventivo = {}) {
             try {
-                console.log(`📊 v7.84 Dettaglio Costi Persiana Pos ${posIndex}`, rigaPreventivo);
+                console.log(`📊 v7.89 Dettaglio Persiana Pos ${posIndex} - DATI DA PREVENTIVO:`, rigaPreventivo);
                 
-                const data = window.currentData || window.projectData || {};
-                const posizioni = data.posizioni || data.positions || [];
-                const pos = posizioni[posIndex - 1];
+                // Dati dal preventivo
+                const L_mm = rigaPreventivo.larghezza || 0;
+                const H_mm = rigaPreventivo.altezza || 0;
+                const superficie = rigaPreventivo.superficie || '0.00';
+                const telaio = rigaPreventivo.telaio || 'N/D';  // Modello persiana
+                const azienda = rigaPreventivo.azienda || 'P. Persiane';
+                const ambiente = rigaPreventivo.ambiente || `Pos ${posIndex}`;
+                const tipo = rigaPreventivo.tipo || 'Persiana';
                 
-                if (!pos || !pos.persiana) {
-                    console.error('❌ Dati persiana non trovati:', { posIndex });
-                    alert(`❌ Dati persiana non trovati per posizione ${posIndex}`);
-                    return;
-                }
-                
-                const pers = pos.persiana;
-                const accessori = pers.accessoriPersiana || {};
-                const cardini = accessori.cardini || { qta: 0, modello: 'N/D' };
-                const ferma = accessori.fermapersiane || { qta: 0, modello: 'N/D' };
-                
-                // Estrai misure
-                const L_mm = parseInt(pers.brm?.L) || parseInt(pers.BRM_L) || 0;
-                const H_mm = parseInt(pers.brm?.H) || parseInt(pers.BRM_H) || 0;
-                
-                // Calcola prezzi accessori
-                const cardineInfo = LISTINO_ACCESSORI_PERSIANE?.cardini?.[cardini.modello] || { nome: cardini.modello, prezzo: 0 };
-                const fermaInfo = LISTINO_ACCESSORI_PERSIANE?.fermapersiane?.[ferma.modello] || { nome: ferma.modello, prezzo: 0 };
-                
-                const prezzoCardini = cardini.qta * cardineInfo.prezzo;
-                const prezzoFerma = ferma.qta * fermaInfo.prezzo;
-                const totaleAccessori = prezzoCardini + prezzoFerma;
-                
-                const ambienteDisplay = rigaPreventivo.ambiente || pos.ambiente || pos.nome || 'N/D';
-                const totaleBase = rigaPreventivo.totale ? parseFloat(rigaPreventivo.totale) : 0;
-                
-                // 🆕 v7.84: Calcola prezzo persiana per breakdown
-                let calcoloPersiana = null;
-                let prezzoManuale = pers.prezzoManuale || null;
-                
-                if (!prezzoManuale && L_mm && H_mm && pers.modello) {
-                    try {
-                        calcoloPersiana = PreventivoCalculator.calcolaPersiana({
-                            larghezza: L_mm,
-                            altezza: H_mm,
-                            modello: pers.modello,
-                            tipologia: pers.tipo || 'F2',
-                            telaio: pers.tipoTelaio || '',
-                            colore: pers.colorePersiana || pers.colore || ''
-                        });
-                        console.log('📊 Calcolo persiana:', calcoloPersiana);
-                    } catch(e) {
-                        console.warn('⚠️ Calcolo persiana fallito:', e);
-                    }
-                }
+                // Prezzi dal preventivo
+                const prezzoBase = parseFloat(rigaPreventivo.prezzoBase) || 0;
+                const suppTelaio = parseFloat(rigaPreventivo.supplementoTelaio) || 0;  // Telaio persiana
+                const suppColore = parseFloat(rigaPreventivo.supplementoColore) || 0;
+                const contributoGestione = parseFloat(rigaPreventivo.supplementoManiglia) || 0;  // Usato per contributo
+                const imballo = parseFloat(rigaPreventivo.supplementoMontante) || 0;  // Usato per imballo
+                const prezzoUnitario = parseFloat(rigaPreventivo.prezzoUnitario) || 0;
+                const quantita = parseInt(rigaPreventivo.quantita) || 1;
+                const totale = parseFloat(rigaPreventivo.totale) || 0;
                 
                 let dettaglioHTML = `
-                    <div style="padding: 1.5rem;">
-                        <!-- HEADER -->
-                        <div style="background: linear-gradient(135deg, #6b21a8 0%, #a855f7 100%); color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <h3 style="margin: 0; font-size: 1.25rem;">🚪 Persiana - Posizione ${posIndex}</h3>
-                                    <p style="margin: 0.25rem 0 0 0; opacity: 0.9;">${ambienteDisplay}</p>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="font-size: 1.5rem; font-weight: 700;">€ ${totaleBase.toFixed(2)}</div>
-                                    <div style="font-size: 0.875rem; opacity: 0.9;">Totale Persiana</div>
-                                </div>
+                <div style="padding: 1.5rem;">
+                    <!-- HEADER -->
+                    <div style="background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%); color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.25rem;">🚪 ${tipo} - Posizione ${posIndex}</h3>
+                                <p style="margin: 0.25rem 0 0 0; opacity: 0.9;">${ambiente}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.5rem; font-weight: 700;">€ ${totale.toFixed(2)}</div>
+                                <div style="font-size: 0.875rem; opacity: 0.9;">Totale${quantita > 1 ? ` (${quantita} pz)` : ''}</div>
                             </div>
                         </div>
-                        
-                        <!-- DATI BASE -->
-                        <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-                            <h4 style="margin: 0 0 0.75rem 0; color: #7c3aed;">📋 Configurazione</h4>
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
-                                <div><span style="color: #6b7280;">Modello:</span> <strong>${pers.modello || 'N/D'}</strong></div>
-                                <div><span style="color: #6b7280;">Tipo:</span> <strong>${pers.tipo || 'N/D'}</strong></div>
-                                <div><span style="color: #6b7280;">Azienda:</span> <strong>${pers.azienda || 'N/D'}</strong></div>
-                                <div><span style="color: #6b7280;">Colore:</span> <strong>${pers.colorePersiana || pers.colore || 'N/D'}</strong></div>
-                                <div><span style="color: #6b7280;">Fissaggio:</span> <strong>${pers.fissaggio || 'N/D'}</strong></div>
-                                <div><span style="color: #6b7280;">Battuta:</span> <strong>${pers.battuta || 'N/D'}</strong></div>
-                                <div><span style="color: #6b7280;">Telaio:</span> <strong>${pers.tipoTelaio || 'N/D'}</strong></div>
-                                <div><span style="color: #6b7280;">Colore Telaio:</span> <strong>${pers.coloreTelaio || 'N/D'}</strong></div>
-                            </div>
-                            ${L_mm && H_mm ? `
-                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e9d5ff;">
-                                <span style="color: #6b7280;">📐 Misure BRM:</span> 
-                                <strong>${L_mm} × ${H_mm} mm</strong>
-                                <span style="color: #9ca3af; margin-left: 0.5rem;">(${(L_mm * H_mm / 1000000).toFixed(2)} m²)</span>
-                            </div>
-                            ` : ''}
-                        </div>
-                        
-                        <!-- BREAKDOWN CALCOLO PREZZO -->
-                        ${prezzoManuale ? `
-                        <div style="background: #fef3c7; border: 1px solid #fde68a; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-                            <h4 style="margin: 0 0 0.75rem 0; color: #b45309;">💰 Calcolo Prezzo (MANUALE)</h4>
-                            <div style="display: grid; gap: 0.5rem;">
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #fde68a;">
-                                    <span>Prezzo Base (${prezzoManuale.dimensione || 'N/D'}):</span>
-                                    <span style="font-weight: 600;">€ ${prezzoManuale.prezzoBase?.toFixed(2) || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #fde68a;">
-                                    <span>Telaio:</span>
-                                    <span style="font-weight: 600;">€ ${prezzoManuale.prezzoTelaio?.toFixed(2) || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #fde68a;">
-                                    <span>Maggiorazione Colore (${prezzoManuale.colorePercentuale || 0}%):</span>
-                                    <span style="font-weight: 600;">€ ${prezzoManuale.maggiorazioneColore?.toFixed(2) || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #fde68a;">
-                                    <span>Contributo Gestione:</span>
-                                    <span style="font-weight: 600;">€ ${prezzoManuale.contributo?.toFixed(2) || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #fde68a;">
-                                    <span>Imballo:</span>
-                                    <span style="font-weight: 600;">€ ${prezzoManuale.imballo?.toFixed(2) || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; margin-top: 0.5rem; border-top: 2px solid #f59e0b; font-size: 1.1rem;">
-                                    <span style="font-weight: 700;">TOTALE:</span>
-                                    <span style="font-weight: 700; color: #059669;">€ ${prezzoManuale.totaleFinale?.toFixed(2) || '0.00'}</span>
-                                </div>
-                            </div>
-                        </div>
-                        ` : calcoloPersiana && calcoloPersiana.successo ? `
-                        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-                            <h4 style="margin: 0 0 0.75rem 0; color: #047857;">💰 Calcolo Prezzo (AUTOMATICO)</h4>
-                            <div style="display: grid; gap: 0.5rem;">
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0;">
-                                    <span>Prezzo Base ${calcoloPersiana.tipologia || ''} (${calcoloPersiana.misure?.dimensione || 'N/D'}):</span>
-                                    <span style="font-weight: 600;">€ ${calcoloPersiana.dettaglio?.prezzo_base || '0.00'}</span>
-                                </div>
-                                ${calcoloPersiana.dettaglio?.maggiorazione_modello > 0 ? `
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0; color: #7c3aed;">
-                                    <span>Magg. Modello (+${calcoloPersiana.dettaglio?.maggiorazione_modello}%):</span>
-                                    <span style="font-weight: 600;">inclusa nel prezzo base</span>
-                                </div>
-                                ` : ''}
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0;">
-                                    <span>Telaio:</span>
-                                    <span style="font-weight: 600;">€ ${calcoloPersiana.dettaglio?.telaio || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0; background: #f0fdf4; padding: 0.5rem; border-radius: 0.25rem;">
-                                    <span style="font-weight: 600;">Subtotale:</span>
-                                    <span style="font-weight: 600;">€ ${calcoloPersiana.dettaglio?.subtotale || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0;">
-                                    <span>Magg. Colore (${calcoloPersiana.dettaglio?.colore_nome || 'N/D'} ${calcoloPersiana.dettaglio?.colore_perc || 0}%):</span>
-                                    <span style="font-weight: 600;">€ ${calcoloPersiana.dettaglio?.maggiorazione_colore || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0;">
-                                    <span>Contributo Gestione:</span>
-                                    <span style="font-weight: 600;">€ ${calcoloPersiana.dettaglio?.contributo_gestione || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0;">
-                                    <span>Imballo:</span>
-                                    <span style="font-weight: 600;">€ ${calcoloPersiana.dettaglio?.imballo || '0.00'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; margin-top: 0.5rem; border-top: 2px solid #10b981; font-size: 1.1rem;">
-                                    <span style="font-weight: 700;">TOTALE PERSIANA:</span>
-                                    <span style="font-weight: 700; color: #059669;">€ ${calcoloPersiana.prezzi?.totale || '0.00'}</span>
-                                </div>
-                            </div>
-                        </div>
-                        ` : `
-                        <div style="background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-                            <h4 style="margin: 0 0 0.5rem 0; color: #6b7280;">💰 Calcolo Prezzo</h4>
-                            <p style="margin: 0; color: #9ca3af; font-size: 0.875rem;">
-                                Calcolo automatico non disponibile. Inserire prezzo manuale o verificare dati.
-                            </p>
-                        </div>
-                        `}
-                        
-                        <!-- ACCESSORI -->
-                        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-                            <h4 style="margin: 0 0 0.75rem 0; color: #b45309;">🔩 Accessori Persiana (EXTRA)</h4>
-                            
-                            <!-- CARDINI -->
-                            <div style="background: white; border-radius: 0.375rem; padding: 0.75rem; margin-bottom: 0.5rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <div style="font-weight: 600; color: #374151;">📍 Cardini</div>
-                                        <div style="font-size: 0.875rem; color: #6b7280;">${cardini.modello} - ${cardineInfo.nome}</div>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <div style="font-size: 0.75rem; color: #6b7280;">${cardini.qta} × €${cardineInfo.prezzo.toFixed(2)}</div>
-                                        <div style="font-weight: 600; color: ${prezzoCardini > 0 ? '#059669' : '#9ca3af'};">
-                                            ${prezzoCardini > 0 ? `€ ${prezzoCardini.toFixed(2)}` : 'Incluso'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- FERMAPERSIANE -->
-                            <div style="background: white; border-radius: 0.375rem; padding: 0.75rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <div style="font-weight: 600; color: #374151;">🔒 Fermapersiane</div>
-                                        <div style="font-size: 0.875rem; color: #6b7280;">${ferma.modello} - ${fermaInfo.nome}</div>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <div style="font-size: 0.75rem; color: #6b7280;">${ferma.qta} × €${fermaInfo.prezzo.toFixed(2)}</div>
-                                        <div style="font-weight: 600; color: ${prezzoFerma > 0 ? '#059669' : '#9ca3af'};">
-                                            ${prezzoFerma > 0 ? `€ ${prezzoFerma.toFixed(2)}` : 'Incluso'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- TOTALE ACCESSORI -->
-                            ${totaleAccessori > 0 ? `
-                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #fde68a; display: flex; justify-content: space-between;">
-                                <span style="font-weight: 600;">Totale Accessori:</span>
-                                <span style="font-weight: 700; color: #059669;">€ ${totaleAccessori.toFixed(2)}</span>
-                            </div>
-                            ` : `
-                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #fde68a; text-align: center; color: #6b7280;">
-                                ✅ Tutti gli accessori sono inclusi nel prezzo base
-                            </div>
-                            `}
-                        </div>
-                        
-                        <!-- RIEPILOGO FINALE -->
-                        <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; border-radius: 0.5rem; padding: 1rem;">
-                            <h4 style="margin: 0 0 0.75rem 0;">📊 Riepilogo Finale</h4>
-                            <div style="display: grid; gap: 0.5rem;">
-                                <div style="display: flex; justify-content: space-between; opacity: 0.9;">
-                                    <span>Persiana:</span>
-                                    <span>€ ${totaleBase.toFixed(2)}</span>
-                                </div>
-                                ${totaleAccessori > 0 ? `
-                                <div style="display: flex; justify-content: space-between; opacity: 0.9;">
-                                    <span>Accessori Extra:</span>
-                                    <span>€ ${totaleAccessori.toFixed(2)}</span>
-                                </div>
-                                ` : ''}
-                                <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.3); font-size: 1.25rem; font-weight: 700;">
-                                    <span>TOTALE POSIZIONE:</span>
-                                    <span>€ ${(totaleBase + totaleAccessori).toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- NOTE -->
-                        ${!accessori.cardini && !accessori.fermapersiane ? `
-                        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; color: #991b1b;">
-                            ⚠️ <strong>Accessori non configurati</strong><br>
-                            <span style="font-size: 0.875rem;">Apri OpenPorte v4.95 e configura cardini e fermapersiane per questa posizione.</span>
-                        </div>
-                        ` : ''}
                     </div>
-                `;
-                
-                mostraModalDettaglioCosti(dettaglioHTML, '🚪 Dettaglio Persiana');
-                
-            } catch(e) {
+                    
+                    <!-- MISURE -->
+                    <div style="background: #f5f3ff; border: 1px solid #c4b5fd; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 0.75rem 0; color: #7c3aed;">📐 Misure</h4>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
+                            <div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Larghezza</div>
+                                <div style="font-size: 1.25rem; font-weight: 600;">${L_mm} mm</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Altezza</div>
+                                <div style="font-size: 1.25rem; font-weight: 600;">${H_mm} mm</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Superficie</div>
+                                <div style="font-size: 1.25rem; font-weight: 600;">${superficie} m²</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- BREAKDOWN COSTI -->
+                    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; margin-bottom: 1rem;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="background: #f3f4f6;">
+                                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb;">Componente</th>
+                                    <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e5e7eb;">Importo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- PREZZO BASE -->
+                                <tr style="background: #f5f3ff;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>📦 Prezzo Base Persiana</strong><br>
+                                        <span style="font-size: 0.8rem; color: #6b7280;">Modello: ${telaio}</span>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #7c3aed;">
+                                        € ${prezzoBase.toFixed(2)}
+                                    </td>
+                                </tr>
+                                
+                                ${suppTelaio > 0 ? `
+                                <!-- TELAIO PERSIANA -->
+                                <tr>
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>🔲 Telaio</strong>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #2563eb;">
+                                        € ${suppTelaio.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${suppColore > 0 ? `
+                                <!-- SUPPLEMENTO COLORE -->
+                                <tr style="background: #fefce8;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>🎨 Maggiorazione Colore</strong>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #ca8a04;">
+                                        € ${suppColore.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${contributoGestione > 0 ? `
+                                <!-- CONTRIBUTO GESTIONE -->
+                                <tr>
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>📋 Contributo Gestione</strong>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #059669;">
+                                        € ${contributoGestione.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                ${imballo > 0 ? `
+                                <!-- IMBALLO -->
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <strong>📦 Imballo</strong>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #6b7280;">
+                                        € ${imballo.toFixed(2)}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                <!-- PREZZO UNITARIO -->
+                                <tr style="background: #faf5ff;">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600;">
+                                        Prezzo Unitario
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600;">
+                                        € ${prezzoUnitario.toFixed(2)}
+                                    </td>
+                                </tr>
+                                
+                                ${quantita > 1 ? `
+                                <!-- QUANTITA -->
+                                <tr>
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        Quantità
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb;">
+                                        × ${quantita}
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                
+                                <!-- TOTALE -->
+                                <tr style="background: #ede9fe;">
+                                    <td style="padding: 1rem; font-weight: 700; font-size: 1.1rem;">
+                                        TOTALE PERSIANA
+                                    </td>
+                                    <td style="padding: 1rem; text-align: right; font-weight: 700; font-size: 1.25rem; color: #7c3aed;">
+                                        € ${totale.toFixed(2)}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- INFO AGGIUNTIVE -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem;">
+                        <div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.375rem;">
+                            <strong>🏭 Azienda:</strong> ${azienda}
+                        </div>
+                        <div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.375rem;">
+                            <strong>🚪 Modello:</strong> ${telaio}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            mostraModalDettaglioCosti('Persiana', dettaglioHTML);
+            } catch (e) {
                 console.error('❌ Errore in mostraDettaglioCostiPersiana:', e);
-                alert('❌ Errore nel mostrare dettaglio persiana: ' + e.message);
+                alert('Errore dettaglio costi: ' + e.message);
             }
         }
-        
-        // 🆕 v7.82: Esporta funzioni su window per accessibilità dai popup
+
         window.mostraDettaglioCostiTapparella = mostraDettaglioCostiTapparella;
         window.mostraDettaglioCostiPersiana = mostraDettaglioCostiPersiana;
+        window.mostraDettaglioCostiInfisso = mostraDettaglioCostiInfisso;
         window.mostraModalDettaglioCosti = mostraModalDettaglioCosti;
         window.chiudiModalDettaglioCosti = chiudiModalDettaglioCosti;
         

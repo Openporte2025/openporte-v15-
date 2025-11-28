@@ -6,7 +6,13 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.85 - CHANGELOG
+    DASHBOARD RILIEVI v7.86 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.86 (27 NOV 2025):
+    - FIX: Allineata logica estrazione misure popup tapparella con preventivo
+    - Priorità: BRM_L/BRM_H → brm.L/brm.H → LF/HF+magg → LVT/HVT → L/H
+    - Arrotondamento cm come preventivo (Math.round)
+    - Totale popup ora corrisponde a totale preventivo
     
     🔧 AGGIORNAMENTI v7.85 (27 NOV 2025):
     - FIX BUG: Mapping proprietà calcolo tapparella (prezzoTelo→telo, prezzoRullo→rullo, etc.)
@@ -1018,12 +1024,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.85 - Fix Tapparella Popup</title>
+    <title>Dashboard Rilievi v7.86 - Fix Popup Tapparella</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.85";
+        const DASHBOARD_VERSION = "7.86";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -10151,7 +10157,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.85</span>
+                <span class="logo-version" id="version-badge">v7.86</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -16265,12 +16271,34 @@ if (typeof module !== 'undefined' && module.exports) {
             
             const tapp = pos.tapparella;
             
-            // Estrai misure
-            let L_mm = parseInt(tapp.brm?.L) || parseInt(tapp.BRM_L) || parseInt(pos.misure?.LF) || parseInt(pos.L) || 0;
-            let H_mm = parseInt(tapp.brm?.H) || parseInt(tapp.BRM_H) || parseInt(pos.misure?.HF) || parseInt(pos.H) || 0;
+            // Estrai misure - STESSA LOGICA DEL PREVENTIVO (v7.85)
+            // 1° BRM_L/BRM_H (campo diretto)
+            // 2° brm?.L/brm?.H (retrocompatibilità)
+            // 3° LF/HF + maggiorazioni
+            // 4° LVT/HVT (ultimo fallback)
+            let L_mm = parseInt(tapp.BRM_L) || parseInt(tapp.brm?.L) || 0;
+            let H_mm = parseInt(tapp.BRM_H) || parseInt(tapp.brm?.H) || 0;
+            let usaMisureForo = false;
             
-            // 🆕 v7.81: Applica maggiorazione foro se da LF/HF
-            const usaMisureForo = !tapp.brm?.L && !tapp.BRM_L && (pos.misure?.LF || pos.misure?.HF);
+            // Fallback 1: LF/HF (misure foro)
+            if (!L_mm && pos.misure?.LF) {
+                L_mm = parseInt(pos.misure.LF);
+                usaMisureForo = true;
+            }
+            if (!H_mm && pos.misure?.HF) {
+                H_mm = parseInt(pos.misure.HF);
+                usaMisureForo = true;
+            }
+            
+            // Fallback 2: LVT/HVT
+            if (!L_mm && pos.misure?.LVT) L_mm = parseInt(pos.misure.LVT);
+            if (!H_mm && pos.misure?.HVT) H_mm = parseInt(pos.misure.HVT);
+            
+            // Fallback 3: pos.L/H generico
+            if (!L_mm) L_mm = parseInt(pos.L) || 0;
+            if (!H_mm) H_mm = parseInt(pos.H) || 0;
+            
+            // Maggiorazioni per misure foro
             let L_telo_mm = L_mm;
             let H_telo_mm = H_mm;
             if (usaMisureForo) {
@@ -16278,8 +16306,9 @@ if (typeof module !== 'undefined' && module.exports) {
                 H_telo_mm = H_mm + 200;  // +200mm altezza
             }
             
-            const L_cm = L_telo_mm / 10;
-            const H_cm = H_telo_mm / 10;
+            // Per calcolo usa CM con arrotondamento (come preventivo)
+            const L_cm = Math.round(L_telo_mm / 10);
+            const H_cm = Math.round(H_telo_mm / 10);
             
             // 🆕 v7.82: Estrai codice modello dalla stringa completa
             const modelloCompleto = tapp.modello || 'TA01';

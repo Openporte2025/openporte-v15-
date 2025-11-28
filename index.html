@@ -6,7 +6,11 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.97_06 - CHANGELOG
+    DASHBOARD RILIEVI v7.97_07 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.97_07 (28 NOV 2025):
+    - 🔐 FIX PREVENTIVO BLINDATE: Normalizza pos.ingresso.blindata → pos.blindata in calcolaPreventivo()
+    - ✅ Ora le blindate appaiono correttamente nella tabella preventivo
     
     🔧 AGGIORNAMENTI v7.97_06 (28 NOV 2025):
     - 🔐 FIX CRITICO: convertGitHubToDashboardFormat() ora estrae blindata da pos.ingresso.blindata
@@ -1117,7 +1121,7 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.97_06 - Fix Ingresso Blindata</title>
+    <title>Dashboard Rilievi v7.97_07 - Fix Blindata Preventivo</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
@@ -10443,7 +10447,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.97</span>
+                <span class="logo-version" id="version-badge">v7.97_07</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -16183,6 +16187,12 @@ if (typeof module !== 'undefined' && module.exports) {
             
             // Processa ogni posizione
             posizioni.forEach((pos, index) => {
+                // 🔐 v7.97_07: NORMALIZZA BLINDATA da ingresso.blindata se non già presente
+                if (pos.ingresso?.blindata && !pos.blindata) {
+                    pos.blindata = pos.ingresso.blindata;
+                    console.log(`   🔐 NORMALIZZATO pos ${index + 1}: ingresso.blindata → blindata`);
+                }
+                
                 // 🔐 DEBUG BLINDATA
                 console.log(`🔐 Pos ${index + 1} blindata:`, pos.blindata);
                 
@@ -16994,13 +17004,14 @@ if (typeof module !== 'undefined' && module.exports) {
                 const isInfisso = riga.tipo.toLowerCase().includes('infisso') || 
                                   riga.tipo.toLowerCase().includes('finestra') ||
                                   riga.tipo.toLowerCase().includes('porta');
-                const isClickable = isTapparella || isPersiana || isInfisso;
+                const isBlindato = riga.tipo.toLowerCase().includes('blindata') || riga._tipoBlindato;
+                const isClickable = isTapparella || isPersiana || isInfisso || isBlindato;
                 
                 if (isClickable) {
                     tr.style.cursor = 'pointer';
                     tr.title = '🔍 Clicca per vedere il dettaglio costi';
                     // Colori hover diversi per tipo
-                    const hoverColor = isTapparella ? '#fef3c7' : isPersiana ? '#f3e8ff' : '#dbeafe';
+                    const hoverColor = isTapparella ? '#fef3c7' : isPersiana ? '#f3e8ff' : isBlindato ? '#fee2e2' : '#dbeafe';
                     tr.onmouseover = function() { this.style.background = hoverColor; };
                     tr.onmouseout = function() { this.style.background = ''; };
                     
@@ -17008,7 +17019,10 @@ if (typeof module !== 'undefined' && module.exports) {
                     const posIdx = riga.posizione;
                     const rigaCopia = Object.assign({}, riga); // Copia per closure
                     tr.onclick = function() {
-                        if (isTapparella) {
+                        if (isBlindato) {
+                            console.log('🖱️ Click su blindata pos', posIdx);
+                            window.mostraDettaglioCostiBlindato(posIdx, rigaCopia);
+                        } else if (isTapparella) {
                             console.log('🖱️ Click su tapparella pos', posIdx);
                             window.mostraDettaglioCostiTapparella(posIdx, rigaCopia);
                         } else if (isPersiana) {
@@ -17707,9 +17721,163 @@ if (typeof module !== 'undefined' && module.exports) {
             }
         }
 
+        // 🔐 v7.97_07: DETTAGLIO COSTI BLINDATA
+        function mostraDettaglioCostiBlindato(posIndex, rigaPreventivo = {}) {
+            try {
+                console.log('🔐 mostraDettaglioCostiBlindato posizione:', posIndex);
+                
+                // Trova la posizione nei dati caricati
+                const data = window.projectData || window.currentData;
+                if (!data) {
+                    alert('Dati progetto non trovati');
+                    return;
+                }
+                
+                const posizioni = data.positions || data.posizioni || [];
+                const pos = posizioni[posIndex - 1];
+                if (!pos) {
+                    alert('Posizione non trovata');
+                    return;
+                }
+                
+                // Prendi i dati blindata (normalizzati)
+                const bld = pos.blindata || pos.ingresso?.blindata;
+                if (!bld) {
+                    alert('Dati blindata non trovati');
+                    return;
+                }
+                
+                // Ricalcola prezzo per avere il dettaglio
+                const prezzoCalcolato = calcolaPrezzoBlindataOikos(bld);
+                const det = prezzoCalcolato.dettaglio || {};
+                
+                // Costruisci HTML del popup
+                const contenutoHTML = `
+                    <div style="padding: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div style="background: #fff7ed; padding: 1rem; border-radius: 8px;">
+                                <div style="font-size: 0.8rem; color: #9a3412;">Luce Netta Passaggio (LNP)</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #c2410c;">${bld.LNP_L || 0} × ${bld.LNP_H || 0} mm</div>
+                            </div>
+                            <div style="background: #fef2f2; padding: 1rem; border-radius: 8px;">
+                                <div style="font-size: 0.8rem; color: #991b1b;">Luce Calcolata</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #dc2626;">${(bld.luceCalcolata || 'luce0').toUpperCase()}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f1f5f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">📋 Configurazione</div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; font-size: 0.85rem;">
+                                <div><strong>Versione:</strong> ${bld.versione || 'E3'}</div>
+                                <div><strong>Tipo Anta:</strong> ${bld.tipoAnta || 'singola'}</div>
+                                <div><strong>Apertura:</strong> ${bld.sensoApertura || 'SX'}</div>
+                                <div><strong>Controtelaio:</strong> ${bld.controtelaio === 'si' ? 'Sì' : 'No'}</div>
+                                <div><strong>Cilindro:</strong> ${bld.cilindro || 'BASIC'}</div>
+                                <div><strong>Colore Telaio:</strong> ${bld.coloreTelaio || 'RAL8022'}</div>
+                                <div><strong>Kit AAV:</strong> ${bld.kitAAV || 'N/D'}</div>
+                                <div><strong>Termica:</strong> ${bld.termica || 'serie'}</div>
+                                <div><strong>Acustica:</strong> ${bld.acustica || 'serie'}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">🎨 Rivestimenti</div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem;">
+                                <div>
+                                    <strong>Interno:</strong><br>
+                                    ${bld.rivestimentoInt?.linea || 'N/D'} - ${bld.rivestimentoInt?.modello || ''}<br>
+                                    ${bld.rivestimentoInt?.essenza || ''} ${bld.rivestimentoInt?.tinta || ''}
+                                </div>
+                                <div>
+                                    <strong>Esterno:</strong><br>
+                                    ${bld.rivestimentoEst?.linea || 'N/D'} - ${bld.rivestimentoEst?.modello || ''}<br>
+                                    ${bld.rivestimentoEst?.essenza || ''} ${bld.rivestimentoEst?.tinta || ''}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="background: #e11d48; color: white;">
+                                    <th style="padding: 0.75rem; text-align: left;">Voce</th>
+                                    <th style="padding: 0.75rem; text-align: right;">Importo €</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="background: #fff;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Prezzo Base ${bld.versione || 'E3'}</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${(det.prezzoBase || 0).toFixed(2)}</td>
+                                </tr>
+                                ${det.controtelaio > 0 ? `
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Controtelaio</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.controtelaio.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                <tr style="background: #fff;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Cilindro ${bld.cilindro || 'BASIC'}</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${(det.cilindro || 0).toFixed(2)}</td>
+                                </tr>
+                                ${det.colore > 0 ? `
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Colore Telaio ${bld.coloreTelaio || ''}</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.colore.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${det.rivestimenti > 0 ? `
+                                <tr style="background: #fff;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Rivestimenti INT + EST</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.rivestimenti.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${det.kitAAV > 0 ? `
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Kit AAV ${bld.kitAAV || ''}</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.kitAAV.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${det.acustica > 0 ? `
+                                <tr style="background: #fff;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Maggiorazione Acustica</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.acustica.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${det.termica > 0 ? `
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Termica ${bld.termica || ''}</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.termica.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${det.optional > 0 ? `
+                                <tr style="background: #fff;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Optional (vetro/sopraluce/fiancoluce)</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.optional.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                            </tbody>
+                            <tfoot>
+                                <tr style="background: #e11d48; color: white; font-weight: bold;">
+                                    <td style="padding: 0.75rem;">TOTALE BLINDATA</td>
+                                    <td style="padding: 0.75rem; text-align: right;">€ ${(prezzoCalcolato.totale || 0).toFixed(2)}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+                
+                // Usa la funzione modale generica
+                mostraModalDettaglioCosti(`🔐 Dettaglio Blindata - Pos. ${posIndex}`, contenutoHTML);
+                
+            } catch (e) {
+                console.error('❌ Errore in mostraDettaglioCostiBlindato:', e);
+                alert('Errore dettaglio costi: ' + e.message);
+            }
+        }
+
         window.mostraDettaglioCostiTapparella = mostraDettaglioCostiTapparella;
         window.mostraDettaglioCostiPersiana = mostraDettaglioCostiPersiana;
         window.mostraDettaglioCostiInfisso = mostraDettaglioCostiInfisso;
+        window.mostraDettaglioCostiBlindato = mostraDettaglioCostiBlindato;
         
         /**
          * 🆕 v7.90: Mostra modal generico per dettaglio costi

@@ -6,6 +6,12 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
+    DASHBOARD RILIEVI v7.85 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.85 (27 NOV 2025):
+    - FIX BUG: Mapping proprietà calcolo tapparella (prezzoTelo→telo, prezzoRullo→rullo, etc.)
+    - Il popup dettaglio tapparella ora mostra correttamente tutti i prezzi
+    
     DASHBOARD RILIEVI v7.84 - CHANGELOG
     
     🔧 VERSIONE 7.84 (27 NOV 2025):
@@ -1012,12 +1018,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.84 - Dettaglio Persiane</title>
+    <title>Dashboard Rilievi v7.85 - Fix Tapparella Popup</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.84";
+        const DASHBOARD_VERSION = "7.85";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -10145,7 +10151,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.84</span>
+                <span class="logo-version" id="version-badge">v7.85</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -16293,7 +16299,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             // Prepara HTML dettaglio
             const teloInfo = LISTINO_PLASTICINO.teli[modelloTelo] || { nome: modelloCompleto, tipo: 'N/D' };
-            const prezzoMq = calcolo.prezzoTeloMq || 60.00;
+            const prezzoMq = calcolo.telo_prezzo_mq || 60.00;
             
             // 🆕 v7.82: Calcola totale se non passato
             let totaleCalcolato = calcolo.totale || 0;
@@ -16335,7 +16341,7 @@ if (typeof module !== 'undefined' && module.exports) {
                             </div>
                             <div>
                                 <div style="font-size: 0.75rem; color: #6b7280;">Superficie</div>
-                                <div style="font-size: 1.25rem; font-weight: 600;">${calcolo.superficie_mq.toFixed(2)} m²</div>
+                                <div style="font-size: 1.25rem; font-weight: 600;">${calcolo.telo_mq.toFixed(2)} m²</div>
                             </div>
                         </div>
                         ${usaMisureForo ? `
@@ -16362,10 +16368,10 @@ if (typeof module !== 'undefined' && module.exports) {
                                         <span style="font-size: 0.8rem; color: #6b7280;">${teloInfo.nome} (${teloInfo.tipo})</span>
                                     </td>
                                     <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb; font-family: monospace;">
-                                        ${calcolo.superficie_mq.toFixed(2)} m² × €${prezzoMq.toFixed(2)}/m²
+                                        ${calcolo.telo_mq.toFixed(2)} m² × €${prezzoMq.toFixed(2)}/m²
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #ca8a04;">
-                                        € ${calcolo.prezzoTelo.toFixed(2)}
+                                        € ${calcolo.telo.toFixed(2)}
                                     </td>
                                 </tr>
                                 
@@ -16379,7 +16385,7 @@ if (typeof module !== 'undefined' && module.exports) {
                                         ${(L_cm / 100).toFixed(2)} m × €13.20/m
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #2563eb;">
-                                        € ${calcolo.prezzoRullo.toFixed(2)}
+                                        € ${calcolo.rullo.toFixed(2)}
                                     </td>
                                 </tr>
                                 
@@ -16405,11 +16411,11 @@ if (typeof module !== 'undefined' && module.exports) {
                                         </details>
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #059669;">
-                                        € ${calcolo.prezzoFissi.toFixed(2)}
+                                        € ${calcolo.fissi.toFixed(2)}
                                     </td>
                                 </tr>
                                 
-                                ${calcolo.supplementoAltezza > 0 ? `
+                                ${calcolo.supplemento_altezza > 0 ? `
                                 <!-- SUPPLEMENTO ALTEZZA -->
                                 <tr>
                                     <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
@@ -16420,7 +16426,7 @@ if (typeof module !== 'undefined' && module.exports) {
                                         (${H_cm} - 300) / 100 × €0.50
                                     </td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #dc2626;">
-                                        € ${calcolo.supplementoAltezza.toFixed(2)}
+                                        € ${calcolo.supplemento_altezza.toFixed(2)}
                                     </td>
                                 </tr>
                                 ` : ''}

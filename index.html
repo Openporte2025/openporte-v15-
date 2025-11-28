@@ -11237,8 +11237,8 @@ if (typeof module !== 'undefined' && module.exports) {
                             } : null,
                             
                             // 🔐 v7.97: BLINDATA (Porte Blindate Oikos)
-                            blindata: pos.blindata && pos.blindata.attivo ? {
-                                attivo: true,
+                            // Blindata esiste se l'oggetto è presente (non usa campo attivo)
+                            blindata: pos.blindata ? {
                                 LNP_L: pos.blindata.LNP_L || 0,
                                 LNP_H: pos.blindata.LNP_H || 0,
                                 luceCalcolata: pos.blindata.luceCalcolata || '',
@@ -11280,7 +11280,7 @@ if (typeof module !== 'undefined' && module.exports) {
                         n_cassonetti: (project.positions || []).filter(p => p.cassonetto && p.cassonetto.qta).length,
                         n_persiane: (project.positions || []).filter(p => p.persiana && p.persiana.qta).length,
                         n_zanzariere: (project.positions || []).filter(p => p.zanzariera && p.zanzariera.qta).length,
-                        n_blindate: (project.positions || []).filter(p => p.blindata && p.blindata.attivo).length
+                        n_blindate: (project.positions || []).filter(p => p.blindata).length
                     }
                 };
                 
@@ -16706,7 +16706,7 @@ if (typeof module !== 'undefined' && module.exports) {
                 // ============================================================================
                 // PORTE BLINDATE - OIKOS
                 // ============================================================================
-                if (pos.blindata && pos.blindata.attivo) {
+                if (pos.blindata && (pos.blindata.LNP_L || pos.blindata.LNP_H || pos.blindata.versione)) {
                     const bld = pos.blindata;
                     const quantita = 1; // Porte blindate sempre qta 1
                     
@@ -17733,8 +17733,8 @@ if (typeof module !== 'undefined' && module.exports) {
                     let hasProdotto = false;
                     
                     if (tipoProdotto === 'blindata') {
-                        // Blindata ha campo 'attivo' boolean
-                        hasProdotto = prodotto && prodotto.attivo === true;
+                        // Blindata: esiste se l'oggetto è presente (non usa campo attivo)
+                        hasProdotto = prodotto && (prodotto.LNP_L || prodotto.LNP_H || prodotto.versione);
                         quantitaProdotto = hasProdotto ? 1 : 0;
                     } else {
                         quantitaProdotto = prodotto ? (parseInt(prodotto.quantita) || 1) : 0;
@@ -21928,8 +21928,8 @@ if (typeof module !== 'undefined' && module.exports) {
                         }
                     });
                     
-                    // 🔐 v7.97: Converti BLINDATA (ha struttura diversa - usa attivo invece di qta)
-                    if (posGitHub.blindata && posGitHub.blindata.attivo) {
+                    // 🔐 v7.97: Converti BLINDATA (esiste se oggetto presente)
+                    if (posGitHub.blindata) {
                         posDash.blindata = { ...posGitHub.blindata };
                         console.log(`✅ blindata Pos ${index + 1}: ${posGitHub.blindata.LNP_L}×${posGitHub.blindata.LNP_H} (${posGitHub.blindata.versione})`);
                     }

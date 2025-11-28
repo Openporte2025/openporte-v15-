@@ -6,7 +6,14 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.97_04 - CHANGELOG
+    DASHBOARD RILIEVI v7.97_05 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.97_05 (28 NOV 2025):
+    - 🔐 RIVESTIMENTI NON DI SERIE: Prezzi specifici da listino EVO 2025 pag. 99
+    - ✅ Prezzi differenziati per essenza (Noce Canaletto, Teak, Altre Essenze)
+    - ✅ Calcolo rivestimenti con chiavi composte (es. "Piano Non di serie Teak")
+    - ✅ Fallback a prezzo generico linea se chiave specifica non trovata
+    - ✅ Log dettagliato prezzi rivestimenti INT/EST
     
     🔧 AGGIORNAMENTI v7.97_04 (28 NOV 2025):
     - 🔐 FIX IMPORTAZIONE BLINDATE: Supporta struttura pos.ingresso.blindata
@@ -1105,12 +1112,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.97_04 - Porte Blindate Import Fix</title>
+    <title>Dashboard Rilievi v7.97_05 - Non di serie Rivestimenti</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.97_04";
+        const DASHBOARD_VERSION = "7.97_05";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -14116,16 +14123,36 @@ if (typeof module !== 'undefined' && module.exports) {
                 'MOSE': { 'luce0': 405, 'luce1': 464, 'luce2': 499, 'luce3': 499, 'luce4': 499 },
                 'DAM': { 'luce0': 459, 'luce1': 489, 'luce2': 514, 'luce3': 514, 'luce4': 514 }
             },
-            // Rivestimenti (prezzi medi per linea)
+            // Rivestimenti (prezzi da listino EVO 2025)
             rivestimenti: {
-                'Piano': { 'luce0': 120, 'luce1': 140, 'luce2': 160 },
-                'Fugato': { 'luce0': 180, 'luce1': 210, 'luce2': 240 },
-                'Pantografato': { 'luce0': 250, 'luce1': 290, 'luce2': 330 },
-                'LegnoVivo': { 'luce0': 350, 'luce1': 400, 'luce2': 450 },
+                // Piano - Di Serie (pag. 94)
+                'Piano Di Serie': { 'luce0': 192, 'luce1': 192, 'luce2': 235, 'luce3': 346, 'luce4': 414 },
+                // 🔐 v7.97_05: Piano - Non di serie (pag. 99)
+                'Piano Non di serie': { 'luce0': 405, 'luce1': 405, 'luce2': 483, 'luce5': 526, 'luce6': 585, 'luce3': 626, 'luce4': 811 },
+                'Piano Non di serie Noce Canaletto': { 'luce0': 458, 'luce1': 458, 'luce2': 545, 'luce3': 700, 'luce4': 889 },
+                'Piano Non di serie Teak': { 'luce0': 520, 'luce1': 520, 'luce2': 620, 'luce3': 782, 'luce4': 1005 },
+                'Piano Non di serie Altre Essenze': { 'luce0': 486, 'luce1': 486, 'luce2': 579, 'luce3': 751, 'luce4': 973 },
+                // Piano - Gres (pag. 100)
+                'Piano Gres': { 'luce0': 1304, 'luce1': 1347, 'luce2': 1436 },
+                // Piano generico (media per retrocompatibilità)
+                'Piano': { 'luce0': 192, 'luce1': 192, 'luce2': 235, 'luce3': 346, 'luce4': 414 },
+                // Fugato
+                'Fugato': { 'luce0': 592, 'luce1': 592, 'luce2': 706, 'luce3': 894, 'luce4': 1156 },
+                // Pantografato
+                'Pantografato': { 'luce0': 791, 'luce1': 791, 'luce2': 968, 'luce3': 1235, 'luce4': 1477 },
+                // Legno Vivo
+                'LegnoVivo': { 'luce0': 1183, 'luce1': 1183, 'luce2': 1411, 'luce3': 1788, 'luce4': 2304 },
+                // Massello (su richiesta - stima)
                 'Massello': { 'luce0': 450, 'luce1': 520, 'luce2': 590 },
-                'Riflessi': { 'luce0': 200, 'luce1': 230, 'luce2': 260 },
+                // Riflessi Vetro
+                'Riflessi': { 'luce0': 1197, 'luce1': 1322, 'luce2': 1534 },
+                'Riflessi Vetro': { 'luce0': 1197, 'luce1': 1322, 'luce2': 1534 },
+                // Alluminio (su richiesta - stima)
                 'Alluminio': { 'luce0': 280, 'luce1': 320, 'luce2': 360 },
-                'Gres': { 'luce0': 380, 'luce1': 430, 'luce2': 480 }
+                // Gres
+                'Gres': { 'luce0': 1304, 'luce1': 1347, 'luce2': 1436 },
+                // Tekno
+                'Tekno': { 'luce0': 909, 'luce1': 1000, 'luce2': 1192 }
             },
             // Optional vetro blindato
             vetroBlindato: {
@@ -14234,12 +14261,65 @@ if (typeof module !== 'undefined' && module.exports) {
             
             // Rivestimento INTERNO
             if (bld.rivestimentoInt?.linea) {
-                dettaglio.rivestimenti += LISTINO_OIKOS_BLINDATE.rivestimenti[bld.rivestimentoInt.linea]?.[luce] || 0;
+                // 🔐 v7.97_05: Chiave composita linea+modello per prezzi specifici
+                const linea = bld.rivestimentoInt.linea;
+                const modello = bld.rivestimentoInt.modello || '';
+                const essenza = bld.rivestimentoInt.essenza || '';
+                let keyRiv = linea;
+                
+                // Prova chiave specifica (es. "Piano Non di serie Noce Canaletto")
+                if (modello === 'Non di serie') {
+                    if (essenza.includes('Noce Canaletto')) {
+                        keyRiv = `${linea} ${modello} Noce Canaletto`;
+                    } else if (essenza.includes('Teak')) {
+                        keyRiv = `${linea} ${modello} Teak`;
+                    } else if (essenza.includes('Altre Essenze')) {
+                        keyRiv = `${linea} ${modello} Altre Essenze`;
+                    } else {
+                        keyRiv = `${linea} ${modello}`;
+                    }
+                } else if (modello === 'Gres') {
+                    keyRiv = `${linea} Gres`;
+                } else if (modello) {
+                    keyRiv = `${linea} ${modello}`;
+                }
+                
+                // Cerca prezzo con fallback
+                const prezzoRiv = LISTINO_OIKOS_BLINDATE.rivestimenti[keyRiv]?.[luce] ||
+                                  LISTINO_OIKOS_BLINDATE.rivestimenti[linea]?.[luce] || 0;
+                dettaglio.rivestimenti += prezzoRiv;
+                console.log(`   Riv INT: ${keyRiv} → €${prezzoRiv}`);
             }
             
             // Rivestimento ESTERNO
             if (bld.rivestimentoEst?.linea) {
-                dettaglio.rivestimenti += LISTINO_OIKOS_BLINDATE.rivestimenti[bld.rivestimentoEst.linea]?.[luce] || 0;
+                // 🔐 v7.97_05: Chiave composita linea+modello per prezzi specifici
+                const linea = bld.rivestimentoEst.linea;
+                const modello = bld.rivestimentoEst.modello || '';
+                const essenza = bld.rivestimentoEst.essenza || '';
+                let keyRiv = linea;
+                
+                if (modello === 'Non di serie') {
+                    if (essenza.includes('Noce Canaletto')) {
+                        keyRiv = `${linea} ${modello} Noce Canaletto`;
+                    } else if (essenza.includes('Teak')) {
+                        keyRiv = `${linea} ${modello} Teak`;
+                    } else if (essenza.includes('Altre Essenze')) {
+                        keyRiv = `${linea} ${modello} Altre Essenze`;
+                    } else {
+                        keyRiv = `${linea} ${modello}`;
+                    }
+                } else if (modello === 'Gres') {
+                    keyRiv = `${linea} Gres`;
+                } else if (modello) {
+                    keyRiv = `${linea} ${modello}`;
+                }
+                
+                const prezzoRiv = LISTINO_OIKOS_BLINDATE.rivestimenti[keyRiv]?.[luce] ||
+                                  LISTINO_OIKOS_BLINDATE.rivestimenti[linea]?.[luce] || 0;
+                dettaglio.rivestimenti += prezzoRiv;
+                console.log(`   Riv EST: ${keyRiv} → €${prezzoRiv}`);
+                
                 // Verniciatura esterni
                 if (bld.rivestimentoEst.verniciatura) {
                     dettaglio.rivestimenti += LISTINO_OIKOS_BLINDATE.verniciaturaEst || 0;

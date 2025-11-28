@@ -6,7 +6,11 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.95 - CHANGELOG
+    DASHBOARD RILIEVI v7.96 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.96 (28 NOV 2025):
+    - ✅ Config Persiana: Colore Telaio mostrato SOLO se presente nel JSON
+    - Dashboard si adatta automaticamente ai dati esportati
     
     🔧 AGGIORNAMENTI v7.95 (28 NOV 2025):
     - ✅ Config Globale Persiana: Mostra colorePersiana correttamente
@@ -1082,12 +1086,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.95 - Fix Colore Persiana Config</title>
+    <title>Dashboard Rilievi v7.96 - Fix Telaio Condizionale</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.95";
+        const DASHBOARD_VERSION = "7.96";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -10408,7 +10412,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.95</span>
+                <span class="logo-version" id="version-badge">v7.96</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -18037,12 +18041,19 @@ if (typeof module !== 'undefined' && module.exports) {
                     { label: '🏭 AZIENDA', value: config.azienda || 'N/D' },
                     { label: '📋 MODELLO', value: config.modello || 'N/D' },
                     { label: '🎨 COLORE PERSIANA', value: config.colorePersiana || 'N/D' },
-                    { label: '🎨 COLORE TELAIO', value: config.coloreTelaio || 'N/D' },
+                    { label: '🔧 FISSAGGIO', value: config.fissaggio || 'N/D' }
+                ];
+                
+                // Mostra colore telaio SOLO se ha un valore (esportato solo se fissaggio=telaio)
+                if (config.coloreTelaio) {
+                    items.push({ label: '🎨 COLORE TELAIO', value: config.coloreTelaio });
+                }
+                
+                items.push(
                     { label: '📐 TIPO', value: config.tipo || 'N/D' },
-                    { label: '🔧 FISSAGGIO', value: config.fissaggio || 'N/D' },
                     { label: '🚪 APERTURA', value: config.apertura || 'N/D' },
                     { label: '📏 BATTUTA', value: config.battuta || 'N/D' }
-                ];
+                );
             } else if (tipo === 'tapparella') {
                 items = [
                     { label: '🏭 AZIENDA', value: config.azienda || 'N/D' },

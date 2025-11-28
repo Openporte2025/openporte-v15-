@@ -6,7 +6,14 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.97_07 - CHANGELOG
+    DASHBOARD RILIEVI v7.97_08 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.97_08 (28 NOV 2025):
+    - 📐 IMBOTTI: Calcolo prezzi imbotte esterno (altezza × larghezza × essenza)
+    - 🖼️ CORNICI: Ferma pannello e interne calcolate per luce
+    - 🚪 MANIGLIE: INT/EST con modelli (MO-05..MO-13, PO-05, JUMBO) e finiture (OL, CS, CL, VP, VL, VS)
+    - 🔑 CHIAVI EXTRA: €25 per ogni chiave oltre le 3 di serie
+    - 🔍 POPUP DETTAGLIO: Mostra tutte le nuove voci nel breakdown
     
     🔧 AGGIORNAMENTI v7.97_07 (28 NOV 2025):
     - 🔐 FIX PREVENTIVO BLINDATE: Normalizza pos.ingresso.blindata → pos.blindata in calcolaPreventivo()
@@ -1121,7 +1128,7 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.97_07 - Fix Blindata Preventivo</title>
+    <title>Dashboard Rilievi v7.97_08 - Imbotti Cornici Maniglie</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
@@ -10447,7 +10454,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.97_07</span>
+                <span class="logo-version" id="version-badge">v7.97_08</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -14202,7 +14209,65 @@ if (typeof module !== 'undefined' && module.exports) {
             // Acustica maggiorata
             acusticaMagg: 120,
             // Verniciatura esterni
-            verniciaturaEst: 150
+            verniciaturaEst: 150,
+            
+            // 🆕 v7.97_08: IMBOTTI (da listino EVO 2025 pag. 142-143)
+            imbotti: {
+                // Imbotte esterno in legno - prezzo per altezza × larghezza
+                'imbotte_cornici': {
+                    // Altezze (H1=fino 2100, H2=fino 2400)
+                    'H1': {
+                        'L20': 180, 'L25': 210, 'L30': 240, 'L35': 270, 'L40': 300
+                    },
+                    'H2': {
+                        'L20': 210, 'L25': 245, 'L30': 280, 'L35': 315, 'L40': 350
+                    }
+                },
+                'imbotte_solo': {
+                    'H1': { 'L20': 140, 'L25': 165, 'L30': 190, 'L35': 215, 'L40': 240 },
+                    'H2': { 'L20': 165, 'L25': 195, 'L30': 225, 'L35': 255, 'L40': 285 }
+                },
+                // Essenza maggiorazione (rispetto a standard)
+                'essenze': {
+                    'tangMog': 0,        // Tanganica Mogano - standard
+                    'tangNat': 0,        // Tanganica Naturale
+                    'rovereNat': 20,     // Rovere Naturale +€20
+                    'rovereSbi': 35,     // Rovere Sbiancato +€35
+                    'noce': 45,          // Noce +€45
+                    'noceCan': 65,       // Noce Canaletto +€65
+                    'teak': 85,          // Teak +€85
+                    'laccato': 60        // Laccato +€60
+                }
+            },
+            
+            // 🆕 v7.97_08: CORNICI FERMA PANNELLO (pag. 142)
+            cornici: {
+                'fermaPannello': { 'luce0': 96, 'luce1': 108, 'luce2': 125, 'luce3': 145, 'luce4': 165 },
+                'interne': { 'luce0': 85, 'luce1': 95, 'luce2': 110, 'luce3': 125, 'luce4': 145 }
+            },
+            
+            // 🆕 v7.97_08: MANIGLIE E POMOLI (pag. 144-148)
+            maniglie: {
+                // Maniglie interne
+                'MO-05': { 'OL': 0, 'OL_TZ': 45, 'CS': 35, 'CL': 40, 'VP': 50, 'VL': 60, 'VS': 55 },
+                'MO-07Q': { 'OL': 65, 'OL_TZ': 95, 'CS': 85, 'CL': 90, 'VP': 95, 'VL': 105, 'VS': 100 },
+                'MO-07T': { 'OL': 65, 'OL_TZ': 95, 'CS': 85, 'CL': 90, 'VP': 95, 'VL': 105, 'VS': 100 },
+                'MO-08Q': { 'OL': 85, 'OL_TZ': 120, 'CS': 105, 'CL': 110, 'VP': 115, 'VL': 130, 'VS': 120 },
+                'MO-08T': { 'OL': 85, 'OL_TZ': 120, 'CS': 105, 'CL': 110, 'VP': 115, 'VL': 130, 'VS': 120 },
+                'MO-13Q': { 'OL': 95, 'OL_TZ': 135, 'CS': 120, 'CL': 125, 'VP': 130, 'VL': 145, 'VS': 135 },
+                'MO-13T': { 'OL': 95, 'OL_TZ': 135, 'CS': 120, 'CL': 125, 'VP': 130, 'VL': 145, 'VS': 135 },
+                'MO-03T': { 'OL_TZ': 145, 'CS': 130, 'CL': 135 },
+                // Pomoli esterni
+                'PO-05': { 'OL': 0, 'OL_TZ': 35, 'CS': 30, 'CL': 32, 'VP': 40, 'VL': 50, 'VS': 45 },
+                'PO-02': { 'OL_TZ': 55, 'CS': 45, 'CL': 48 },
+                'PO-INOX': { 'INOX': 76 },
+                // Maniglioni
+                'JUMBO-300': { 'VP': 180, 'VL': 210, 'VS': 195, 'OB': 220 },
+                'JUMBO-600': { 'VP': 240, 'VL': 280, 'VS': 260, 'OB': 295 }
+            },
+            
+            // 🆕 v7.97_08: CHIAVI EXTRA (oltre le 3 di serie)
+            chiaviExtra: 25  // €25 per ogni chiave aggiuntiva
         };
         
         // Funzione calcolo luce Oikos
@@ -14229,7 +14294,12 @@ if (typeof module !== 'undefined' && module.exports) {
                 termica: 0,
                 kitAAV: 0,
                 rivestimenti: 0,
-                optional: 0
+                optional: 0,
+                // 🆕 v7.97_08: Nuovi campi
+                imbotti: 0,
+                cornici: 0,
+                maniglie: 0,
+                chiaviExtra: 0
             };
             
             // Calcola luce se non presente
@@ -14250,8 +14320,32 @@ if (typeof module !== 'undefined' && module.exports) {
             dettaglio.cilindro = LISTINO_OIKOS_BLINDATE.cilindri[bld.cilindro] || 
                                  LISTINO_OIKOS_BLINDATE.cilindri['BASIC'] || 0;
             
+            // 🆕 v7.97_08: CHIAVI EXTRA (oltre le 3 di serie)
+            const numChiavi = parseInt(bld.numChiavi) || 3;
+            if (numChiavi > 3) {
+                dettaglio.chiaviExtra = (numChiavi - 3) * (LISTINO_OIKOS_BLINDATE.chiaviExtra || 25);
+                console.log(`   Chiavi extra: ${numChiavi - 3} × €25 = €${dettaglio.chiaviExtra}`);
+            }
+            
             // Colore telaio
             dettaglio.colore = LISTINO_OIKOS_BLINDATE.colori[bld.coloreTelaio] || 0;
+            
+            // 🆕 v7.97_08: MANIGLIA INTERNA
+            if (bld.manigliaInt && bld.finituraInt) {
+                const prezzoManInt = LISTINO_OIKOS_BLINDATE.maniglie[bld.manigliaInt]?.[bld.finituraInt] || 0;
+                dettaglio.maniglie += prezzoManInt;
+                console.log(`   Maniglia INT: ${bld.manigliaInt} ${bld.finituraInt} → €${prezzoManInt}`);
+            }
+            
+            // 🆕 v7.97_08: MANIGLIA/POMOLO ESTERNO
+            if (bld.manigliaEst && bld.finituraEst) {
+                let finitura = bld.finituraEst;
+                // PO-INOX usa sempre finitura INOX
+                if (bld.manigliaEst === 'PO-INOX') finitura = 'INOX';
+                const prezzoManEst = LISTINO_OIKOS_BLINDATE.maniglie[bld.manigliaEst]?.[finitura] || 0;
+                dettaglio.maniglie += prezzoManEst;
+                console.log(`   Maniglia EST: ${bld.manigliaEst} ${finitura} → €${prezzoManEst}`);
+            }
             
             // Acustica maggiorata
             if (bld.acustica === 'maggiorata') {
@@ -14335,6 +14429,34 @@ if (typeof module !== 'undefined' && module.exports) {
                 }
             }
             
+            // 🆕 v7.97_08: IMBOTTI ESTERNO
+            if (bld.imbotteEst && bld.imbotteEst !== '' && bld.imbotteEstAltezza && bld.imbotteEstLargh) {
+                const tipoImbotte = bld.imbotteEst; // 'imbotte_cornici' o 'imbotte_solo'
+                const altezza = bld.imbotteEstAltezza; // 'H1' o 'H2'
+                const larghezza = bld.imbotteEstLargh; // 'L20', 'L25', 'L30', 'L35', 'L40'
+                const essenza = bld.imbotteEstEssenza || 'tangMog';
+                
+                // Prezzo base imbotte
+                const prezzoImbotte = LISTINO_OIKOS_BLINDATE.imbotti[tipoImbotte]?.[altezza]?.[larghezza] || 0;
+                // Maggiorazione essenza
+                const maggEssenza = LISTINO_OIKOS_BLINDATE.imbotti.essenze[essenza] || 0;
+                
+                dettaglio.imbotti = prezzoImbotte + maggEssenza;
+                console.log(`   Imbotte: ${tipoImbotte} ${altezza}×${larghezza} ${essenza} → €${dettaglio.imbotti}`);
+            }
+            
+            // 🆕 v7.97_08: CORNICI FERMA PANNELLO
+            if (bld.corniciFermaPannello) {
+                dettaglio.cornici += LISTINO_OIKOS_BLINDATE.cornici.fermaPannello[luce] || 0;
+                console.log(`   Cornici ferma pannello: €${dettaglio.cornici}`);
+            }
+            
+            // 🆕 v7.97_08: CORNICI INTERNE
+            if (bld.corniciInt) {
+                dettaglio.cornici += LISTINO_OIKOS_BLINDATE.cornici.interne[luce] || 0;
+                console.log(`   Cornici interne: €${dettaglio.cornici}`);
+            }
+            
             // Optional: VETRO
             if (bld.vetro?.attivo && bld.vetro?.tipo) {
                 const tipoVetro = bld.vetro.termico ? 
@@ -14373,9 +14495,10 @@ if (typeof module !== 'undefined' && module.exports) {
             // Totale
             const totale = dettaglio.prezzoBase + dettaglio.controtelaio + dettaglio.cilindro +
                           dettaglio.colore + dettaglio.acustica + dettaglio.termica +
-                          dettaglio.kitAAV + dettaglio.rivestimenti + dettaglio.optional;
+                          dettaglio.kitAAV + dettaglio.rivestimenti + dettaglio.optional +
+                          dettaglio.imbotti + dettaglio.cornici + dettaglio.maniglie + dettaglio.chiaviExtra;
             
-            console.log(`🔐 Calcolo Oikos: Base €${dettaglio.prezzoBase} + CT €${dettaglio.controtelaio} + Cil €${dettaglio.cilindro} + Col €${dettaglio.colore} + Riv €${dettaglio.rivestimenti} + Opt €${dettaglio.optional} = €${totale}`);
+            console.log(`🔐 Calcolo Oikos: Base €${dettaglio.prezzoBase} + CT €${dettaglio.controtelaio} + Cil €${dettaglio.cilindro} + Col €${dettaglio.colore} + Riv €${dettaglio.rivestimenti} + Imb €${dettaglio.imbotti} + Cor €${dettaglio.cornici} + Man €${dettaglio.maniglie} + Opt €${dettaglio.optional} = €${totale}`);
             
             return {
                 totale: totale,
@@ -17834,6 +17957,30 @@ if (typeof module !== 'undefined' && module.exports) {
                                 <tr style="background: #f9fafb;">
                                     <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">Kit AAV ${bld.kitAAV || ''}</td>
                                     <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.kitAAV.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${det.maniglie > 0 ? `
+                                <tr style="background: #fff;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">🚪 Maniglie (INT: ${bld.manigliaInt || 'std'} ${bld.finituraInt || ''} + EST: ${bld.manigliaEst || 'std'} ${bld.finituraEst || ''})</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.maniglie.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${det.chiaviExtra > 0 ? `
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">🔑 Chiavi extra (${parseInt(bld.numChiavi || 3) - 3} × €25)</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.chiaviExtra.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${det.imbotti > 0 ? `
+                                <tr style="background: #fff;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">📐 Imbotte Est. ${bld.imbotteEstAltezza || ''} × ${bld.imbotteEstLargh || ''} (${bld.imbotteEstEssenza || 'std'})</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.imbotti.toFixed(2)}</td>
+                                </tr>
+                                ` : ''}
+                                ${det.cornici > 0 ? `
+                                <tr style="background: #f9fafb;">
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb;">🖼️ Cornici ${bld.corniciFermaPannello ? 'Ferma Pannello' : ''} ${bld.corniciInt ? '+ Interne' : ''}</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid #e5e7eb; text-align: right;">€ ${det.cornici.toFixed(2)}</td>
                                 </tr>
                                 ` : ''}
                                 ${det.acustica > 0 ? `

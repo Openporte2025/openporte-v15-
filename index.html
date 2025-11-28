@@ -6,7 +6,16 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.93 - CHANGELOG
+    DASHBOARD RILIEVI v7.94 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.94 (28 NOV 2025):
+    - 🆕 Config Globale ORA È DENTRO ogni tab prodotto:
+      * Tab Infisso → Config Globale Infisso
+      * Tab Persiana → Config Globale Persiana
+      * Tab Tapparella → Config Globale Tapparella
+      * Tab Cassonetto → Config Globale Cassonetto
+    - Rimossa Config Globale "fissa" in alto (era fuori posto)
+    - Ogni config è collassabile con click
     
     🔧 AGGIORNAMENTI v7.93 (28 NOV 2025):
     - ✅ FIX: Spagnolette NON sono supplemento - INCLUSE nel prezzo base
@@ -1068,12 +1077,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.93 - Fix Spagnolette Incluse</title>
+    <title>Dashboard Rilievi v7.94 - Config Globale Dentro Tabs</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.93";
+        const DASHBOARD_VERSION = "7.94";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -1766,6 +1775,86 @@
         }
         
         .config-item-value-empty {
+            color: #9ca3af;
+            font-style: italic;
+            font-weight: 400;
+        }
+        
+        /* 🆕 v7.94: Config Globale DENTRO i tabs prodotto */
+        .config-globale-intab {
+            background: #fffbeb;
+            border-radius: 8px;
+            border: 1px solid #fcd34d;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .config-globale-header-intab {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .config-globale-header-intab:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        }
+        
+        .config-globale-title-intab {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .config-globale-toggle-intab {
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .config-globale-toggle-intab.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .config-globale-content-intab {
+            padding: 0.75rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .config-globale-content-intab.collapsed {
+            display: none;
+        }
+        
+        .config-item-intab {
+            background: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .config-item-label-intab {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 0.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .config-item-value-intab {
+            font-size: 0.85rem;
+            color: #1f2937;
+            font-weight: 500;
+        }
+        
+        .config-item-value-intab.empty {
             color: #9ca3af;
             font-style: italic;
             font-weight: 400;
@@ -10314,7 +10403,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.93</span>
+                <span class="logo-version" id="version-badge">v7.94</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -10641,10 +10730,7 @@ if (typeof module !== 'undefined' && module.exports) {
                                 </div>
                             </div>
                             
-                            <!-- Config Globale Infissi (collapsabile) -->
-                            <div id="configGlobaleCard" class="config-globale-card" style="display: none;">
-                                <!-- Popolata dinamicamente -->
-                            </div>
+                            <!-- 🆕 v7.94: Config Globale ora è DENTRO ogni tab prodotto -->
                             
                             <div id="positionDetailCard" class="position-card">
                                 <!-- Popolata dinamicamente -->
@@ -17863,86 +17949,14 @@ if (typeof module !== 'undefined' && module.exports) {
         // ============================================================================
         // RENDER CONFIG GLOBALE INFISSI
         // ============================================================================
+        /**
+         * 🚫 v7.94: Funzione DEPRECATA - Config globale ora è dentro i tabs
+         * @deprecated Use renderConfigGlobaleInTab() instead
+         */
         function renderConfigGlobale() {
-            console.log('🔄 renderConfigGlobale() chiamato');
-            console.log('   🔍 projectData:', !!projectData);
-            console.log('   🔍 projectData?.configInfissi:', projectData?.configInfissi);
-            
-            const container = document.getElementById('configGlobaleCard');
-            if (!container) {
-                console.error('❌ configGlobaleCard non trovato!');
-                return;
-            }
-            
-            const config = projectData?.configInfissi;
-            
-            // 🔍 DEBUG: Mostra cosa c'è nel config
-            console.log('🔧 v7.73 DEBUG Config Globale:', config);
-            
-            if (!config || Object.keys(config).length === 0) {
-                console.warn('⚠️ configInfissi vuoto o mancante');
-                container.style.display = 'none';
-                return;
-            }
-            
-            container.style.display = 'block';
-            
-            // Helper: prova sia camelCase che snake_case
-            const getVal = (key1, key2) => config[key1] || config[key2] || null;
-            
-            // Combina finiture + colori e maniglia + colore
-            const finituraInt = getVal('finituraInt', 'finitura_int');
-            const coloreInt = getVal('coloreInt', 'colore_int');
-            const finituraIntCompleta = finituraInt ? 
-                `${finituraInt}${coloreInt ? ' + ' + coloreInt : ''}` : null;
-            
-            const finituraEst = getVal('finituraEst', 'finitura_est');
-            const coloreEst = getVal('coloreEst', 'colore_est');
-            const finituraEstCompleta = finituraEst ? 
-                `${finituraEst}${coloreEst ? ' + ' + coloreEst : ''}` : null;
-            
-            const maniglia = getVal('maniglia', 'maniglia');
-            const coloreManiglia = getVal('coloreManiglia', 'colore_maniglia');
-            const manigliaCompleta = maniglia ? 
-                `${maniglia}${coloreManiglia ? ' + ' + coloreManiglia : ''}` : null;
-            
-            const tagliTelaio = getVal('tagliTelaio', 'tagli_telaio');
-            const codTagli = config.codTagli || config.cod_tagli || [];
-            const tagliCompleti = tagliTelaio ? 
-                `${tagliTelaio}${codTagli && codTagli.length > 0 ? ' [' + codTagli.join(', ') + ']' : ''}` : null;
-            
-            const items = [
-                { label: '🏢 AZIENDA', value: getVal('azienda', 'azienda') || 'N/D' },
-                { label: '🪟 TELAIO', value: getVal('telaio', 'telaio') || 'N/D' },
-                { label: '🎨 FINITURA INT', value: finituraIntCompleta || 'N/D' },
-                { label: '🎨 FINITURA EST', value: finituraEstCompleta || 'N/D' },
-                { label: '🚪 TIPO ANTA', value: getVal('tipoAnta', 'tipo_anta') || 'N/D' },
-                { label: '💎 VETRO', value: getVal('vetro', 'vetro') || 'N/D' },
-                { label: '🔧 MANIGLIA', value: manigliaCompleta || 'N/D' },
-                { label: '✂️ TAGLI TELAIO', value: tagliCompleti || 'N/D' },
-                { label: '🔔 ALLARME', value: getVal('allarme', 'allarme') || 'N/D' }
-            ];
-            
-            // NON filtrare - mostra SEMPRE tutti i campi
-            console.log('📊 Config items (tutti):', items);
-            
-            container.innerHTML = `
-                <div class="config-globale-header" onclick="toggleConfigGlobale()">
-                    <div class="config-globale-title">
-                        <span>⚙️</span>
-                        <span>CONFIGURAZIONE GLOBALE INFISSI</span>
-                    </div>
-                    <div class="config-globale-toggle" id="configToggle">▼</div>
-                </div>
-                <div class="config-globale-content" id="configContent">
-                    ${items.map(item => `
-                        <div class="config-item">
-                            <div class="config-item-label">${item.label}</div>
-                            <div class="config-item-value ${item.value === 'N/D' ? 'config-item-value-empty' : ''}">${item.value}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+            console.log('⚠️ v7.94: renderConfigGlobale() DEPRECATA - Config ora dentro i tabs prodotto');
+            // Non fare nulla - la config globale ora è dentro ogni tab
+            return;
         }
         
         function toggleConfigGlobale() {
@@ -17953,6 +17967,117 @@ if (typeof module !== 'undefined' && module.exports) {
             
             content.classList.toggle('collapsed');
             toggle.classList.toggle('collapsed');
+        }
+        
+        /**
+         * 🆕 v7.94: Toggle per config globale dentro i tabs
+         */
+        function toggleConfigGlobaleTab(tipo) {
+            const content = document.getElementById(`configContent_${tipo}`);
+            const toggle = document.getElementById(`configToggle_${tipo}`);
+            
+            if (!content || !toggle) return;
+            
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
+        
+        /**
+         * 🆕 v7.94: Genera HTML per Configurazione Globale DENTRO il tab prodotto
+         */
+        function renderConfigGlobaleInTab(tipo, config) {
+            if (!config || Object.keys(config).length === 0) {
+                return `
+                    <div class="config-globale-intab">
+                        <div class="config-globale-header-intab" onclick="toggleConfigGlobaleTab('${tipo}')">
+                            <div class="config-globale-title-intab">
+                                <span>⚙️</span>
+                                <span>CONFIGURAZIONE GLOBALE ${tipo.toUpperCase()}</span>
+                            </div>
+                            <div class="config-globale-toggle-intab" id="configToggle_${tipo}">▼</div>
+                        </div>
+                        <div class="config-globale-content-intab" id="configContent_${tipo}">
+                            <p style="color: #9ca3af; font-style: italic; padding: 1rem;">Nessuna configurazione globale</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            let items = [];
+            
+            if (tipo === 'infisso') {
+                // Costruisci finitura INT completa
+                const finIntCompleta = config.finituraInt ? 
+                    `${config.finituraInt}${config.coloreInt ? ' + ' + config.coloreInt : ''}` : 'N/D';
+                const finEstCompleta = config.finituraEst ? 
+                    `${config.finituraEst}${config.coloreEst ? ' + ' + config.coloreEst : ''}` : 'N/D';
+                const manigliaCompleta = config.maniglia ? 
+                    `${config.maniglia}${config.coloreManiglia ? ' + ' + config.coloreManiglia : ''}` : 'N/D';
+                const tagliCompleti = config.tagliTelaio ? 
+                    `${config.tagliTelaio}${config.codTagli?.length > 0 ? ' [' + config.codTagli.join(', ') + ']' : ''}` : 'N/D';
+                
+                items = [
+                    { label: '🏭 AZIENDA', value: config.azienda || 'N/D' },
+                    { label: '🪟 TELAIO', value: config.telaio || 'N/D' },
+                    { label: '🎨 FINITURA INT', value: finIntCompleta },
+                    { label: '🎨 FINITURA EST', value: finEstCompleta },
+                    { label: '📐 TIPO ANTA', value: config.tipoAnta || 'N/D' },
+                    { label: '💎 VETRO', value: config.vetro || 'N/D' },
+                    { label: '🔧 MANIGLIA', value: manigliaCompleta },
+                    { label: '✂️ TAGLI TELAIO', value: tagliCompleti },
+                    { label: '🔔 ALLARME', value: config.allarme || 'N/D' }
+                ];
+            } else if (tipo === 'persiana') {
+                items = [
+                    { label: '🏭 AZIENDA', value: config.azienda || 'N/D' },
+                    { label: '📋 MODELLO', value: config.modello || 'N/D' },
+                    { label: '🎨 COLORE', value: config.colorePersiana || config.colore || 'N/D' },
+                    { label: '📐 TIPO', value: config.tipo || 'N/D' },
+                    { label: '🚪 APERTURA', value: config.apertura || 'N/D' }
+                ];
+            } else if (tipo === 'tapparella') {
+                items = [
+                    { label: '🏭 AZIENDA', value: config.azienda || 'N/D' },
+                    { label: '📋 MODELLO TELO', value: config.modelloTelo || 'N/D' },
+                    { label: '🎨 COLORE TELO', value: config.coloreTelo || 'N/D' },
+                    { label: '⚙️ TIPO MANOVRA', value: config.tipoManovra || 'N/D' },
+                    { label: '🔧 MOTORE', value: config.motore || 'N/D' }
+                ];
+            } else if (tipo === 'cassonetto') {
+                items = [
+                    { label: '🏭 AZIENDA', value: config.azienda || 'N/D' },
+                    { label: '📋 MODELLO', value: config.modello || 'N/D' },
+                    { label: '🎨 COLORE', value: config.colore || 'N/D' },
+                    { label: '📐 TIPO', value: config.tipo || 'N/D' }
+                ];
+            } else if (tipo === 'zanzariera') {
+                items = [
+                    { label: '🏭 AZIENDA', value: config.azienda || 'N/D' },
+                    { label: '📋 MODELLO', value: config.modello || 'N/D' },
+                    { label: '🎨 COLORE', value: config.colore || 'N/D' },
+                    { label: '📐 TIPO', value: config.tipo || 'N/D' }
+                ];
+            }
+            
+            return `
+                <div class="config-globale-intab">
+                    <div class="config-globale-header-intab" onclick="toggleConfigGlobaleTab('${tipo}')">
+                        <div class="config-globale-title-intab">
+                            <span>⚙️</span>
+                            <span>CONFIGURAZIONE GLOBALE ${tipo.toUpperCase()}</span>
+                        </div>
+                        <div class="config-globale-toggle-intab" id="configToggle_${tipo}">▼</div>
+                    </div>
+                    <div class="config-globale-content-intab" id="configContent_${tipo}">
+                        ${items.map(item => `
+                            <div class="config-item-intab">
+                                <div class="config-item-label-intab">${item.label}</div>
+                                <div class="config-item-value-intab ${item.value === 'N/D' ? 'empty' : ''}">${item.value}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         // ============================================================================
@@ -18486,9 +18611,26 @@ if (typeof module !== 'undefined' && module.exports) {
                 return renderInfissoContent(prodotto, brm, isActive);
             }
             
+            // 🆕 v7.94: Ottieni config globale per questo tipo di prodotto
+            let configGlobale = {};
+            if (tipo === 'persiana') {
+                configGlobale = projectData?.configPersiana || projectData?.configPersiane || {};
+            } else if (tipo === 'tapparella') {
+                configGlobale = projectData?.configTapparella || projectData?.configTapparelle || {};
+            } else if (tipo === 'cassonetto') {
+                configGlobale = projectData?.configCassonetto || projectData?.configCassonetti || {};
+            } else if (tipo === 'zanzariera') {
+                configGlobale = projectData?.configZanzariera || projectData?.configZanzariere || {};
+            }
+            
+            const configGlobaleHTML = renderConfigGlobaleInTab(tipo, configGlobale);
+            
             // Per ALTRI PRODOTTI: rendering completo originale
             return `
                 <div class="product-content ${isActive ? 'active' : ''}" data-product="${tipo}">
+                    
+                    <!-- 🆕 v7.94: Configurazione Globale DENTRO il tab -->
+                    ${configGlobaleHTML}
                     
                     ${brm.L || brm.H ? `
                         <div class="brm-box">
@@ -18731,6 +18873,9 @@ if (typeof module !== 'undefined' && module.exports) {
         function renderInfissoContent(prodotto, brm, isActive) {
             const config = projectData?.configInfissi || {};
             
+            // 🆕 v7.94: Genera HTML per Configurazione Globale INFISSO (dentro il tab)
+            const configGlobaleInfissoHTML = renderConfigGlobaleInTab('infisso', config);
+            
             // Costruisci valori combinati per confronto
             const configFinInt = config.finituraInt ? 
                 `${config.finituraInt}${config.coloreInt ? ' + ' + config.coloreInt : ''}` : null;
@@ -18799,6 +18944,9 @@ if (typeof module !== 'undefined' && module.exports) {
             
             return `
                 <div class="product-content ${isActive ? 'active' : ''}" data-product="infisso">
+                    
+                    <!-- 🆕 v7.94: Configurazione Globale DENTRO il tab -->
+                    ${configGlobaleInfissoHTML}
                     
                     <!-- BRM (grande e chiaro) -->
                     ${brm.L || brm.H ? `

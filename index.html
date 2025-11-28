@@ -16992,6 +16992,107 @@ if (typeof module !== 'undefined' && module.exports) {
         window.mostraDettaglioCostiTapparella = mostraDettaglioCostiTapparella;
         window.mostraDettaglioCostiPersiana = mostraDettaglioCostiPersiana;
         window.mostraDettaglioCostiInfisso = mostraDettaglioCostiInfisso;
+        
+        /**
+         * 🆕 v7.90: Mostra modal generico per dettaglio costi
+         */
+        function mostraModalDettaglioCosti(tipoTitolo, contenutoHTML) {
+            // Rimuovi modal esistente se presente
+            const existingModal = document.getElementById('modalDettaglioCosti');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Crea overlay e modal
+            const modalOverlay = document.createElement('div');
+            modalOverlay.id = 'modalDettaglioCosti';
+            modalOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white;
+                border-radius: 0.75rem;
+                max-width: 700px;
+                width: 90%;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+                position: relative;
+            `;
+            
+            // Header con titolo e X di chiusura
+            const header = document.createElement('div');
+            header.style.cssText = `
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid #e5e7eb;
+                background: #f9fafb;
+                border-radius: 0.75rem 0.75rem 0 0;
+            `;
+            header.innerHTML = `
+                <h2 style="margin: 0; font-size: 1.25rem; color: #1f2937;">💰 Dettaglio Costi - ${tipoTitolo}</h2>
+                <button onclick="window.chiudiModalDettaglioCosti()" style="
+                    background: none;
+                    border: none;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    color: #6b7280;
+                    padding: 0.25rem;
+                    line-height: 1;
+                " title="Chiudi">×</button>
+            `;
+            
+            // Corpo del modal
+            const body = document.createElement('div');
+            body.innerHTML = contenutoHTML;
+            
+            modalContent.appendChild(header);
+            modalContent.appendChild(body);
+            modalOverlay.appendChild(modalContent);
+            
+            // Chiudi cliccando fuori
+            modalOverlay.onclick = function(e) {
+                if (e.target === modalOverlay) {
+                    window.chiudiModalDettaglioCosti();
+                }
+            };
+            
+            // Chiudi con ESC
+            document.addEventListener('keydown', function escHandler(e) {
+                if (e.key === 'Escape') {
+                    window.chiudiModalDettaglioCosti();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            });
+            
+            document.body.appendChild(modalOverlay);
+            console.log(`📋 Modal dettaglio ${tipoTitolo} aperto`);
+        }
+        
+        /**
+         * Chiude il modal dettaglio costi
+         */
+        function chiudiModalDettaglioCosti() {
+            const modal = document.getElementById('modalDettaglioCosti');
+            if (modal) {
+                modal.remove();
+                console.log('📋 Modal dettaglio chiuso');
+            }
+        }
+        
         window.mostraModalDettaglioCosti = mostraModalDettaglioCosti;
         window.chiudiModalDettaglioCosti = chiudiModalDettaglioCosti;
         

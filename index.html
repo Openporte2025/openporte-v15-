@@ -6,7 +6,12 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.97_05 - CHANGELOG
+    DASHBOARD RILIEVI v7.97_06 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.97_06 (28 NOV 2025):
+    - 🔐 FIX CRITICO: convertGitHubToDashboardFormat() ora estrae blindata da pos.ingresso.blindata
+    - ✅ FORMATO 3 (positions): Supporta struttura ingresso.blindata e ingresso.portoncino
+    - ✅ Crea sia pos.blindata che pos.ingresso per retrocompatibilità
     
     🔧 AGGIORNAMENTI v7.97_05 (28 NOV 2025):
     - 🔐 RIVESTIMENTI NON DI SERIE: Prezzi specifici da listino EVO 2025 pag. 99
@@ -1112,12 +1117,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.97_05 - Non di serie Rivestimenti</title>
+    <title>Dashboard Rilievi v7.97_06 - Fix Ingresso Blindata</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.97_05";
+        const DASHBOARD_VERSION = "7.97_06";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -22232,10 +22237,26 @@ if (typeof module !== 'undefined' && module.exports) {
                         }
                     });
                     
-                    // 🔐 v7.97: Converti BLINDATA (esiste se oggetto presente)
-                    if (posGitHub.blindata) {
-                        posDash.blindata = { ...posGitHub.blindata };
-                        console.log(`✅ blindata Pos ${index + 1}: ${posGitHub.blindata.LNP_L}×${posGitHub.blindata.LNP_H} (${posGitHub.blindata.versione})`);
+                    // 🔐 v7.97_06: Converti BLINDATA/PORTONCINO (supporta pos.ingresso.blindata e pos.blindata)
+                    const blindataSource = posGitHub.ingresso?.blindata || posGitHub.blindata;
+                    if (blindataSource) {
+                        posDash.blindata = { ...blindataSource };
+                        posDash.ingresso = {
+                            tipo: posGitHub.ingresso?.tipo || 'blindata',
+                            blindata: { ...blindataSource }
+                        };
+                        console.log(`✅ blindata Pos ${index + 1}: ${blindataSource.LNP_L}×${blindataSource.LNP_H} (${blindataSource.versione})`);
+                    }
+                    
+                    // 🔐 v7.97_06: Converti PORTONCINO
+                    const portoncinoSource = posGitHub.ingresso?.portoncino || posGitHub.portoncino;
+                    if (portoncinoSource) {
+                        posDash.portoncino = { ...portoncinoSource };
+                        posDash.ingresso = {
+                            tipo: posGitHub.ingresso?.tipo || 'portoncino',
+                            portoncino: { ...portoncinoSource }
+                        };
+                        console.log(`✅ portoncino Pos ${index + 1}`);
                     }
                     
                     return posDash;

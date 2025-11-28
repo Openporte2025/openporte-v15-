@@ -1101,7 +1101,7 @@
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.97";
+        const DASHBOARD_VERSION = "7.97_02";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -18903,11 +18903,13 @@ if (typeof module !== 'undefined' && module.exports) {
         // SEZIONE D: PRODOTTI E CONFIGURAZIONI
         // ============================================================================
         function renderPositionProducts(pos) {
+            // 🔐 v7.97: Aggiunto blindata
             const hasProdotti = (pos.infisso && pos.infisso.quantita > 0) ||
                               (pos.tapparella && pos.tapparella.quantita > 0) ||
                               (pos.cassonetto && pos.cassonetto.quantita > 0) ||
                               (pos.persiana && pos.persiana.quantita > 0) ||
-                              (pos.zanzariera && pos.zanzariera.quantita > 0);
+                              (pos.zanzariera && pos.zanzariera.quantita > 0) ||
+                              (pos.blindata && (pos.blindata.LNP_L || pos.blindata.LNP_H || pos.blindata.versione));
             
             if (!hasProdotti) {
                 return `
@@ -18922,17 +18924,24 @@ if (typeof module !== 'undefined' && module.exports) {
             }
             
             // ✅ v7.76 FIX: Determina quale prodotto è il PRIMO disponibile (sarà active)
+            // 🔐 v7.97: Aggiunto blindata
             const prodotti = [
                 { key: 'infisso', label: '🪟 Infisso', data: pos.infisso },
                 { key: 'tapparella', label: '🔽 Tapparella', data: pos.tapparella },
                 { key: 'cassonetto', label: '📦 Cassonetto', data: pos.cassonetto },
                 { key: 'persiana', label: '🪟 Persiana', data: pos.persiana },
-                { key: 'zanzariera', label: '🦟 Zanzariera', data: pos.zanzariera }
+                { key: 'zanzariera', label: '🦟 Zanzariera', data: pos.zanzariera },
+                { key: 'blindata', label: '🔐 Blindata', data: pos.blindata }
             ];
             
             // 🆕 v7.82: Filtra solo quelli con quantita > 0 (supporta sia qta che quantita)
+            // 🔐 v7.97: Blindata non usa quantita, controlla se esiste
             const prodottiDisponibili = prodotti.filter(p => {
                 if (!p.data) return false;
+                if (p.key === 'blindata') {
+                    // Blindata esiste se ha LNP o versione
+                    return p.data.LNP_L || p.data.LNP_H || p.data.versione;
+                }
                 const qty = parseInt(p.data.quantita) || parseInt(p.data.qta) || 0;
                 return qty > 0;
             });
@@ -18967,6 +18976,11 @@ if (typeof module !== 'undefined' && module.exports) {
         }
 
         function renderProductContent(tipo, prodotto, isActive) {
+            // 🔐 v7.97: Blindata non usa quantita
+            if (tipo === 'blindata') {
+                return renderBlindataContent(prodotto, isActive);
+            }
+            
             // 🆕 v7.82: Supporta sia qta che quantita
             const qty = parseInt(prodotto?.quantita) || parseInt(prodotto?.qta) || 0;
             if (!prodotto || qty === 0) return '';
@@ -19230,6 +19244,127 @@ if (typeof module !== 'undefined' && module.exports) {
                             </div>
                         ` : ''}
                     </div>
+                </div>
+            `;
+        }
+        
+        // ============================================================================
+        // 🔐 RENDER BLINDATA CONTENT - v7.97
+        // ============================================================================
+        function renderBlindataContent(bld, isActive) {
+            if (!bld) return '';
+            
+            const configGlobale = projectData?.configBlindate || {};
+            
+            // Calcola prezzo stimato
+            let prezzoStimato = 0;
+            if (typeof calcolaPrezzoBlindataOikos === 'function') {
+                const calcolo = calcolaPrezzoBlindataOikos(bld);
+                prezzoStimato = calcolo.totale || 0;
+            }
+            
+            return `
+                <div class="product-content ${isActive ? 'active' : ''}" data-product="blindata">
+                    
+                    <!-- Config Globale Blindate -->
+                    ${Object.keys(configGlobale).length > 0 ? `
+                        <div class="config-globale-box" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                            <div style="font-weight: 600; color: #991b1b; margin-bottom: 8px; cursor: pointer;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                                ⚙️ Config Globale Blindate ▼
+                            </div>
+                            <div style="display: none; font-size: 0.85rem;">
+                                ${configGlobale.versione ? `<div>Versione: <b>${configGlobale.versione}</b></div>` : ''}
+                                ${configGlobale.tipoAnta ? `<div>Tipo Anta: <b>${configGlobale.tipoAnta}</b></div>` : ''}
+                                ${configGlobale.cilindro ? `<div>Cilindro: <b>${configGlobale.cilindro}</b></div>` : ''}
+                                ${configGlobale.coloreTelaio ? `<div>Colore Telaio: <b>${configGlobale.coloreTelaio}</b></div>` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Misure LNP -->
+                    <div class="brm-box" style="background: #fef2f2; border-color: #fecaca;">
+                        <div class="brm-title" style="color: #991b1b;">📐 Luce Netta Passaggio (LNP)</div>
+                        <div class="brm-grid">
+                            ${bld.LNP_L ? `
+                                <div class="brm-item">
+                                    <div class="brm-label">Larghezza</div>
+                                    <div class="brm-value">${bld.LNP_L} mm</div>
+                                </div>
+                            ` : ''}
+                            ${bld.LNP_H ? `
+                                <div class="brm-item">
+                                    <div class="brm-label">Altezza</div>
+                                    <div class="brm-value">${bld.LNP_H} mm</div>
+                                </div>
+                            ` : ''}
+                            ${bld.luceCalcolata ? `
+                                <div class="brm-item">
+                                    <div class="brm-label">Luce</div>
+                                    <div class="brm-value" style="color: #dc2626; font-weight: bold;">${bld.luceCalcolata.toUpperCase()}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Configurazione -->
+                    <div class="wall-chars-grid" style="margin-top: 1.5rem;">
+                        ${bld.azienda ? `
+                            <div class="wall-char-item">
+                                <div class="wall-char-label">Azienda</div>
+                                <div class="wall-char-value">${bld.azienda}</div>
+                            </div>
+                        ` : ''}
+                        ${bld.versione ? `
+                            <div class="wall-char-item">
+                                <div class="wall-char-label">Versione</div>
+                                <div class="wall-char-value">${bld.versione}</div>
+                            </div>
+                        ` : ''}
+                        ${bld.tipoAnta ? `
+                            <div class="wall-char-item">
+                                <div class="wall-char-label">Tipo Anta</div>
+                                <div class="wall-char-value">${bld.tipoAnta === 'doppia' ? '2 Ante' : '1 Anta'}</div>
+                            </div>
+                        ` : ''}
+                        ${bld.sensoApertura ? `
+                            <div class="wall-char-item">
+                                <div class="wall-char-label">Senso Apertura</div>
+                                <div class="wall-char-value">${bld.sensoApertura}</div>
+                            </div>
+                        ` : ''}
+                        ${bld.controtelaio ? `
+                            <div class="wall-char-item">
+                                <div class="wall-char-label">Controtelaio</div>
+                                <div class="wall-char-value">${bld.controtelaio === 'si' ? '✅ Sì' : '❌ No'}</div>
+                            </div>
+                        ` : ''}
+                        ${bld.cilindro ? `
+                            <div class="wall-char-item">
+                                <div class="wall-char-label">Cilindro</div>
+                                <div class="wall-char-value">${bld.cilindro}</div>
+                            </div>
+                        ` : ''}
+                        ${bld.coloreTelaio ? `
+                            <div class="wall-char-item">
+                                <div class="wall-char-label">Colore Telaio</div>
+                                <div class="wall-char-value">${bld.coloreTelaio}</div>
+                            </div>
+                        ` : ''}
+                        ${bld.kitAAV ? `
+                            <div class="wall-char-item">
+                                <div class="wall-char-label">Kit AAV</div>
+                                <div class="wall-char-value">${bld.kitAAV}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- Prezzo Stimato -->
+                    ${prezzoStimato > 0 ? `
+                        <div style="margin-top: 1.5rem; padding: 12px; background: #dcfce7; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 0.85rem; color: #166534;">Prezzo Stimato</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #15803d;">€ ${prezzoStimato.toFixed(2)}</div>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }

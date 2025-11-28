@@ -6,7 +6,14 @@
     
     <!--
     ═══════════════════════════════════════════════════════════════════════════════
-    DASHBOARD RILIEVI v7.86 - CHANGELOG
+    DASHBOARD RILIEVI v7.87 - CHANGELOG
+    
+    🔧 AGGIORNAMENTI v7.87 (27 NOV 2025):
+    - 🆕 Aggiunto modello "Alto Adige" al listino persiane con griglia prezzi completa (F1, F2, PF1, PF2)
+    - 🆕 Aggiunto modello "Cortina" e "Nerina" con maggiorazione +4%
+    - 🆕 Arrotondamento misure secondo regole listino (<=49 in difetto, >49 in eccesso)
+    - 🆕 Calcolo automatico persiana ora funziona per modelli Punto Persiane
+    - 📊 Popup dettaglio persiana mostra breakdown completo del calcolo
     
     🔧 AGGIORNAMENTI v7.86 (27 NOV 2025):
     - FIX: Allineata logica estrazione misure popup tapparella con preventivo
@@ -1024,12 +1031,12 @@
     ═══════════════════════════════════════════════════════════════════════════════
     -->
     
-    <title>Dashboard Rilievi v7.86 - Fix Popup Tapparella</title>
+    <title>Dashboard Rilievi v7.87 - Calcolo Persiane</title>
     <script>
         // ═══════════════════════════════════════════════════════════════════════
         // ✅ VERSIONE CENTRALIZZATA - MODIFICARE SOLO QUI!
         // ═══════════════════════════════════════════════════════════════════════
-        const DASHBOARD_VERSION = "7.86";
+        const DASHBOARD_VERSION = "7.87";
         const DASHBOARD_DATE = "27 NOV 2025";
         
         // ═══════════════════════════════════════════════════════════════════════
@@ -7083,11 +7090,76 @@ if (typeof module !== 'undefined' && module.exports) {
                     ]
                 },
                 persiane: {
-                    versione: "1.0 - STEP 1",
-                    dataAggiornamento: "2025-11-19",
+                    versione: "1.1 - Alto Adige + Cortina",
+                    dataAggiornamento: "2025-11-27",
                     fonte: "Listino Punto Persiane 45/52 Ottobre 2025 + Preventivi Reali",
                     
                     modelli: {
+                        "Alto Adige": {
+                            descrizione: "Persiana cieca con doghe orizzontali da 125mm",
+                            categoria: "Persiane cieche e a doghe",
+                            spessore_anta: "45mm",
+                            struttura_esterna: "80mm",
+                            maggiorazione_modello: 0,  // Prezzo base nella griglia
+                            prezzi: {
+                                "F1": {
+                                    "500x700": 257, "500x800": 275, "500x900": 291, "500x1000": 307,
+                                    "600x700": 282, "600x800": 294, "600x900": 336, "600x1000": 349, "600x1100": 362, "600x1200": 376, "600x1300": 389, "600x1400": 398, "600x1500": 414,
+                                    "700x700": 306, "700x800": 314, "700x900": 351, "700x1000": 365, "700x1100": 381, "700x1200": 393, "700x1300": 407, "700x1400": 421, "700x1500": 433, "700x1600": 446, "700x1700": 461, "700x1800": 485, "700x1900": 510, "700x2000": 534,
+                                    "800x700": 326, "800x800": 338, "800x900": 382, "800x1000": 395, "800x1100": 412, "800x1200": 427, "800x1300": 444, "800x1400": 460, "800x1500": 477, "800x1600": 490, "800x1700": 507, "800x1800": 532, "800x1900": 559, "800x2000": 585,
+                                    "900x700": 317, "900x800": 327, "900x900": 365, "900x1000": 382, "900x1100": 394, "900x1200": 409, "900x1300": 424, "900x1400": 441, "900x1500": 455, "900x1600": 469, "900x1700": 483, "900x1800": 509, "900x1900": 534, "900x2000": 561,
+                                    "1000x700": 335, "1000x800": 349, "1000x900": 394, "1000x1000": 410, "1000x1100": 427, "1000x1200": 445, "1000x1300": 464, "1000x1400": 479, "1000x1500": 497, "1000x1600": 510, "1000x1700": 529, "1000x1800": 556, "1000x1900": 583, "1000x2000": 610,
+                                    "1100x700": 350, "1100x800": 365, "1100x900": 417, "1100x1000": 436, "1100x1100": 457, "1100x1200": 477, "1100x1300": 492, "1100x1400": 510, "1100x1500": 531, "1100x1600": 551, "1100x1700": 572, "1100x1800": 598, "1100x1900": 623, "1100x2000": 649,
+                                    "1200x700": 366, "1200x800": 381, "1200x900": 438, "1200x1000": 464, "1200x1100": 485, "1200x1200": 508, "1200x1300": 521, "1200x1400": 542, "1200x1500": 566, "1200x1600": 591, "1200x1700": 614, "1200x1800": 648, "1200x1900": 682, "1200x2000": 715
+                                },
+                                "F2": {
+                                    "800x700": 542, "800x800": 550, "800x900": 565, "800x1000": 579, "800x1100": 602, "800x1200": 623, "800x1300": 648, "800x1400": 658, "800x1500": 684, "800x1600": 698, "800x1700": 720, "800x1800": 755, "800x1900": 773, "800x2000": 790,
+                                    "900x700": 546, "900x800": 552, "900x900": 569, "900x1000": 587, "900x1100": 608, "900x1200": 627, "900x1300": 650, "900x1400": 666, "900x1500": 688, "900x1600": 705, "900x1700": 727, "900x1800": 762, "900x1900": 780, "900x2000": 799,
+                                    "1000x700": 551, "1000x800": 554, "1000x900": 574, "1000x1000": 593, "1000x1100": 613, "1000x1200": 633, "1000x1300": 652, "1000x1400": 674, "1000x1500": 693, "1000x1600": 711, "1000x1700": 732, "1000x1800": 769, "1000x1900": 789, "1000x2000": 809,
+                                    "1100x700": 563, "1100x800": 579, "1100x900": 597, "1100x1000": 614, "1100x1100": 639, "1100x1200": 661, "1100x1300": 682, "1100x1400": 704, "1100x1500": 724, "1100x1600": 746, "1100x1700": 769, "1100x1800": 809, "1100x1900": 830, "1100x2000": 851,
+                                    "1200x700": 569, "1200x800": 580, "1200x900": 602, "1200x1000": 622, "1200x1100": 645, "1200x1200": 664, "1200x1300": 688, "1200x1400": 706, "1200x1500": 731, "1200x1600": 751, "1200x1700": 775, "1200x1800": 818, "1200x1900": 845, "1200x2000": 872,
+                                    "1300x700": 576, "1300x800": 600, "1300x900": 622, "1300x1000": 646, "1300x1100": 667, "1300x1200": 693, "1300x1300": 716, "1300x1400": 740, "1300x1500": 764, "1300x1600": 785, "1300x1700": 813, "1300x1800": 853, "1300x1900": 876, "1300x2000": 899,
+                                    "1400x700": 580, "1400x800": 604, "1400x900": 626, "1400x1000": 650, "1400x1100": 675, "1400x1200": 699, "1400x1300": 720, "1400x1400": 742, "1400x1500": 769, "1400x1600": 790, "1400x1700": 817, "1400x1800": 857, "1400x1900": 878, "1400x2000": 900,
+                                    "1500x700": 602, "1500x800": 625, "1500x900": 650, "1500x1000": 674, "1500x1100": 700, "1500x1200": 724, "1500x1300": 750, "1500x1400": 777, "1500x1500": 801, "1500x1600": 827, "1500x1700": 854, "1500x1800": 895, "1500x1900": 920, "1500x2000": 944
+                                },
+                                "PF1": {
+                                    "500x1800": 488, "500x1900": 498, "500x2000": 514, "500x2100": 526, "500x2200": 534, "500x2300": 549, "500x2400": 561, "500x2500": 573, "500x2600": 586, "500x2700": 598,
+                                    "600x1800": 542, "600x1900": 559, "600x2000": 569, "600x2100": 591, "600x2200": 604, "600x2300": 620, "600x2400": 633, "600x2500": 649, "600x2600": 666, "600x2700": 683,
+                                    "700x1800": 569, "700x1900": 585, "700x2000": 604, "700x2100": 621, "700x2200": 635, "700x2300": 650, "700x2400": 667, "700x2500": 682, "700x2600": 696, "700x2700": 710,
+                                    "800x1800": 597, "800x1900": 614, "800x2000": 631, "800x2100": 650, "800x2200": 667, "800x2300": 682, "800x2400": 702, "800x2500": 720, "800x2600": 738, "800x2700": 755,
+                                    "900x1800": 675, "900x1900": 694, "900x2000": 715, "900x2100": 737, "900x2200": 757, "900x2300": 779, "900x2400": 797, "900x2500": 816, "900x2600": 835, "900x2700": 854,
+                                    "1000x1800": 626, "1000x1900": 644, "1000x2000": 663, "1000x2100": 681, "1000x2200": 698, "1000x2300": 719, "1000x2400": 737, "1000x2500": 755, "1000x2600": 775, "1000x2700": 793,
+                                    "1100x1800": 723, "1100x1900": 744, "1100x2000": 767, "1100x2100": 792, "1100x2200": 817, "1100x2300": 839, "1100x2400": 858, "1100x2500": 876, "1100x2600": 895, "1100x2700": 915,
+                                    "1200x1800": 515, "1200x1900": 528, "1200x2000": 542, "1200x2100": 559, "1200x2200": 569, "1200x2300": 585, "1200x2400": 597, "1200x2500": 611, "1200x2600": 625, "1200x2700": 640
+                                },
+                                "PF2": {
+                                    "800x1800": 840, "800x1900": 871, "800x2000": 893, "800x2100": 918, "800x2200": 939, "800x2300": 964, "800x2400": 991, "800x2500": 1004, "800x2600": 1017, "800x2700": 1032,
+                                    "900x1800": 849, "900x1900": 878, "900x2000": 902, "900x2100": 925, "900x2200": 948, "900x2300": 971, "900x2400": 996, "900x2500": 1017, "900x2600": 1040, "900x2700": 1061,
+                                    "1000x1800": 860, "1000x1900": 886, "1000x2000": 910, "1000x2100": 933, "1000x2200": 957, "1000x2300": 979, "1000x2400": 1002, "1000x2500": 1032, "1000x2600": 1061, "1000x2700": 1091,
+                                    "1100x1800": 905, "1100x1900": 933, "1100x2000": 960, "1100x2100": 989, "1100x2200": 1014, "1100x2300": 1037, "1100x2400": 1062, "1100x2500": 1088, "1100x2600": 1113, "1100x2700": 1138,
+                                    "1200x1800": 911, "1200x1900": 947, "1200x2000": 969, "1200x2100": 997, "1200x2200": 1022, "1200x2300": 1047, "1200x2400": 1071, "1200x2500": 1106, "1200x2600": 1142, "1200x2700": 1178,
+                                    "1300x1800": 959, "1300x1900": 995, "1300x2000": 1022, "1300x2100": 1051, "1300x2200": 1078, "1300x2300": 1107, "1300x2400": 1132, "1300x2500": 1160, "1300x2600": 1189, "1300x2700": 1218,
+                                    "1400x1800": 1005, "1400x1900": 1047, "1400x2000": 1075, "1400x2100": 1106, "1400x2200": 1135, "1400x2300": 1165, "1400x2400": 1195, "1400x2500": 1225, "1400x2600": 1254, "1400x2700": 1285,
+                                    "1500x1800": 1017, "1500x1900": 1051, "1500x2000": 1082, "1500x2100": 1111, "1500x2200": 1143, "1500x2300": 1173, "1500x2400": 1201, "1500x2500": 1229, "1500x2600": 1258, "1500x2700": 1287
+                                }
+                            }
+                        },
+                        "Cortina": {
+                            descrizione: "Persiana cieca con doghe verticali da 80mm",
+                            categoria: "Persiane cieche e a doghe",
+                            spessore_anta: "45mm",
+                            struttura_esterna: "80mm",
+                            maggiorazione_modello: 4,  // +4% rispetto a prezzi griglia base
+                            usa_griglia_base: "Alto Adige"  // Usa stessa griglia + maggiorazione
+                        },
+                        "Nerina": {
+                            descrizione: "Persiana cieca con doghe verticali da 80mm, cornice perimetrale a rientro",
+                            categoria: "Persiane cieche e a doghe",
+                            spessore_anta: "45mm",
+                            struttura_esterna: "80mm",
+                            maggiorazione_modello: 4,  // +4% rispetto a prezzi griglia base
+                            usa_griglia_base: "Alto Adige"
+                        },
                         "NERINA": {
                             descrizione: "Scuro in alluminio con doghe verticali a passo di 80mm",
                             categoria: "Persiane cieche e a doghe",
@@ -7277,30 +7349,75 @@ if (typeof module !== 'undefined' && module.exports) {
                     
                     // Verifica modello esiste
                     if (!this.listini.persiane.modelli[modello]) {
-                        throw new Error(`Modello "${modello}" non trovato nel listino STEP 1`);
+                        throw new Error(`Modello "${modello}" non trovato nel listino`);
                     }
                     
-                    const mod = this.listini.persiane.modelli[modello];
+                    let mod = this.listini.persiane.modelli[modello];
+                    let maggiorazioneModello = mod.maggiorazione_modello || 0;
                     
-                    // Cerca prezzo base nella griglia per tipologia
-                    const key = `${larghezza}x${altezza}`;
+                    // 🆕 v7.86: Se il modello usa griglia base di altro modello
+                    if (mod.usa_griglia_base) {
+                        const modBase = this.listini.persiane.modelli[mod.usa_griglia_base];
+                        if (modBase && modBase.prezzi) {
+                            mod = { ...mod, prezzi: modBase.prezzi };
+                        }
+                    }
+                    
+                    // 🆕 v7.86: Arrotondamento misure secondo regole listino Punto Persiane
+                    // Ultime 2 cifre: <=49 arrotonda in difetto, >49 arrotonda in eccesso
+                    function arrotondaMisura(mm) {
+                        const ultime2cifre = mm % 100;
+                        if (ultime2cifre <= 49) {
+                            return Math.floor(mm / 100) * 100;
+                        } else {
+                            return Math.ceil(mm / 100) * 100;
+                        }
+                    }
+                    
+                    const L_arr = arrotondaMisura(larghezza);
+                    const H_arr = arrotondaMisura(altezza);
+                    const key = `${L_arr}x${H_arr}`;
                     const tip = tipologia || "F2"; // Default F2 se non specificato
                     
-                    let prezzoBase = 0;
+                    console.log(`📐 Persiana ${modello} ${tip}: ${larghezza}x${altezza}mm → arrotondato ${key}`);
                     
-                    if (mod.prezzi[tip] && mod.prezzi[tip][key]) {
+                    let prezzoBase = 0;
+                    let dimensioneUsata = key;
+                    
+                    if (mod.prezzi && mod.prezzi[tip] && mod.prezzi[tip][key]) {
                         // Trovato prezzo esatto
                         prezzoBase = mod.prezzi[tip][key];
-                    } else {
+                    } else if (mod.prezzi && mod.prezzi[tip]) {
                         // Cerca dimensione disponibile più vicina come fallback
-                        const dimensioniDisponibili = mod.prezzi[tip] ? Object.keys(mod.prezzi[tip]) : [];
+                        const dimensioniDisponibili = Object.keys(mod.prezzi[tip]);
                         if (dimensioniDisponibili.length > 0) {
-                            // Usa prima dimensione disponibile
-                            prezzoBase = mod.prezzi[tip][dimensioniDisponibili[0]];
-                            console.warn(`⚠️ Persiana ${modello}: dimensione ${key} non trovata, uso ${dimensioniDisponibili[0]}`);
+                            // Trova la dimensione più vicina
+                            let minDiff = Infinity;
+                            let bestKey = dimensioniDisponibili[0];
+                            
+                            dimensioniDisponibili.forEach(dk => {
+                                const [dL, dH] = dk.split('x').map(Number);
+                                const diff = Math.abs(dL - L_arr) + Math.abs(dH - H_arr);
+                                if (diff < minDiff) {
+                                    minDiff = diff;
+                                    bestKey = dk;
+                                }
+                            });
+                            
+                            prezzoBase = mod.prezzi[tip][bestKey];
+                            dimensioneUsata = bestKey;
+                            console.warn(`⚠️ Persiana ${modello}: dimensione ${key} non trovata, uso ${bestKey}`);
                         } else {
                             throw new Error(`Nessuna dimensione disponibile per ${modello} ${tip}`);
                         }
+                    } else {
+                        throw new Error(`Tipologia ${tip} non disponibile per ${modello}`);
+                    }
+                    
+                    // Applica maggiorazione modello (es. Cortina +4%)
+                    if (maggiorazioneModello > 0) {
+                        prezzoBase = prezzoBase * (1 + maggiorazioneModello / 100);
+                        console.log(`📊 Maggiorazione modello +${maggiorazioneModello}%: €${prezzoBase.toFixed(2)}`);
                     }
                     
                     // Aggiungi telaio se presente
@@ -7337,15 +7454,18 @@ if (typeof module !== 'undefined' && module.exports) {
                     return {
                         successo: true,
                         prodotto: "Persiana",
-                        modello: `${modello} - ${mod.descrizione}`,
+                        modello: `${modello} - ${mod.descrizione || modello}`,
                         tipologia: tip,
                         misure: {
                             larghezza: larghezza,
                             altezza: altezza,
-                            dimensione: key
+                            larghezza_arrotondata: L_arr,
+                            altezza_arrotondata: H_arr,
+                            dimensione: dimensioneUsata
                         },
                         dettaglio: {
                             prezzo_base: prezzoBase.toFixed(2),
+                            maggiorazione_modello: maggiorazioneModello,
                             telaio: prezzoTelaio.toFixed(2),
                             subtotale: subtotale.toFixed(2),
                             colore_perc: percColore,
@@ -10157,7 +10277,7 @@ if (typeof module !== 'undefined' && module.exports) {
             
             <div class="logo">
                 Dashboard Rilievi 
-                <span class="logo-version" id="version-badge">v7.86</span>
+                <span class="logo-version" id="version-badge">v7.87</span>
                 <span class="logo-subtitle">- Calcolo Completo</span>
             </div>
             <nav class="main-nav">
@@ -16740,9 +16860,15 @@ if (typeof module !== 'undefined' && module.exports) {
                             <h4 style="margin: 0 0 0.75rem 0; color: #047857;">💰 Calcolo Prezzo (AUTOMATICO)</h4>
                             <div style="display: grid; gap: 0.5rem;">
                                 <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0;">
-                                    <span>Prezzo Base (${calcoloPersiana.misure?.dimensione || 'N/D'}):</span>
+                                    <span>Prezzo Base ${calcoloPersiana.tipologia || ''} (${calcoloPersiana.misure?.dimensione || 'N/D'}):</span>
                                     <span style="font-weight: 600;">€ ${calcoloPersiana.dettaglio?.prezzo_base || '0.00'}</span>
                                 </div>
+                                ${calcoloPersiana.dettaglio?.maggiorazione_modello > 0 ? `
+                                <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0; color: #7c3aed;">
+                                    <span>Magg. Modello (+${calcoloPersiana.dettaglio?.maggiorazione_modello}%):</span>
+                                    <span style="font-weight: 600;">inclusa nel prezzo base</span>
+                                </div>
+                                ` : ''}
                                 <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dashed #a7f3d0;">
                                     <span>Telaio:</span>
                                     <span style="font-weight: 600;">€ ${calcoloPersiana.dettaglio?.telaio || '0.00'}</span>

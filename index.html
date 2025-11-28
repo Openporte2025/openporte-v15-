@@ -11236,6 +11236,30 @@ if (typeof module !== 'undefined' && module.exports) {
                                 quantita: pos.zanzariera.qta || 1
                             } : null,
                             
+                            // 🔐 v7.97: BLINDATA (Porte Blindate Oikos)
+                            blindata: pos.blindata && pos.blindata.attivo ? {
+                                attivo: true,
+                                LNP_L: pos.blindata.LNP_L || 0,
+                                LNP_H: pos.blindata.LNP_H || 0,
+                                luceCalcolata: pos.blindata.luceCalcolata || '',
+                                azienda: pos.blindata.azienda || 'Oikos',
+                                versione: pos.blindata.versione || 'E3',
+                                tipoAnta: pos.blindata.tipoAnta || 'singola',
+                                sensoApertura: pos.blindata.sensoApertura || '',
+                                versoApertura: pos.blindata.versoApertura || '',
+                                controtelaio: pos.blindata.controtelaio || 'si',
+                                cilindro: pos.blindata.cilindro || 'BASIC',
+                                coloreTelaio: pos.blindata.coloreTelaio || 'RAL8022',
+                                acustica: pos.blindata.acustica || 'serie',
+                                termica: pos.blindata.termica || 'serie',
+                                kitAAV: pos.blindata.kitAAV || '',
+                                rivestimentoInt: pos.blindata.rivestimentoInt || null,
+                                rivestimentoEst: pos.blindata.rivestimentoEst || null,
+                                vetro: pos.blindata.vetro || null,
+                                sopraluce: pos.blindata.sopraluce || null,
+                                fiancoluce: pos.blindata.fiancoluce || null
+                            } : null,
+                            
                             // NOTE E RILIEVI - TUTTI I PRODOTTI
                             note: pos.note || '',
                             rilievo_preesistente: pos.rilievo || {},
@@ -11255,7 +11279,8 @@ if (typeof module !== 'undefined' && module.exports) {
                         n_tapparelle: (project.positions || []).filter(p => p.tapparella && p.tapparella.qta).length,
                         n_cassonetti: (project.positions || []).filter(p => p.cassonetto && p.cassonetto.qta).length,
                         n_persiane: (project.positions || []).filter(p => p.persiana && p.persiana.qta).length,
-                        n_zanzariere: (project.positions || []).filter(p => p.zanzariera && p.zanzariera.qta).length
+                        n_zanzariere: (project.positions || []).filter(p => p.zanzariera && p.zanzariera.qta).length,
+                        n_blindate: (project.positions || []).filter(p => p.blindata && p.blindata.attivo).length
                     }
                 };
                 
@@ -21828,6 +21853,8 @@ if (typeof module !== 'undefined' && module.exports) {
                     },
                     // ✅ v7.73: FIX - Preserva configInfissi
                     configInfissi: githubData.configInfissi || {},
+                    // 🔐 v7.97: Preserva configBlindate
+                    configBlindate: githubData.configBlindate || {},
                     data_rilievo: githubData.metadata?.created || Date.now()
                 };
             }
@@ -21901,6 +21928,12 @@ if (typeof module !== 'undefined' && module.exports) {
                         }
                     });
                     
+                    // 🔐 v7.97: Converti BLINDATA (ha struttura diversa - usa attivo invece di qta)
+                    if (posGitHub.blindata && posGitHub.blindata.attivo) {
+                        posDash.blindata = { ...posGitHub.blindata };
+                        console.log(`✅ blindata Pos ${index + 1}: ${posGitHub.blindata.LNP_L}×${posGitHub.blindata.LNP_H} (${posGitHub.blindata.versione})`);
+                    }
+                    
                     return posDash;
                 });
                 
@@ -21922,6 +21955,8 @@ if (typeof module !== 'undefined' && module.exports) {
                     },
                     // ✅ v7.73: FIX - Preserva configInfissi
                     configInfissi: githubData.configInfissi || {},
+                    // 🔐 v7.97: Preserva configBlindate
+                    configBlindate: githubData.configBlindate || {},
                     data_rilievo: githubData.created || Date.now()
                 };
             }
